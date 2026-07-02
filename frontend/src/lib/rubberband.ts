@@ -16,11 +16,11 @@ interface Opts {
 }
 
 export function rubberband(node: HTMLElement, opts: Opts = {}) {
-  const MAX = 72;            // px cap on the stretch
+  const MAX = 60;            // px cap on the stretch
   const PUSH = 0.16;         // how much a wheel delta feeds the stretch
-  const TARGET_DECAY = 0.55; // per-frame pull of target → 0
-  const EASE = 0.35;         // per-frame ease of offset → target
-  const HOLD_MS = 140;       // only feed the stretch this long after it starts
+  const TARGET_DECAY = 0.40; // per-frame pull of target → 0 (lower = snappier)
+  const EASE = 0.55;         // per-frame ease of offset → target (higher = snappier)
+  const HOLD_MS = 130;       // only feed the stretch this long after it starts
 
   const inner = () => node.firstElementChild as HTMLElement | null;
   let offset = 0;
@@ -30,10 +30,10 @@ export function rubberband(node: HTMLElement, opts: Opts = {}) {
 
   function frame() {
     target *= TARGET_DECAY;
-    if (Math.abs(target) < 0.4) target = 0;
+    if (Math.abs(target) < 0.6) target = 0;
     offset += (target - offset) * EASE;
     const el = inner();
-    if (target === 0 && Math.abs(offset) < 0.3) {
+    if (target === 0 && Math.abs(offset) < 0.5) {
       offset = 0;
       if (el) el.style.transform = '';
       raf = 0;
