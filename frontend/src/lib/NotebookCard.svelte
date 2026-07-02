@@ -19,7 +19,7 @@
 -->
 <script lang="ts">
   import { onMount, tick, createEventDispatcher } from 'svelte';
-  import { setFocused, setNotebookWidth, setNotebookHeight } from './canvas';
+  import { setFocused, setNotebookWidth, setNotebookHeight, setNotebookPos } from './canvas';
   const dispatch = createEventDispatcher();
   import { get } from 'svelte/store';
   import CellShell from './CellShell.svelte';
@@ -106,7 +106,6 @@
   // Bottom / corner resize handles
 
   let resizingBottom  = false;
-  let resizingCorner  = false;
   let resizeStartY    = 0;
   let resizeStartH    = 0;
 
@@ -127,31 +126,56 @@
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
 
-  function onCornerResizeDown(e: PointerEvent) {
-    if (e.button !== 0) return;
-    e.stopPropagation();
-    resizingCorner = true;
-    resizeStartY   = e.clientY;
-    resizeStartH   = currentHeight();
-    resizeStartX   = e.clientX;
-    resizeStartW   = nb.width;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }
-
   function onBottomResizeMove(e: PointerEvent) {
-    if (!resizingBottom && !resizingCorner) return;
+    if (!resizingBottom) return;
     e.stopPropagation();
     const dy = (e.clientY - resizeStartY) / (currentZoom || 1);
     setNotebookHeight(nb.id, resizeStartH + dy);
-    if (resizingCorner) {
-      const dx = (e.clientX - resizeStartX) / (currentZoom || 1);
-      setNotebookWidth(nb.id, resizeStartW + dx);
-    }
   }
+
+  // ---- Four-corner diagonal resize ------------------------------------------
+  // Each corner keeps its opposite corner fixed: dragging changes width/height
+  // and, for the west/north corners, also the notebook's x/y so the anchored
+  // edge stays put.
+  type Corner = 'nw' | 'ne' | 'sw' | 'se';
+  const MIN_W = 220, MIN_H = 140;
+  let resizeCorner: Corner | null = null;
+  let cornerStartX = 0, cornerStartY = 0;   // pointer at grab (screen)
+  let cornerNbX = 0, cornerNbY = 0;         // notebook pos at grab (world)
+
+  function onCornerDown(e: PointerEvent, corner: Corner) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    resizeCorner = corner;
+    cornerStartX = e.clientX; cornerStartY = e.clientY;
+    cornerNbX = nb.x; cornerNbY = nb.y;
+    resizeStartW = nb.width;
+    resizeStartH = currentHeight();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function onCornerMove(e: PointerEvent) {
+    if (!resizeCorner) return;
+    e.stopPropagation();
+    const z = currentZoom || 1;
+    const dx = (e.clientX - cornerStartX) / z;
+    const dy = (e.clientY - cornerStartY) / z;
+    const east  = resizeCorner === 'ne' || resizeCorner === 'se';
+    const south = resizeCorner === 'se' || resizeCorner === 'sw';
+    const newW = Math.max(MIN_W, east  ? resizeStartW + dx : resizeStartW - dx);
+    const newH = Math.max(MIN_H, south ? resizeStartH + dy : resizeStartH - dy);
+    // Keep the anchored (opposite) edge fixed when growing west/north.
+    const newX = east  ? cornerNbX : cornerNbX + (resizeStartW - newW);
+    const newY = south ? cornerNbY : cornerNbY + (resizeStartH - newH);
+    setNotebookWidth(nb.id, newW);
+    setNotebookHeight(nb.id, newH);
+    setNotebookPos(nb.id, newX, newY);
+  }
+
+  function onCornerUp(_e: PointerEvent) { resizeCorner = null; }
 
   function onBottomResizeUp(_e: PointerEvent) {
     resizingBottom = false;
-    resizingCorner = false;
   }
 
   function onTitlePointerDown(e: PointerEvent) {
@@ -518,9 +542,9 @@
   bind:this={cardEl}
   tabindex="-1"
   on:keydown={onCardKeydown}
-  on:pointermove={(e) => { onTitlePointerMove(e); onBottomResizeMove(e); }}
-  on:pointerup={(e) => { onTitlePointerUp(e); onBottomResizeUp(e); }}
-  on:pointercancel={(e) => { onTitlePointerUp(e); onBottomResizeUp(e); }}
+  on:pointermove={(e) => { onTitlePointerMove(e); onBottomResizeMove(e); onCornerMove(e); }}
+  on:pointerup={(e) => { onTitlePointerUp(e); onBottomResizeUp(e); onCornerUp(e); }}
+  on:pointercancel={(e) => { onTitlePointerUp(e); onBottomResizeUp(e); onCornerUp(e); }}
 >
   <!-- Title bar — only pointerdown here; move/up handled by cardEl after setPointerCapture -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -616,9 +640,15 @@
     <!-- Bottom resize handle -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div class="resize-handle-bottom" on:pointerdown={onBottomResizeDown}></div>
-    <!-- Corner resize handle -->
+    <!-- Four diagonal corner resize handles -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="resize-handle-corner" on:pointerdown={onCornerResizeDown}></div>
+    <div class="resize-corner rc-nw" on:pointerdown={(e) => onCornerDown(e, 'nw')}></div>
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="resize-corner rc-ne" on:pointerdown={(e) => onCornerDown(e, 'ne')}></div>
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="resize-corner rc-sw" on:pointerdown={(e) => onCornerDown(e, 'sw')}></div>
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="resize-corner rc-se" on:pointerdown={(e) => onCornerDown(e, 'se')}></div>
   {/if}
 
   <!-- Collapse wrapper -->
@@ -1019,17 +1049,18 @@
   }
   .resize-handle-bottom:hover { background: rgba(137,180,250,0.25); border-radius: 4px; }
 
-  /* ---- Corner resize handle ---- */
-  .resize-handle-corner {
+  /* ---- Four diagonal corner resize handles ---- */
+  .resize-corner {
     position: absolute;
-    bottom: -4px;
-    right: -4px;
-    width: 12px;
-    height: 12px;
-    cursor: nwse-resize;
-    z-index: 11;
+    width: 14px;
+    height: 14px;
+    z-index: 12;   /* above the titlebar so top corners resize, not drag */
   }
-  .resize-handle-corner:hover { background: rgba(137,180,250,0.4); border-radius: 2px; }
+  .resize-corner:hover { background: rgba(137,180,250,0.4); border-radius: 3px; }
+  .rc-nw { top: -4px;    left: -4px;  cursor: nwse-resize; }
+  .rc-ne { top: -4px;    right: -4px; cursor: nesw-resize; }
+  .rc-sw { bottom: -4px; left: -4px;  cursor: nesw-resize; }
+  .rc-se { bottom: -4px; right: -4px; cursor: nwse-resize; }
 
   /* ---- Insertion cursor between rows ---- */
   .insertion-cursor {
