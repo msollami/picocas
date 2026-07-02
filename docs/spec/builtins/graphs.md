@@ -198,7 +198,10 @@ circular.
 | Kernel | Wolfram names served | Notes |
 |--------|----------------------|-------|
 | Circular | `"CircularEmbedding"` | default; vertices on a circle |
-| Spring / force-directed | `"SpringElectricalEmbedding"`, `"SpringEmbedding"`, `"GravityEmbedding"`, `"HighDimensionalEmbedding"`, `"SpectralEmbedding"`, `"SphericalEmbedding"`, `"HyperbolicSpringEmbedding"`, `"TutteEmbedding"`, `"PlanarEmbedding"` | Fruchterman–Reingold; the energy-minimization family is **approximated** by this one solver |
+| Spring / force-directed | `"SpringElectricalEmbedding"`, `"SpringEmbedding"`, `"TutteEmbedding"`, `"PlanarEmbedding"` | Fruchterman–Reingold: edges as springs, vertices as charges |
+| Gravity | `"GravityEmbedding"` | Fruchterman–Reingold plus a central gravity well that pulls high-degree hubs inward and compacts the drawing |
+| High-dimensional | `"HighDimensionalEmbedding"`, `"SpectralEmbedding"` | pivot-MDS: coordinates are BFS distances to two far-apart pivots (lays the graph along its diameter) |
+| Hyperbolic | `"HyperbolicSpringEmbedding"`, `"SphericalEmbedding"` | spring layout, then a radial warp crowding vertices toward a disk boundary (Poincaré-disk feel) |
 | Spiral | `"SpiralEmbedding"`, `"DiscreteSpiralEmbedding"` | Archimedean spiral; good for paths |
 | Linear | `"LinearEmbedding"` | vertices on a line |
 | Grid | `"GridEmbedding"` | row-major square grid |

@@ -30,6 +30,9 @@
 typedef enum {
     LAYOUT_CIRCULAR,
     LAYOUT_SPRING,      /* Fruchterman-Reingold spring-electrical             */
+    LAYOUT_GRAVITY,     /* FR with an added central gravity well              */
+    LAYOUT_HIGHDIM,     /* two-pivot BFS-distance embedding projected to 2D   */
+    LAYOUT_HYPERBOLIC,  /* FR then radial warp onto a Poincare-like disk      */
     LAYOUT_SPIRAL,
     LAYOUT_LINEAR,
     LAYOUT_GRID,
@@ -48,11 +51,11 @@ static LayoutKernel layout_kernel(const char* name) {
         { "CircularEmbedding",            LAYOUT_CIRCULAR  },
         { "SpringElectricalEmbedding",    LAYOUT_SPRING    },
         { "SpringEmbedding",              LAYOUT_SPRING    },
-        { "GravityEmbedding",             LAYOUT_SPRING    },
-        { "HighDimensionalEmbedding",     LAYOUT_SPRING    },
-        { "SpectralEmbedding",            LAYOUT_SPRING    },
-        { "SphericalEmbedding",           LAYOUT_SPRING    },
-        { "HyperbolicSpringEmbedding",    LAYOUT_SPRING    },
+        { "GravityEmbedding",             LAYOUT_GRAVITY   },
+        { "HighDimensionalEmbedding",     LAYOUT_HIGHDIM   },
+        { "SpectralEmbedding",            LAYOUT_HIGHDIM   },
+        { "SphericalEmbedding",           LAYOUT_HYPERBOLIC},
+        { "HyperbolicSpringEmbedding",    LAYOUT_HYPERBOLIC},
         { "TutteEmbedding",               LAYOUT_SPRING    },
         { "PlanarEmbedding",              LAYOUT_SPRING    },
         { "SpiralEmbedding",              LAYOUT_SPIRAL    },
@@ -264,10 +267,14 @@ static void layout_bipartite(const GraphAdj* a, double* x, double* y, int n) {
     free(color); free(queue);
 }
 
-/* Fruchterman-Reingold spring-electrical layout. Vertices repel each other
- * (~k^2/d); adjacent vertices attract (~d^2/k). Initialized from the circular
- * layout (deterministic) and cooled linearly, so the result is stable. */
-static void layout_spring(const GraphAdj* a, double* x, double* y, int n) {
+/* Fruchterman-Reingold spring-electrical core. Vertices repel each other
+ * (~k^2/d); adjacent vertices attract (~d^2/k). When `gravity` > 0 an extra
+ * central pull (~gravity*distance-from-origin, scaled by 1+degree) compacts the
+ * graph and draws well-connected vertices inward — this is what distinguishes
+ * GravityEmbedding from the plain spring-electrical layout. Initialized from the
+ * circular layout (deterministic) and cooled linearly, so the result is stable.
+ */
+static void fr_core(const GraphAdj* a, double* x, double* y, int n, double gravity) {
     if (n <= 2) { layout_circular(x, y, n); return; }
     layout_circular(x, y, n);                     /* deterministic seed         */
     double area = 4.0;                            /* the [-1,1]^2 box           */
@@ -307,6 +314,15 @@ static void layout_spring(const GraphAdj* a, double* x, double* y, int n) {
                 dx[v] += ux * f; dy[v] += uy * f;
             }
         }
+        /* Optional central gravity: pull toward the origin, stronger for
+         * higher-degree vertices, so hubs settle in the middle. */
+        if (gravity > 0.0) {
+            for (int i = 0; i < n; i++) {
+                double mass = 1.0 + 0.5 * (double)(a->outdeg[i] + a->indeg[i]);
+                dx[i] -= gravity * mass * x[i];
+                dy[i] -= gravity * mass * y[i];
+            }
+        }
         /* Displace, capped by the current temperature. */
         for (int i = 0; i < n; i++) {
             double d = sqrt(dx[i] * dx[i] + dy[i] * dy[i]);
@@ -321,6 +337,93 @@ static void layout_spring(const GraphAdj* a, double* x, double* y, int n) {
     free(dx); free(dy);
 }
 
+static void layout_spring(const GraphAdj* a, double* x, double* y, int n) {
+    fr_core(a, x, y, n, 0.0);
+}
+
+static void layout_gravity(const GraphAdj* a, double* x, double* y, int n) {
+    fr_core(a, x, y, n, 0.12);
+}
+
+/* HyperbolicSpring / Spherical: run the spring layout, then warp radii outward
+ * so vertices crowd toward the boundary of a disk (a Poincare-disk feel). */
+static void layout_hyperbolic(const GraphAdj* a, double* x, double* y, int n) {
+    fr_core(a, x, y, n, 0.04);
+    if (n <= 1) return;
+    double cx = 0.0, cy = 0.0;
+    for (int i = 0; i < n; i++) { cx += x[i]; cy += y[i]; }
+    cx /= n; cy /= n;
+    double maxr = 1e-9;
+    for (int i = 0; i < n; i++) {
+        double r = hypot(x[i] - cx, y[i] - cy);
+        if (r > maxr) maxr = r;
+    }
+    for (int i = 0; i < n; i++) {
+        double ddx = x[i] - cx, ddy = y[i] - cy;
+        double r = hypot(ddx, ddy);
+        if (r < 1e-9) continue;
+        double rn = r / maxr;                 /* in [0,1]                       */
+        double warped = pow(rn, 0.45);        /* push outward toward the rim    */
+        double s = warped / rn;
+        x[i] = cx + ddx * s;
+        y[i] = cy + ddy * s;
+    }
+}
+
+/* BFS distances from `src` over the underlying undirected graph; unreached
+ * vertices get `n` (a value larger than any real distance). */
+static void bfs_from(const GraphAdj* a, int n, int src, int* dist) {
+    int* queue = malloc((size_t)(n > 0 ? n : 1) * sizeof(int));
+    if (!queue) { for (int i = 0; i < n; i++) dist[i] = 0; return; }
+    for (int i = 0; i < n; i++) dist[i] = -1;
+    int head = 0, tail = 0;
+    dist[src] = 0; queue[tail++] = src;
+    while (head < tail) {
+        int u = queue[head++];
+        for (int e = 0; e < a->outdeg[u]; e++) {
+            int v = a->out[u][e];
+            if (dist[v] < 0) { dist[v] = dist[u] + 1; queue[tail++] = v; }
+        }
+        for (int e = 0; e < a->indeg[u]; e++) {
+            int v = a->in[u][e];
+            if (dist[v] < 0) { dist[v] = dist[u] + 1; queue[tail++] = v; }
+        }
+    }
+    for (int i = 0; i < n; i++) if (dist[i] < 0) dist[i] = n;
+    free(queue);
+}
+
+static int farthest(const int* dist, int n) {
+    int best = 0, bd = -1;
+    for (int i = 0; i < n; i++) {
+        int d = (dist[i] >= n) ? -1 : dist[i];   /* ignore unreached           */
+        if (d > bd) { bd = d; best = i; }
+    }
+    return best;
+}
+
+/* HighDimensional / Spectral (approx): embed each vertex by its BFS distance to
+ * two far-apart pivots (found by a double sweep) and use those two distances as
+ * the 2D coordinates — a cheap pivot-MDS that lays the graph out along its
+ * "diameter". A tiny index-based nudge separates coincident vertices. */
+static void layout_highdim(const GraphAdj* a, double* x, double* y, int n) {
+    if (n <= 2) { layout_circular(x, y, n); return; }
+    int* d = malloc((size_t)n * sizeof(int));
+    int* d1 = malloc((size_t)n * sizeof(int));
+    int* d2 = malloc((size_t)n * sizeof(int));
+    if (!d || !d1 || !d2) { free(d); free(d1); free(d2); layout_circular(x, y, n); return; }
+    bfs_from(a, n, 0, d);          int p1 = farthest(d, n);
+    bfs_from(a, n, p1, d1);        int p2 = farthest(d1, n);
+    bfs_from(a, n, p2, d2);
+    for (int i = 0; i < n; i++) {
+        double a1 = (d1[i] >= n) ? 0.0 : (double)d1[i];
+        double a2 = (d2[i] >= n) ? 0.0 : (double)d2[i];
+        x[i] = a1 + 0.001 * (double)(i % 7);
+        y[i] = a2 + 0.001 * (double)(i % 5);
+    }
+    free(d); free(d1); free(d2);
+}
+
 void graph_compute_layout(const Expr* g, const char* layout, double* x, double* y) {
     const Expr* verts = g->data.function.args[0];
     int n = (int)verts->data.function.arg_count;
@@ -330,7 +433,8 @@ void graph_compute_layout(const Expr* g, const char* layout, double* x, double* 
 
     /* Kernels that need adjacency build it once; geometric kernels don't. */
     GraphAdj* a = NULL;
-    if (kern == LAYOUT_SPRING || kern == LAYOUT_STAR || kern == LAYOUT_RADIAL
+    if (kern == LAYOUT_SPRING || kern == LAYOUT_GRAVITY || kern == LAYOUT_HIGHDIM
+        || kern == LAYOUT_HYPERBOLIC || kern == LAYOUT_STAR || kern == LAYOUT_RADIAL
         || kern == LAYOUT_LAYERED || kern == LAYOUT_BIPARTITE) {
         a = graph_build_adj(g);
         if (!a) kern = LAYOUT_CIRCULAR;   /* defensive: fall back if build fails */
@@ -347,6 +451,9 @@ void graph_compute_layout(const Expr* g, const char* layout, double* x, double* 
         case LAYOUT_LAYERED:   layout_layered(a, x, y, n);     break;
         case LAYOUT_BIPARTITE: layout_bipartite(a, x, y, n);   break;
         case LAYOUT_SPRING:    layout_spring(a, x, y, n);      break;
+        case LAYOUT_GRAVITY:   layout_gravity(a, x, y, n);     break;
+        case LAYOUT_HIGHDIM:   layout_highdim(a, x, y, n);     break;
+        case LAYOUT_HYPERBOLIC:layout_hyperbolic(a, x, y, n);  break;
     }
 
     if (a) graph_adj_free(a);
