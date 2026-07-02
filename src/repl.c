@@ -8,6 +8,7 @@
 #include "sym_names.h"
 #include "show.h"
 #include "graphics_json.h"
+#include "graph.h"
 #include "print_latex.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -143,6 +144,16 @@ void process_input(const char* input, int line_number) {
         && to_print->data.function.head->data.symbol == SYM_Graphics
         && to_print->data.function.arg_count >= 1) {
         graphics_show(to_print);
+    }
+    /* A bare Graph result auto-displays as a diagram, the same way Graphics
+     * does: render it to a temporary Graphics tree and hand that to the
+     * renderer (which we own and free here). */
+    else if (to_print && to_print->type == EXPR_FUNCTION
+             && to_print->data.function.head->type == EXPR_SYMBOL
+             && to_print->data.function.head->data.symbol == SYM_Graph
+             && graph_is_valid(to_print)) {
+        Expr* gfx = graph_default_graphics(to_print);
+        if (gfx) { graphics_show(gfx); expr_free(gfx); }
     }
 
     expr_free(to_print);
@@ -414,7 +425,18 @@ static void pipe_process_input(const char* input, int id) {
         return;
     }
 
-    /* Graphics[...] → serialize as Plotly JSON for the notebook frontend. */
+    /* Graphics[...] → serialize as Plotly JSON for the notebook frontend. A
+     * bare valid Graph[...] auto-renders the same way: we swap in its default
+     * GraphPlot diagram before serializing, so `g` alone shows as a picture
+     * (FullForm/InputForm keep their textual heads and fall through to text). */
+    if (evaluated->type == EXPR_FUNCTION
+        && evaluated->data.function.head
+        && evaluated->data.function.head->type == EXPR_SYMBOL
+        && evaluated->data.function.head->data.symbol == SYM_Graph
+        && graph_is_valid(evaluated)) {
+        Expr* gfx = graph_default_graphics(evaluated);
+        if (gfx) { expr_free(evaluated); evaluated = gfx; }
+    }
     if (evaluated->type == EXPR_FUNCTION
         && evaluated->data.function.head
         && evaluated->data.function.head->type == EXPR_SYMBOL

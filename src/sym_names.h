@@ -673,6 +673,13 @@ extern const char* SYM_StronglyConnectedComponents;
 extern const char* SYM_FindSpanningTree;
 extern const char* SYM_VertexConnectivity;
 extern const char* SYM_GraphPlot;
+extern const char* SYM_HighlightGraph;
+/* GraphPlot / HighlightGraph option names. */
+extern const char* SYM_GraphLayout;
+extern const char* SYM_VertexStyle;
+extern const char* SYM_EdgeStyle;
+extern const char* SYM_VertexLabels;
+extern const char* SYM_VertexSize;
 
 /* Populate every SYM_* by interning its name string. Idempotent: safe
  * to call repeatedly. Must run before any consumer reads a SYM_*

@@ -112,5 +112,36 @@ Expr* builtin_vertex_connectivity(Expr* res);           /* VertexConnectivity   
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
+Expr* builtin_highlight_graph(Expr* res);   /* HighlightGraph[g, parts]        */
+
+/* Vertex-coordinate layout (src/graph/layout.c). Fills caller-allocated x[]/y[]
+ * (length = VertexCount[g]) with 2D coordinates under the named layout,
+ * normalized to the [-1,1] box. `layout` is a Wolfram GraphLayout name (e.g.
+ * "SpringElectricalEmbedding"); NULL / unknown falls back to circular. Fully
+ * deterministic so notebooks reproduce. Read-only over g. */
+void graph_compute_layout(const Expr* g, const char* layout, double* x, double* y);
+
+/* Styling passed to graph_render(). Colors are borrowed RGBColor expressions
+ * (or NULL for the built-in defaults). Highlight masks, when non-NULL, are
+ * arrays as long as the vertex / edge list: a set entry draws that element in
+ * the accent color and dims the rest. */
+typedef struct GraphStyle {
+    const char* layout;       /* layout name, or NULL for circular            */
+    const Expr* vertex_color; /* RGBColor for all vertices, or NULL           */
+    const Expr* edge_color;   /* RGBColor for all edges, or NULL              */
+    double      vertex_size;  /* Disk radius; <= 0 uses the default           */
+    int         show_labels;  /* draw Text vertex labels (default 1)          */
+    const char* hi_vert;      /* per-vertex highlight mask, or NULL           */
+    const char* hi_edge;      /* per-edge highlight mask, or NULL             */
+} GraphStyle;
+
+/* Render a validated graph to a Graphics[...] expression using `st` (NULL = all
+ * defaults). Circular layout, blue vertices, labelled. Caller owns the result;
+ * read-only over g and st. */
+Expr* graph_render(const Expr* g, const GraphStyle* st);
+
+/* Convenience wrapper: graph_render with all defaults. Used by the REPL to
+ * auto-display a bare Graph result as a diagram. */
+Expr* graph_default_graphics(const Expr* g);
 
 #endif /* GRAPH_H */

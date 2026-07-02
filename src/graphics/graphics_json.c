@@ -294,6 +294,16 @@ char* graphics_to_plotly_json(const Expr* g) {
             double x, y;
             if (!get_xy(p->data.function.args[0], &x, &y)) continue;
 
+            /* Marker px size scales with the disk radius so VertexSize takes
+             * effect; the default radius (0.08) maps to the historical 22px. */
+            double radius = 0.08, msize = 22.0;
+            if (p->data.function.arg_count >= 2
+                && expr_to_double(p->data.function.args[1], &radius)) {
+                msize = radius * 275.0;
+                if (msize < 6.0)  msize = 6.0;
+                if (msize > 90.0) msize = 90.0;
+            }
+
             char color_str[64];
             rgba_str(color_str, sizeof(color_str), cur_r, cur_g, cur_b, 1.0);
 
@@ -304,7 +314,9 @@ char* graphics_to_plotly_json(const Expr* g) {
             buf_catd(&data_buf, x);
             buf_cat(&data_buf, "],\"y\":[");
             buf_catd(&data_buf, y);
-            buf_cat(&data_buf, "],\"marker\":{\"size\":22,\"color\":\"");
+            buf_cat(&data_buf, "],\"marker\":{\"size\":");
+            buf_catd(&data_buf, msize);
+            buf_cat(&data_buf, ",\"color\":\"");
             buf_cat(&data_buf, color_str);
             buf_cat(&data_buf, "\"},\"hoverinfo\":\"skip\",\"showlegend\":false}");
             continue;

@@ -416,6 +416,8 @@ set(COMMON_SRC
     ../src/graph/spanningtree.c
     ../src/graph/connectivity.c
     ../src/graph/graphplot.c
+    ../src/graph/layout.c
+    ../src/graph/highlight.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

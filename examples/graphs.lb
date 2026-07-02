@@ -225,6 +225,60 @@
         { "cells": [{ "type": "code", "source": "GraphPlot[Graph[{1, 2, 3, 4, 5}, {1 -> 2, 2 -> 3, 3 -> 4, 4 -> 5, 5 -> 1}]]" }] },
         { "cells": [{ "type": "code", "source": "GraphPlot[Graph[{a1, a2, a3, b1, b2, b3}, {a1 <-> b1, a1 <-> b2, a1 <-> b3, a2 <-> b1, a2 <-> b2, a2 <-> b3, a3 <-> b1, a3 <-> b2, a3 <-> b3}]]" }] }
       ]
+    },
+    {
+      "id": "nb-layouts",
+      "title": "Layouts — One Graph, Many Embeddings",
+      "x": 1500,
+      "y": 1420,
+      "width": 660,
+      "collapsed": false,
+      "rows": [
+        { "cells": [{ "type": "section", "source": "Graph Layouts" }] },
+        { "cells": [{ "type": "text", "source": "A bare Graph now renders itself as a node-link diagram, so evaluating gL below draws it. GraphLayout -> \"name\" chooses how vertices are placed. Every layout is deterministic, so re-running reproduces the same picture. Here is one graph — the pentagonal prism — drawn ten ways." }] },
+        { "cells": [{ "type": "code", "source": "gL = Graph[{1,2,3,4,5,6,7,8,9,10}, {1<->2, 2<->3, 3<->4, 4<->5, 5<->1, 6<->7, 7<->8, 8<->9, 9<->10, 10<->6, 1<->6, 2<->7, 3<->8, 4<->9, 5<->10}]" }] },
+        { "cells": [{ "type": "text", "source": "Circular is the default embedding — and what a bare graph auto-renders with." }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[gL, GraphLayout -> \"CircularEmbedding\"]" }] },
+        { "cells": [{ "type": "text", "source": "The spring-electrical (force-directed) layout treats edges as springs and vertices as mutually repelling charges — structure like the prism's two rings falls out on its own. This is the workhorse for the whole energy-minimization family (SpringEmbedding, GravityEmbedding, SpectralEmbedding, ...)." }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[gL, GraphLayout -> \"SpringElectricalEmbedding\"]" }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[gL, GraphLayout -> \"SpiralEmbedding\"]" }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[gL, GraphLayout -> \"GridEmbedding\"]" }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[gL, GraphLayout -> \"RadialEmbedding\"]" }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[gL, GraphLayout -> \"LayeredEmbedding\"]" }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[gL, GraphLayout -> \"StarEmbedding\"]" }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[gL, GraphLayout -> \"BipartiteEmbedding\"]" }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[gL, GraphLayout -> \"RandomEmbedding\"]" }] },
+        { "cells": [{ "type": "subsection", "source": "Layouts that suit a shape" }] },
+        { "cells": [{ "type": "text", "source": "The spiral and linear embeddings are made for paths; the spring layout untangles trees and meshes." }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[PathGraph[12], GraphLayout -> \"SpiralEmbedding\"]" }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[CompleteGraph[10], GraphLayout -> \"SpringElectricalEmbedding\"]" }] }
+      ]
+    },
+    {
+      "id": "nb-styling",
+      "title": "Styling & Highlighting",
+      "x": 60,
+      "y": 2160,
+      "width": 660,
+      "collapsed": false,
+      "rows": [
+        { "cells": [{ "type": "section", "source": "Styling" }] },
+        { "cells": [{ "type": "text", "source": "GraphPlot accepts VertexStyle, EdgeStyle, VertexSize, and VertexLabels. Colors may be named (Red, Blue, Orange, ...), RGBColor[r,g,b], or GrayLevel[x]." }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[CycleGraph[10], VertexStyle -> Orange, EdgeStyle -> GrayLevel[0.7]]" }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[CompleteGraph[6], VertexStyle -> RGBColor[0.2, 0.7, 0.45], VertexSize -> 0.13]" }] },
+        { "cells": [{ "type": "code", "source": "GraphPlot[PathGraph[8], GraphLayout -> \"LinearEmbedding\", VertexLabels -> None]" }] },
+        { "cells": [{ "type": "section", "source": "HighlightGraph" }] },
+        { "cells": [{ "type": "text", "source": "HighlightGraph[g, parts] emphasizes chosen vertices/edges (accent color) and dims the rest. Parts may be vertices, edges (u<->v), or a list of vertices treated as a path." }] },
+        { "cells": [{ "type": "code", "source": "HighlightGraph[CycleGraph[8], {1, 2, 3}]" }] },
+        { "cells": [{ "type": "code", "source": "HighlightGraph[CompleteGraph[6], {1 <-> 2, 2 <-> 3, 3 <-> 4}]" }] },
+        { "cells": [{ "type": "subsection", "source": "Highlight a computed result" }] },
+        { "cells": [{ "type": "text", "source": "Because highlights take ordinary graph elements, you can feed them the output of an algorithm — a shortest path (wrap the vertex list so it is read as one path), or the edges of a spanning tree." }] },
+        { "cells": [{ "type": "code", "source": "gp = Graph[{1,2,3,4,5,6}, {1<->2, 2<->3, 3<->4, 4<->5, 5<->6, 1<->6, 2<->5}]" }] },
+        { "cells": [{ "type": "code", "source": "HighlightGraph[gp, {FindShortestPath[gp, 1, 4]}]" }] },
+        { "cells": [{ "type": "code", "source": "HighlightGraph[CompleteGraph[7], EdgeList[FindSpanningTree[CompleteGraph[7]]]]" }] },
+        { "cells": [{ "type": "text", "source": "A highlight can also use any layout: draw gp with its spring layout and pick out a subpath." }] },
+        { "cells": [{ "type": "code", "source": "HighlightGraph[gp, {1 <-> 2, 2 <-> 3, 3 <-> 4}, GraphLayout -> \"SpringElectricalEmbedding\"]" }] }
+      ]
     }
   ]
 }

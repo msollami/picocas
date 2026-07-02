@@ -647,6 +647,12 @@ const char* SYM_StronglyConnectedComponents = NULL;
 const char* SYM_FindSpanningTree = NULL;
 const char* SYM_VertexConnectivity = NULL;
 const char* SYM_GraphPlot = NULL;
+const char* SYM_HighlightGraph = NULL;
+const char* SYM_GraphLayout = NULL;
+const char* SYM_VertexStyle = NULL;
+const char* SYM_EdgeStyle = NULL;
+const char* SYM_VertexLabels = NULL;
+const char* SYM_VertexSize = NULL;
 
 void sym_names_init(void) {
     /* intern_symbol is idempotent and stable, so this can run multiple
@@ -1288,6 +1294,12 @@ void sym_names_init(void) {
     SYM_FindSpanningTree           = intern_symbol("FindSpanningTree");
     SYM_VertexConnectivity         = intern_symbol("VertexConnectivity");
     SYM_GraphPlot                  = intern_symbol("GraphPlot");
+    SYM_HighlightGraph             = intern_symbol("HighlightGraph");
+    SYM_GraphLayout                = intern_symbol("GraphLayout");
+    SYM_VertexStyle                = intern_symbol("VertexStyle");
+    SYM_EdgeStyle                  = intern_symbol("EdgeStyle");
+    SYM_VertexLabels               = intern_symbol("VertexLabels");
+    SYM_VertexSize                 = intern_symbol("VertexSize");
 
     /* System symbols that have no kernel implementation and no cached SYM_*
      * pointer, but must still be recognized as System` (not qualified into a

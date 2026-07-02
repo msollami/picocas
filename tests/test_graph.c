@@ -294,6 +294,34 @@ static void test_graphplot(void) {
     assert_eval_eq("Head[GraphPlot[5]]", "GraphPlot", 0);
 }
 
+static void test_graphplot_options(void) {
+    /* Every layout still yields a Graphics with the same edge/vertex counts;
+     * only the coordinates differ. */
+    assert_eval_eq("Head[GraphPlot[CompleteGraph[6], GraphLayout -> \"SpringElectricalEmbedding\"]]", "Graphics", 0);
+    assert_eval_eq("Count[GraphPlot[CompleteGraph[6], GraphLayout -> \"SpringElectricalEmbedding\"], _Line, Infinity]", "15", 0);
+    assert_eval_eq("Count[GraphPlot[CycleGraph[8], GraphLayout -> \"GridEmbedding\"], _Disk, Infinity]", "8", 0);
+    /* Unknown layout name falls back to circular (still valid). */
+    assert_eval_eq("Head[GraphPlot[CycleGraph[5], GraphLayout -> \"NoSuchEmbedding\"]]", "Graphics", 0);
+    /* VertexLabels -> None suppresses the Text labels; default draws them. */
+    assert_eval_eq("Count[GraphPlot[CycleGraph[5], VertexLabels -> None], _Text, Infinity]", "0", 0);
+    assert_eval_eq("Count[GraphPlot[CycleGraph[5]], _Text, Infinity]", "5", 0);
+    /* Styling emits per-primitive RGBColor directives (one per edge + vertex). */
+    assert_eval_eq("Count[GraphPlot[CycleGraph[5]], _RGBColor, Infinity]", "10", 0);
+}
+
+static void test_highlight_graph(void) {
+    /* HighlightGraph returns a Graphics (not a Graph). */
+    assert_eval_eq("Head[HighlightGraph[CycleGraph[8], {1, 2, 3}]]", "Graphics", 0);
+    assert_eval_eq("Head[HighlightGraph[CompleteGraph[6], {1 <-> 2, 2 <-> 3}]]", "Graphics", 0);
+    /* Edge/vertex counts are preserved (highlighting only recolors). */
+    assert_eval_eq("Count[HighlightGraph[CycleGraph[6], {1, 2}], _Line, Infinity]", "6", 0);
+    assert_eval_eq("Count[HighlightGraph[CycleGraph[6], {1, 2}], _Disk, Infinity]", "6", 0);
+    /* A vertex list is treated as a path (accepted, still a Graphics). */
+    assert_eval_eq("Head[HighlightGraph[PathGraph[5], {{1, 2, 3}}]]", "Graphics", 0);
+    /* Non-graph / malformed arg stays unevaluated. */
+    assert_eval_eq("Head[HighlightGraph[5, {1}]]", "HighlightGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -313,6 +341,8 @@ int main(void) {
     TEST(test_components);
     TEST(test_spanning_and_connectivity);
     TEST(test_graphplot);
+    TEST(test_graphplot_options);
+    TEST(test_highlight_graph);
 
     printf("All graph tests passed!\n");
     return 0;

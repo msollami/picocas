@@ -173,6 +173,20 @@ void graph_init(void) {
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
     symtab_set_docstring("GraphPlot",
-        "GraphPlot[g] gives a Graphics object drawing the graph g with a "
-        "circular vertex layout.");
+        "GraphPlot[g] gives a Graphics object drawing the graph g. Options: "
+        "GraphLayout->\"name\" (e.g. \"SpringElectricalEmbedding\", "
+        "\"CircularEmbedding\", \"SpiralEmbedding\", \"LinearEmbedding\", "
+        "\"GridEmbedding\", \"RadialEmbedding\", \"LayeredEmbedding\", "
+        "\"BipartiteEmbedding\", \"StarEmbedding\", \"RandomEmbedding\"), "
+        "VertexStyle->color, EdgeStyle->color, VertexSize->r, "
+        "VertexLabels->None. A bare Graph also auto-renders with these "
+        "defaults.");
+
+    symtab_add_builtin("HighlightGraph", builtin_highlight_graph);
+    symtab_get_def("HighlightGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("HighlightGraph",
+        "HighlightGraph[g, parts] draws g with the given vertices and/or edges "
+        "emphasized (accent color, rest dimmed). Each part may be a vertex, an "
+        "edge (u<->v / u->v), or a list of vertices treated as a path "
+        "(highlighting its vertices and joining edges). Returns a Graphics.");
 }

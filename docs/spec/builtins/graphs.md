@@ -20,6 +20,14 @@ expressions. Because graphs are plain expressions, generic tools (`Part`,
 no edge tags, no multigraphs, no hypergraphs, and no edge/vertex weights.
 `WeightedAdjacencyMatrix` and edge weights are a documented future extension.
 
+**Auto-display.** A bare valid `Graph[...]` result renders itself as a
+node-link diagram — the REPL owns display the same way it does for `Graphics`
+and `Plot` (see `src/repl.c`). In the notebook it appears as a drawn graph
+rather than the `Graph[<n vertices, m edges>]` summary; `InputForm[g]` and
+`FullForm[g]` still print the literal constructor. The auto-rendered picture
+uses the default (circular) layout and styling; use `GraphPlot`/`HighlightGraph`
+for explicit layout and styling control.
+
 ## Graph
 A graph value.
 - `Graph[v, e]`: a graph with vertex list `v` and edge list `e`.
@@ -150,13 +158,78 @@ VertexConnectivity[CycleGraph[5]]                           (* 2            *)
 
 ## Visualization
 
-- `GraphPlot[g]` — a `Graphics[...]` object drawing `g`: vertices are laid out
-  on a circle (one `Disk` and one `Text` label each), edges are `Line`s. It
-  renders through the standard graphics path (a window when `USE_GRAPHICS=1`,
-  the text placeholder otherwise). Directed edges are drawn as plain lines in
-  the MVP (no arrowheads yet); a force-directed layout is a future hook.
+`GraphPlot[g]` gives a `Graphics[...]` object drawing `g`: edges are `Line`s,
+vertices are `Disk`s with a `Text` label, each preceded by an `RGBColor`
+directive so the notebook Plotly serializer and the Raylib renderer both style
+it with no special-casing (a window when `USE_GRAPHICS=1`, the text placeholder
+otherwise). Directed edges are drawn as plain lines in the MVP (no arrowheads
+yet). Because a bare `Graph` auto-displays, `GraphPlot` is only needed when you
+want a non-default layout or styling.
 
 ```
 Head[GraphPlot[CycleGraph[8]]]                 (* Graphics *)
 Count[GraphPlot[CompleteGraph[6]], _Line, Infinity]   (* 15 edges *)
+```
+
+### Options
+
+- `GraphLayout -> "name"` — vertex placement (see the layout table below).
+- `VertexStyle -> color` / `EdgeStyle -> color` — a color for all vertices /
+  edges. Accepts `RGBColor[...]`, `GrayLevel[...]`, or a named color
+  (`Red`, `Blue`, `Orange`, …), which resolve to `RGBColor`.
+- `VertexSize -> r` — the vertex `Disk` radius (default `0.08`); the notebook
+  maps radius to marker size, so larger `r` yields bigger dots.
+- `VertexLabels -> None` — suppress the text labels (default draws them).
+
+```
+GraphPlot[CompleteGraph[8], GraphLayout -> "SpringElectricalEmbedding"]
+GraphPlot[CycleGraph[10], VertexStyle -> Orange, EdgeStyle -> GrayLevel[0.7]]
+GraphPlot[PathGraph[6], GraphLayout -> "LinearEmbedding", VertexLabels -> None]
+```
+
+### Layouts (`GraphLayout`)
+
+Coordinates are computed in `src/graph/layout.c` and normalized to the
+`[-1, 1]` box. Every kernel is deterministic (no RNG), so notebooks reproduce
+exactly. The full Wolfram-Language `GraphLayout` name list is accepted and
+mapped onto the kernels below; an unrecognized name (or `None`) falls back to
+circular.
+
+| Kernel | Wolfram names served | Notes |
+|--------|----------------------|-------|
+| Circular | `"CircularEmbedding"` | default; vertices on a circle |
+| Spring / force-directed | `"SpringElectricalEmbedding"`, `"SpringEmbedding"`, `"GravityEmbedding"`, `"HighDimensionalEmbedding"`, `"SpectralEmbedding"`, `"SphericalEmbedding"`, `"HyperbolicSpringEmbedding"`, `"TutteEmbedding"`, `"PlanarEmbedding"` | Fruchterman–Reingold; the energy-minimization family is **approximated** by this one solver |
+| Spiral | `"SpiralEmbedding"`, `"DiscreteSpiralEmbedding"` | Archimedean spiral; good for paths |
+| Linear | `"LinearEmbedding"` | vertices on a line |
+| Grid | `"GridEmbedding"` | row-major square grid |
+| Random | `"RandomEmbedding"` | deterministic pseudo-random |
+| Star | `"StarEmbedding"` | highest-degree vertex centered, rest on a circle |
+| Radial | `"RadialEmbedding"`, `"BalloonEmbedding"`, `"HyperbolicRadialEmbedding"` | concentric BFS shells from the highest-degree root |
+| Layered | `"LayeredEmbedding"`, `"LayeredDigraphEmbedding"`, `"SymmetricLayeredEmbedding"` | stacked BFS layers |
+| Bipartite | `"BipartiteEmbedding"`, `"MultipartiteEmbedding"`, `"CircularMultipartiteEmbedding"` | two columns from a BFS 2-coloring (approximated for the multipartite names) |
+
+Edge-layout, packing, and rendering-order values (`"StraightLine"`,
+`"HierarchicalEdgeBundling"`, `"LayeredTop"`, `"VertexFirst"`, …) are not
+vertex layouts; they are accepted and ignored (circular fallback).
+
+## HighlightGraph
+
+`HighlightGraph[g, parts]` draws `g` with selected elements emphasized (accent
+color) and everything else dimmed, returning a `Graphics` (so it auto-displays).
+Each element of `parts` may be:
+
+- a **vertex** — highlight that vertex;
+- an **edge** — `u <-> v`, `u -> v`, or `DirectedEdge`/`UndirectedEdge[u, v]`
+  (endpoints matched unordered);
+- a **list of vertices** — treated as a *path*: its vertices and the edges
+  joining consecutive vertices are highlighted.
+
+It returns a `Graphics`, not a `Graph`: the canonical `Graph[List, List]` form
+is locked to simple graphs with no annotations, so a highlight lives only in
+the picture. `GraphLayout` may be given as a trailing option.
+
+```
+HighlightGraph[CycleGraph[6], {1, 2, 3}]                    (* 3 vertices *)
+HighlightGraph[CompleteGraph[5], {1 <-> 2, 2 <-> 3}]        (* 2 edges    *)
+HighlightGraph[g, {FindShortestPath[g, 1, 4]}]              (* a path     *)
 ```
