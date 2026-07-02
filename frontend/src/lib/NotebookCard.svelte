@@ -34,6 +34,8 @@
     kernelStatus,
     selectedCells,
     clearSelection,
+    setRowClipboard,
+    getRowClipboard,
   } from './notebook';
   import type { OutputItem, CellType } from './notebook';
   import {
@@ -466,7 +468,65 @@
   // ---------------------------------------------------------------------------
   // Keyboard (scoped to card — stop propagation so canvas doesn't eat keys)
 
+  // ---- Multi-row selection from the insertion point (Shift+Up/Down) --------
+  // selAnchor is the gap where a shift-selection started; the selected rows are
+  // those between selAnchor and insertionIdx. Selection drives selectedCells
+  // (for highlight) and enables delete / cut / copy / paste to reorder cells.
+  let selAnchor: number | null = null;
+  let selRows = new Set<number>();
+
+  function clearRowSelection() {
+    selAnchor = null;
+    if (selRows.size) { selRows = new Set(); clearSelection(); }
+  }
+  function applyRowSelection(gap: number) {
+    if (selAnchor === null) selAnchor = gap;
+    insertionIdx = gap;
+    const rows = nb.store.getRows();
+    const lo = Math.min(selAnchor, gap), hi = Math.max(selAnchor, gap);
+    selRows = new Set();
+    const ids: string[] = [];
+    for (let r = lo; r < hi; r++) {
+      selRows.add(r);
+      rows[r]?.cells.forEach(c => ids.push(c.id));
+    }
+    selectedCells.set(new Set(ids));
+  }
+  function selectedRowData() {
+    const rows = nb.store.getRows();
+    return [...selRows].sort((a, b) => a - b)
+      .map(r => ({ cells: rows[r].cells.map(c => ({ type: c.type, source: c.source })) }));
+  }
+  function deleteSelectedRows() {
+    if (!selRows.size) return;
+    const rows = nb.store.getRows();
+    const lo = Math.min(...selRows);
+    const ids = new Set<string>();
+    selRows.forEach(r => rows[r]?.cells.forEach(c => ids.add(c.id)));
+    nb.store.removeCells(ids);
+    clearRowSelection();
+    insertionIdx = lo;
+  }
+
   async function onCardKeydown(e: KeyboardEvent) {
+    const cardFocused = e.target === cardEl;
+
+    // Clipboard / delete on a multi-row selection (must run before the generic
+    // Cmd/Ctrl pass-through below).
+    if ((e.metaKey || e.ctrlKey) && cardFocused && insertionIdx !== null) {
+      const k = e.key.toLowerCase();
+      if (k === 'c' && selRows.size) { e.preventDefault(); e.stopPropagation(); setRowClipboard(selectedRowData()); return; }
+      if (k === 'x' && selRows.size) { e.preventDefault(); e.stopPropagation(); setRowClipboard(selectedRowData()); deleteSelectedRows(); return; }
+      if (k === 'v' && getRowClipboard().length) {
+        e.preventDefault(); e.stopPropagation();
+        const data = getRowClipboard();
+        clearRowSelection();
+        nb.store.insertRowsAt(insertionIdx, data);
+        insertionIdx = insertionIdx + data.length;
+        return;
+      }
+    }
+
     // Let Cmd+0 and Cmd+N pass through to Canvas for fit-all / add notebook
     // Let ALL Cmd/Ctrl combos pass through to App.svelte's window handler
     // (Cmd+0 fit-all, Cmd+N new notebook, Cmd+=/- ui scale, Cmd+S/O save/open)
@@ -480,9 +540,25 @@
     // itself has focus) to navigate further.
     if (insertionIdx === null || e.target !== cardEl) return;
 
-    if (e.key === 'Escape') { e.preventDefault(); insertionIdx = null; return; }
+    if (e.key === 'Escape') { e.preventDefault(); clearRowSelection(); insertionIdx = null; return; }
+
+    // Delete/Backspace removes the selected rows.
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selRows.size) {
+      e.preventDefault(); deleteSelectedRows(); return;
+    }
+
+    // Shift+Up/Down extends a multi-row selection from the insertion point.
+    if (e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault();
+      const rows = nb.store.getRows();
+      if (e.key === 'ArrowDown') applyRowSelection(Math.min(rows.length, insertionIdx + 1));
+      else                       applyRowSelection(Math.max(0, insertionIdx - 1));
+      return;
+    }
+
     if (e.key === 'ArrowUp') {
       e.preventDefault();
+      clearRowSelection();
       const rows = nb.store.getRows();
       // Arrow up from insertion point → enter the cell ABOVE the cursor
       // insertionIdx N = gap between row[N-1] and row[N].
@@ -504,6 +580,7 @@
     }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
+      clearRowSelection();
       const rows = nb.store.getRows();
       // Arrow down from insertion point → enter the cell BELOW the cursor
       // insertionIdx N = gap between row[N-1] and row[N].
@@ -523,6 +600,7 @@
       return;
     }
     if (e.key === 'Enter') {
+      clearRowSelection();
       e.preventDefault();
       const idx = insertionIdx; insertionIdx = null;
       const id = nb.store.insertRowAt(idx);
@@ -960,12 +1038,17 @@
   }
   .tb-btn:hover { color: var(--text, #cdd6f4); background: rgba(128,128,128,0.12); }
   .tb-run-all {
-    font-size: 0.72rem;
-    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    font-size: 0.66rem;
+    letter-spacing: 1px;      /* even spacing between the two triangles */
+    padding: 0 8px;
     background: rgba(166,227,161,0.12);
     border: 1px solid rgba(166,227,161,0.3);
     color: #a6e3a1;
-    border-radius: 5px;
+    border-radius: 6px;
   }
   .tb-run-all:hover { background: rgba(166,227,161,0.22) !important; }
   .tb-close:hover { color: #f38ba8; }

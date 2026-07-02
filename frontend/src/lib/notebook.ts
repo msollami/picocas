@@ -47,6 +47,12 @@ function makeRow(type: CellType = 'code', source = ''): NotebookRow {
 export const selectedCells = writable<Set<string>>(new Set());
 export let lastSelectedId: string | null = null;
 
+// Shared row clipboard for cut/copy/paste of whole cells across notebooks.
+type RowData = { cells: Array<{ type: string; source: string }> };
+let _rowClipboard: RowData[] = [];
+export function setRowClipboard(rows: RowData[]) { _rowClipboard = rows; }
+export function getRowClipboard(): RowData[] { return _rowClipboard; }
+
 export function selectOnly(id: string) {
   lastSelectedId = id;
   selectedCells.set(new Set([id]));
@@ -102,6 +108,16 @@ export function createNotebook() {
       const row = makeRow(type, source);
       update(rows => [...rows.slice(0, rowIdx), row, ...rows.slice(rowIdx)]);
       return row.cells[0].id;
+    },
+
+    /** Insert whole rows (each with its cells) at absolute row index. */
+    insertRowsAt(rowIdx: number, rowsData: Array<{ cells: Array<{ type: string; source: string }> }>) {
+      const newRows: NotebookRow[] = rowsData.map(rd => ({
+        id: newRowId(),
+        cells: (rd.cells.length ? rd.cells : [{ type: 'code', source: '' }]).map(c =>
+          makeCell((c.type as CellType) ?? 'code', c.source ?? '')),
+      }));
+      update(rows => [...rows.slice(0, rowIdx), ...newRows, ...rows.slice(rowIdx)]);
     },
 
     /** Append a row at the end. Returns new cell id. */
