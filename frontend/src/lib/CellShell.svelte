@@ -10,7 +10,8 @@
   All mutation calls go through store.xxx() instead of the global notebook singleton.
 -->
 <script lang="ts">
-  import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+  import { onMount, onDestroy, createEventDispatcher, tick } from 'svelte';
+  import { renderMarkdown } from './markdown';
   import { EditorView, keymap } from '@codemirror/view';
   import { EditorState, EditorSelection } from '@codemirror/state';
   import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -164,9 +165,29 @@
     dispatch('change', { id: cell.id, source: (e.target as HTMLElement).innerText });
   }
 
-  // Arrow navigation for contenteditable cells (section/subsection/text).
-  // Dispatches focusPrev/focusNext so the notebook can show the insertion cursor.
+  // Markdown render state for text cells (Shift+Enter renders; click edits).
+  let rendered = false;
+
+  async function editProse() {
+    rendered = false;
+    await tick();
+    if (proseEl) { proseEl.innerText = cell.source; proseEl.focus(); }
+  }
+
+  // Arrow navigation for contenteditable cells (section/subsection/text), plus
+  // Shift+Enter to render a text cell's markdown. Dispatches focusPrev/focusNext
+  // so the notebook can show the insertion cursor.
   function onProseKeydown(e: KeyboardEvent) {
+    // Shift+Enter renders the markdown of a text cell and advances to the next
+    // insertion point, mirroring how running a code cell moves on.
+    if (e.key === 'Enter' && e.shiftKey && cell.type === 'text') {
+      e.preventDefault();
+      dispatch('change', { id: cell.id, source: (proseEl?.innerText ?? cell.source) });
+      rendered = true;
+      dispatch('focusNext', { id: cell.id });
+      return;
+    }
+
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
 
     // Section/subsection headings are always single-line → navigate immediately.
@@ -176,20 +197,37 @@
       return;
     }
 
-    // Text cells: only navigate when the cursor is at the very start or end.
+    // Text cells: navigate out only from the FIRST visual line (up) or the LAST
+    // visual line (down). We compare the caret's rect to the cell's content box
+    // so wrapped multi-line prose works — the previous code only fired at the
+    // absolute start/end of the text, so ArrowDown on the last (non-final) line
+    // did nothing. Fall back to offset checks if the caret rect is unavailable.
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return;
     const range = sel.getRangeAt(0);
+    const caret = range.getBoundingClientRect();
+    const haveCaret = !(caret.top === 0 && caret.bottom === 0 && caret.left === 0);
 
-    if (e.key === 'ArrowUp' && range.startOffset === 0) {
-      e.preventDefault();
-      dispatch('focusPrev', { id: cell.id });
-    } else if (e.key === 'ArrowDown') {
+    const cs = getComputedStyle(proseEl);
+    const lh = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) * 1.4) || 20;
+    const box = proseEl.getBoundingClientRect();
+    const contentTop = box.top + (parseFloat(cs.paddingTop) || 0);
+    const contentBottom = box.bottom - (parseFloat(cs.paddingBottom) || 0);
+
+    if (e.key === 'ArrowUp') {
+      const onFirstLine = haveCaret
+        ? (caret.top - contentTop < lh * 0.5)
+        : (range.startOffset === 0);
+      if (onFirstLine) { e.preventDefault(); dispatch('focusPrev', { id: cell.id }); }
+    } else {
       const node = range.startContainer;
-      const atEnd = node.nodeType === Node.TEXT_NODE
+      const atTextEnd = node.nodeType === Node.TEXT_NODE
         ? range.startOffset === (node.textContent?.length ?? 0)
         : range.startOffset >= node.childNodes.length;
-      if (atEnd) { e.preventDefault(); dispatch('focusNext', { id: cell.id }); }
+      const onLastLine = haveCaret
+        ? (contentBottom - caret.bottom < lh * 0.5)
+        : atTextEnd;
+      if (onLastLine) { e.preventDefault(); dispatch('focusNext', { id: cell.id }); }
     }
   }
 
@@ -204,10 +242,11 @@
   $: if (proseEl && cell.id !== _lastCellId) {
     proseEl.innerText = cell.source;
     _lastCellId = cell.id;
-    // Register focus fn once the element exists
+    // Register focus fn once the element exists. If the cell is currently
+    // showing rendered markdown, focusing it re-enters edit mode.
     dispatch('register', {
       id: cell.id,
-      fn: () => { proseEl?.focus(); },
+      fn: () => { if (rendered) editProse(); else proseEl?.focus(); },
     });
   }
 </script>
@@ -290,15 +329,22 @@
 
     {:else if cell.type === 'text'}
       <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- Content set via JS ($: proseEl update) to avoid contenteditable doubling -->
-      <div
-        class="prose-cell"
-        contenteditable="true"
-        bind:this={proseEl}
-        on:input={onTextInput}
-        on:keydown={onProseKeydown}
-        on:click|stopPropagation
-      ></div>
+      {#if rendered}
+        <!-- Rendered markdown (Shift+Enter). Click to edit again. -->
+        <div class="prose-rendered" on:click|stopPropagation={editProse}>
+          {@html renderMarkdown(cell.source)}
+        </div>
+      {:else}
+        <!-- Content set via JS ($: proseEl update) to avoid contenteditable doubling -->
+        <div
+          class="prose-cell"
+          contenteditable="true"
+          bind:this={proseEl}
+          on:input={onTextInput}
+          on:keydown={onProseKeydown}
+          on:click|stopPropagation
+        ></div>
+      {/if}
 
     {:else if cell.type === 'section'}
       <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -496,6 +542,50 @@
     text-align: left;
     white-space: pre-wrap;
   }
+  /* Rendered markdown view (Shift+Enter on a text cell). */
+  .prose-rendered {
+    padding: 6px 8px;
+    font-size: 0.95rem;
+    color: var(--text, #cdd6f4);
+    min-height: 2em;
+    line-height: 1.6;
+    text-align: left;
+    cursor: text;
+  }
+  .prose-rendered :global(h1),
+  .prose-rendered :global(h2),
+  .prose-rendered :global(h3),
+  .prose-rendered :global(h4) { margin: 0.4em 0 0.3em; font-weight: 700; line-height: 1.3; }
+  .prose-rendered :global(h1) { font-size: 1.25rem; }
+  .prose-rendered :global(h2) { font-size: 1.1rem; }
+  .prose-rendered :global(h3) { font-size: 1.0rem; }
+  .prose-rendered :global(p) { margin: 0.35em 0; }
+  .prose-rendered :global(ul),
+  .prose-rendered :global(ol) { margin: 0.35em 0; padding-left: 1.4em; }
+  .prose-rendered :global(li) { margin: 0.15em 0; }
+  .prose-rendered :global(a) { color: var(--accent, #89b4fa); text-decoration: underline; }
+  .prose-rendered :global(code) {
+    font-family: 'SF Mono', ui-monospace, monospace;
+    font-size: 0.88em;
+    background: rgba(255,255,255,0.08);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+  }
+  .prose-rendered :global(pre) {
+    background: rgba(255,255,255,0.06);
+    padding: 0.6em 0.8em;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 0.4em 0;
+  }
+  .prose-rendered :global(pre code) { background: none; padding: 0; }
+  .prose-rendered :global(blockquote) {
+    margin: 0.4em 0;
+    padding-left: 0.8em;
+    border-left: 3px solid rgba(255,255,255,0.18);
+    color: var(--text-muted, #a6adc8);
+  }
+  .prose-rendered :global(hr) { border: none; border-top: 1px solid rgba(255,255,255,0.12); margin: 0.6em 0; }
   .heading-cell {
     padding: 6px 8px;
     margin: 0;
