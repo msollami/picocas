@@ -84,7 +84,7 @@
       });
     };
 
-    import('plotly.js-dist-min').then((P: any) => { Plotly = P; render(); });
+    import('plotly.js-dist-min').then((P: any) => { Plotly = P; render(); resize(); });
 
     // Re-render when the app toggles light/dark (the `light` class on <html>),
     // so already-drawn plots (e.g. graph diagrams) follow the theme instead of
@@ -95,9 +95,24 @@
     });
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
+    // Plotly's `responsive` only refits on window resize, not when the plot's
+    // CONTAINER changes size — so toggling horizontal cell mode or dragging the
+    // input/output split left the plot at its original width, overflowing the
+    // narrower pane. A ResizeObserver refits it to the container instead.
+    let raf = 0;
+    const resize = () => {
+      if (!Plotly) return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => { try { Plotly.Plots.resize(node); } catch { /* ignore */ } });
+    };
+    const ro = new ResizeObserver(resize);
+    ro.observe(node);
+
     return {
       destroy() {
         obs.disconnect();
+        ro.disconnect();
+        cancelAnimationFrame(raf);
         try { Plotly?.purge?.(node); } catch { /* ignore */ }
       },
     };
