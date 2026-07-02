@@ -182,6 +182,13 @@ void graph_init(void) {
         "VertexLabels->None. A bare Graph also auto-renders with these "
         "defaults.");
 
+    symtab_add_builtin("Graph3D", builtin_graph3d);
+    symtab_get_def("Graph3D")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("Graph3D",
+        "Graph3D[v, e] / Graph3D[e] builds a graph like Graph but displays it as "
+        "a 3D node-link diagram (force-directed layout in a cube). Same edge "
+        "sugar (u->v, u<->v) and simple-graph rules as Graph.");
+
     symtab_add_builtin("HighlightGraph", builtin_highlight_graph);
     symtab_get_def("HighlightGraph")->attributes |= ATTR_PROTECTED;
     symtab_set_docstring("HighlightGraph",

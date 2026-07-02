@@ -437,6 +437,42 @@ static void pipe_process_input(const char* input, int id) {
         Expr* gfx = graph_default_graphics(evaluated);
         if (gfx) { expr_free(evaluated); evaluated = gfx; }
     }
+    /* A bare valid Graph3D[...] auto-renders as a 3D node-link diagram. */
+    if (evaluated->type == EXPR_FUNCTION
+        && evaluated->data.function.head
+        && evaluated->data.function.head->type == EXPR_SYMBOL
+        && evaluated->data.function.head->data.symbol == SYM_Graph3D
+        && graph_is_valid_head(evaluated, SYM_Graph3D)) {
+        Expr* gfx = graph_default_graphics3d(evaluated);
+        if (gfx) { expr_free(evaluated); evaluated = gfx; }
+    }
+    /* Graphics3D[...] → Plotly scatter3d scene. */
+    if (evaluated->type == EXPR_FUNCTION
+        && evaluated->data.function.head
+        && evaluated->data.function.head->type == EXPR_SYMBOL
+        && evaluated->data.function.head->data.symbol == SYM_Graphics3D) {
+        char* plotly = graphics3d_to_plotly_json(evaluated);
+        expr_free(evaluated);
+        if (plotly) {
+            size_t json_len = strlen(plotly) + 64;
+            char* json_line = malloc(json_len);
+            if (json_line) {
+                strcpy(json_line, "{\"id\":");
+                char id_buf[32]; snprintf(id_buf, sizeof(id_buf), "%d", id);
+                strcat(json_line, id_buf);
+                strcat(json_line, ",\"type\":\"plot\",\"payload\":");
+                strcat(json_line, plotly);
+                strcat(json_line, "}");
+                pipe_emit(json_line);
+                free(json_line);
+            }
+            free(plotly);
+        }
+        char done[64];
+        snprintf(done, sizeof(done), "{\"id\":%d,\"type\":\"done\"}", id);
+        pipe_emit(done);
+        return;
+    }
     if (evaluated->type == EXPR_FUNCTION
         && evaluated->data.function.head
         && evaluated->data.function.head->type == EXPR_SYMBOL

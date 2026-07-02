@@ -288,6 +288,30 @@
         { "cells": [{ "type": "text", "source": "A highlight can also use any layout: draw gp with its spring layout and pick out a subpath." }] },
         { "cells": [{ "type": "code", "source": "HighlightGraph[gp, {1 <-> 2, 2 <-> 3, 3 <-> 4}, GraphLayout -> \"SpringElectricalEmbedding\"]" }] }
       ]
+    },
+    {
+      "id": "nb-graph3d",
+      "title": "3D Graphs",
+      "x": 780,
+      "y": 2160,
+      "width": 660,
+      "collapsed": false,
+      "rows": [
+        { "cells": [{ "type": "section", "source": "Graph3D" }] },
+        { "cells": [{ "type": "text", "source": "Graph3D builds a graph just like Graph — same edge sugar and rules — but auto-displays as an interactive 3D node-link diagram (a force-directed layout in a cube). Drag to orbit, scroll to zoom." }] },
+        { "cells": [{ "type": "code", "source": "Graph3D[{1, 2, 3, 4}, {1 <-> 2, 2 <-> 3, 3 <-> 4, 4 <-> 1}]" }] },
+        { "cells": [{ "type": "subsection", "source": "Wrapping an existing graph" }] },
+        { "cells": [{ "type": "text", "source": "Graph3D[g] lifts any graph into 3D; Graph[g3d] projects it back to 2D." }] },
+        { "cells": [{ "type": "code", "source": "Graph3D[CompleteGraph[6]]" }] },
+        { "cells": [{ "type": "code", "source": "Graph3D[CycleGraph[12]]" }] },
+        { "cells": [{ "type": "text", "source": "The 3-cube (Q3): eight vertices, each joined to three neighbors — a clean 3D shape once the spring layout settles." }] },
+        { "cells": [{ "type": "code", "source": "Graph3D[{1,2,3,4,5,6,7,8}, {1<->2, 2<->3, 3<->4, 4<->1, 5<->6, 6<->7, 7<->8, 8<->5, 1<->5, 2<->6, 3<->7, 4<->8}]" }] },
+        { "cells": [{ "type": "subsection", "source": "A Graph3D is still a graph" }] },
+        { "cells": [{ "type": "text", "source": "GraphQ is True, so every query works directly on a Graph3D." }] },
+        { "cells": [{ "type": "code", "source": "GraphQ[Graph3D[{1,2},{1<->2}]]" }] },
+        { "cells": [{ "type": "code", "source": "{VertexCount[Graph3D[CompleteGraph[5]]], EdgeCount[Graph3D[CompleteGraph[5]]]}" }] },
+        { "cells": [{ "type": "code", "source": "InputForm[Graph3D[{1,2,3},{1<->2,2<->3,3<->1}]]" }] }
+      ]
     }
   ]
 }

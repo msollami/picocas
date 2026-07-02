@@ -236,3 +236,28 @@ HighlightGraph[CycleGraph[6], {1, 2, 3}]                    (* 3 vertices *)
 HighlightGraph[CompleteGraph[5], {1 <-> 2, 2 <-> 3}]        (* 2 edges    *)
 HighlightGraph[g, {FindShortestPath[g, 1, 4]}]              (* a path     *)
 ```
+
+## Graph3D
+
+`Graph3D[v, e]` / `Graph3D[e]` builds a graph exactly like `Graph` — same edge
+sugar (`u -> v`, `u <-> v`), same simple-graph validation — but the canonical
+value has head `Graph3D` and **auto-displays as a 3D node-link diagram**: a
+force-directed (Fruchterman–Reingold) layout in a cube, rendered as Plotly
+`scatter3d` (edges as 3D lines, vertices as markers) that you can orbit and
+zoom. `Graph3D[g]` converts an existing graph to 3D, and `Graph[g3d]` converts
+back to 2D.
+
+A `Graph3D` counts as a graph (`GraphQ` is `True`), so every query, matrix, and
+algorithm builtin works on it directly.
+
+```
+Graph3D[{1, 2, 3, 4}, {1 <-> 2, 2 <-> 3, 3 <-> 4, 4 <-> 1}]   (* 3D diagram *)
+Graph3D[CompleteGraph[6]]                                      (* wrap a graph *)
+VertexCount[Graph3D[CompleteGraph[5]]]                         (* 5 *)
+GraphQ[Graph3D[{1, 2}, {1 <-> 2}]]                             (* True *)
+InputForm[Graph3D[{1, 2}, {1 <-> 2}]]     (* Graph3D[{1, 2}, {1 <-> 2}] *)
+```
+
+The default 3D layout is a spring embedding; `"SphericalEmbedding"` places
+vertices on a sphere. (Rendering: `src/graph/render3d.c` emits `Graphics3D`,
+serialized by `graphics3d_to_plotly_json` in `src/graphics/graphics_json.c`.)

@@ -412,3 +412,99 @@ char* graphics_to_plotly_json(const Expr* g) {
     buf_free(&layout);
     return out.buf; /* caller frees */
 }
+
+/* -----------------------------------------------------------------------
+ * Graphics3D → Plotly scatter3d (Graph3D node-link diagrams)
+ * --------------------------------------------------------------------- */
+
+static int get_xyz(const Expr* t, double* x, double* y, double* z) {
+    if (!head_is(t, SYM_List) || t->data.function.arg_count < 3) return 0;
+    return expr_to_double(t->data.function.args[0], x)
+        && expr_to_double(t->data.function.args[1], y)
+        && expr_to_double(t->data.function.args[2], z);
+}
+
+char* graphics3d_to_plotly_json(const Expr* g) {
+    if (!g || !head_is(g, SYM_Graphics3D) || g->data.function.arg_count < 1)
+        return NULL;
+    const Expr* prim_list = g->data.function.args[0];
+    if (!head_is(prim_list, SYM_List)) return NULL;
+    size_t n = prim_list->data.function.arg_count;
+
+    Buf data_buf;
+    if (!buf_init(&data_buf, 65536)) return NULL;
+    buf_cat(&data_buf, "[");
+
+    double cr = 0.24, cg = 0.52, cb = 0.90;   /* current colour */
+    int first_trace = 1;
+
+    for (size_t i = 0; i < n; i++) {
+        const Expr* p = prim_list->data.function.args[i];
+        if (!p) continue;
+
+        if (head_is(p, SYM_RGBColor) && p->data.function.arg_count >= 3) {
+            double r, gg, b;
+            if (expr_to_double(p->data.function.args[0], &r)
+                && expr_to_double(p->data.function.args[1], &gg)
+                && expr_to_double(p->data.function.args[2], &b)) {
+                cr = r; cg = gg; cb = b;
+            }
+            continue;
+        }
+
+        /* Line[List[{x,y,z},{x,y,z}]] — a 3D edge segment. */
+        if (head_is(p, SYM_Line) && p->data.function.arg_count >= 1) {
+            const Expr* pts = p->data.function.args[0];
+            if (!head_is(pts, SYM_List) || pts->data.function.arg_count < 2) continue;
+            double x1,y1,z1,x2,y2,z2;
+            if (!get_xyz(pts->data.function.args[0], &x1,&y1,&z1)) continue;
+            if (!get_xyz(pts->data.function.args[1], &x2,&y2,&z2)) continue;
+            char color[64]; rgba_str(color, sizeof(color), cr, cg, cb, 1.0);
+            if (!first_trace) buf_cat(&data_buf, ","); first_trace = 0;
+            buf_cat(&data_buf, "{\"type\":\"scatter3d\",\"mode\":\"lines\",\"x\":[");
+            buf_catd(&data_buf, x1); buf_cat(&data_buf, ","); buf_catd(&data_buf, x2);
+            buf_cat(&data_buf, "],\"y\":[");
+            buf_catd(&data_buf, y1); buf_cat(&data_buf, ","); buf_catd(&data_buf, y2);
+            buf_cat(&data_buf, "],\"z\":[");
+            buf_catd(&data_buf, z1); buf_cat(&data_buf, ","); buf_catd(&data_buf, z2);
+            buf_cat(&data_buf, "],\"line\":{\"color\":\""); buf_cat(&data_buf, color);
+            buf_cat(&data_buf, "\",\"width\":3},\"hoverinfo\":\"skip\",\"showlegend\":false}");
+            continue;
+        }
+
+        /* Point[List[{x,y,z}, ...]] — 3D vertex markers. */
+        if (head_is(p, SYM_Point) && p->data.function.arg_count >= 1) {
+            const Expr* pts = p->data.function.args[0];
+            if (!head_is(pts, SYM_List)) continue;
+            size_t m = pts->data.function.arg_count;
+            char color[64]; rgba_str(color, sizeof(color), cr, cg, cb, 1.0);
+            if (!first_trace) buf_cat(&data_buf, ","); first_trace = 0;
+            buf_cat(&data_buf, "{\"type\":\"scatter3d\",\"mode\":\"markers\",\"x\":[");
+            for (size_t j = 0; j < m; j++) { double x,y,z; if (!get_xyz(pts->data.function.args[j],&x,&y,&z)) continue; if (j) buf_cat(&data_buf, ","); buf_catd(&data_buf, x); }
+            buf_cat(&data_buf, "],\"y\":[");
+            for (size_t j = 0; j < m; j++) { double x,y,z; if (!get_xyz(pts->data.function.args[j],&x,&y,&z)) continue; if (j) buf_cat(&data_buf, ","); buf_catd(&data_buf, y); }
+            buf_cat(&data_buf, "],\"z\":[");
+            for (size_t j = 0; j < m; j++) { double x,y,z; if (!get_xyz(pts->data.function.args[j],&x,&y,&z)) continue; if (j) buf_cat(&data_buf, ","); buf_catd(&data_buf, z); }
+            buf_cat(&data_buf, "],\"marker\":{\"size\":5,\"color\":\""); buf_cat(&data_buf, color);
+            buf_cat(&data_buf, "\"},\"hoverinfo\":\"skip\",\"showlegend\":false}");
+            continue;
+        }
+    }
+    buf_cat(&data_buf, "]");
+
+    Buf out;
+    if (!buf_init(&out, data_buf.len + 512)) { buf_free(&data_buf); return NULL; }
+    buf_cat(&out, "{\"data\":");
+    buf_cat(&out, data_buf.buf);
+    buf_cat(&out,
+        ",\"layout\":{\"scene\":{"
+        "\"xaxis\":{\"visible\":false},"
+        "\"yaxis\":{\"visible\":false},"
+        "\"zaxis\":{\"visible\":false},"
+        "\"aspectmode\":\"data\"},"
+        "\"margin\":{\"l\":0,\"r\":0,\"t\":0,\"b\":0},"
+        "\"showlegend\":false,"
+        "\"paper_bgcolor\":\"#fff\"}}");
+    buf_free(&data_buf);
+    return out.buf; /* caller frees */
+}

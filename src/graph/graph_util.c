@@ -160,8 +160,8 @@ static int edges_parallel(const Expr* e1, const Expr* e2) {
     return 0;
 }
 
-int graph_is_valid(const Expr* g) {
-    if (!head_is_sym(g, SYM_Graph) || g->data.function.arg_count != 2)
+int graph_is_valid_head(const Expr* g, const char* head_sym) {
+    if (!head_is_sym(g, head_sym) || g->data.function.arg_count != 2)
         return 0;
 
     const Expr* verts = g->data.function.args[0];
@@ -184,4 +184,11 @@ int graph_is_valid(const Expr* g) {
         }
     }
     return 1;
+}
+
+int graph_is_valid(const Expr* g) {
+    /* Both 2D Graph and 3D Graph3D count as valid graphs, so every query,
+     * matrix, and algorithm builtin works transparently on a Graph3D. */
+    return graph_is_valid_head(g, SYM_Graph)
+        || graph_is_valid_head(g, SYM_Graph3D);
 }

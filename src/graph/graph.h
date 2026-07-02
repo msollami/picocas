@@ -53,6 +53,9 @@ const char* graph_edge_kind(const Expr* e);
  * no parallel/duplicate edges, and every edge endpoint appears in verts. */
 int graph_is_valid(const Expr* g);
 
+/* Same validity check but for an arbitrary outer head (Graph or Graph3D). */
+int graph_is_valid_head(const Expr* g, const char* head_sym);
+
 /* Index of vertex v within List `verts` (linear expr_eq scan), or -1. */
 int graph_vertex_index(const Expr* verts, const Expr* v);
 
@@ -143,5 +146,23 @@ Expr* graph_render(const Expr* g, const GraphStyle* st);
 /* Convenience wrapper: graph_render with all defaults. Used by the REPL to
  * auto-display a bare Graph result as a diagram. */
 Expr* graph_default_graphics(const Expr* g);
+
+/* ---- Graph3D: three-dimensional graphs ------------------------------------ */
+
+/* Graph3D[...] — same construction/normalization as Graph, but the canonical
+ * value has head Graph3D and auto-displays as a 3D node-link diagram. */
+Expr* builtin_graph3d(Expr* res);
+
+/* 3D vertex layout (src/graph/layout.c): fills caller-allocated x[]/y[]/z[]
+ * (length = VertexCount) with coordinates in the [-1,1] cube. `layout` selects
+ * a kernel (currently a 3D Fruchterman-Reingold spring, seeded on a sphere;
+ * "SphericalEmbedding" places vertices on the sphere). Deterministic. */
+void graph_compute_layout3d(const Expr* g, const char* layout,
+                            double* x, double* y, double* z);
+
+/* Render a valid Graph3D to a Graphics3D[...] expression (edges as 3D Lines,
+ * vertices as a Point set). Caller owns the result. */
+Expr* graph_render3d(const Expr* g, const GraphStyle* st);
+Expr* graph_default_graphics3d(const Expr* g);
 
 #endif /* GRAPH_H */

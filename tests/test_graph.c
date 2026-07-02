@@ -322,6 +322,22 @@ static void test_highlight_graph(void) {
     assert_eval_eq("Head[HighlightGraph[5, {1}]]", "HighlightGraph", 0);
 }
 
+static void test_graph3d(void) {
+    /* Graph3D builds a canonical value with head Graph3D, and counts as a graph. */
+    assert_eval_eq("GraphQ[Graph3D[{1,2},{1->2}]]", "True", 0);
+    assert_eval_eq("Head[Graph3D[{1,2,3},{1<->2,2<->3}]]", "Graph3D", 0);
+    /* Same vertex/edge readers work on a Graph3D value. */
+    assert_eval_eq("VertexCount[Graph3D[{1,2,3},{1<->2,2<->3}]]", "3", 0);
+    assert_eval_eq("EdgeCount[Graph3D[{1,2,3},{1<->2,2<->3}]]", "2", 0);
+    /* Graph3D of an existing graph reuses its vertices/edges. */
+    assert_eval_eq("VertexCount[Graph3D[CompleteGraph[5]]]", "5", 0);
+    assert_eval_eq("EdgeCount[Graph3D[CompleteGraph[5]]]", "10", 0);
+    /* InputForm round-trips the constructor. */
+    assert_eval_eq("InputForm[Graph3D[{1,2},{1<->2}]]", "Graph3D[{1, 2}, {1 <-> 2}]", 0);
+    /* Malformed (self-loop) stays unevaluated. */
+    assert_eval_eq("Head[Graph3D[{1},{1->1}]]", "Graph3D", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -343,6 +359,7 @@ int main(void) {
     TEST(test_graphplot);
     TEST(test_graphplot_options);
     TEST(test_highlight_graph);
+    TEST(test_graph3d);
 
     printf("All graph tests passed!\n");
     return 0;

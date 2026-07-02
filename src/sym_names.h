@@ -644,6 +644,8 @@ extern const char* SYM_PlotResample;
  * Graph[List[verts...], List[edges...]]; no new EXPR_* tag. SYM_Rule and
  * SYM_Graphics primitives (Line/Point/Disk/Text) are reused, not re-declared. */
 extern const char* SYM_Graph;
+extern const char* SYM_Graph3D;
+extern const char* SYM_Graphics3D;
 extern const char* SYM_DirectedEdge;
 extern const char* SYM_UndirectedEdge;
 extern const char* SYM_TwoWayRule;

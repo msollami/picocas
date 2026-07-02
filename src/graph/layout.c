@@ -459,3 +459,95 @@ void graph_compute_layout(const Expr* g, const char* layout, double* x, double* 
     if (a) graph_adj_free(a);
     normalize(x, y, n);
 }
+
+/* ---- 3D layout (Graph3D) --------------------------------------------------- */
+
+static void normalize3d(double* x, double* y, double* z, int n) {
+    if (n <= 0) return;
+    double mn[3] = { x[0], y[0], z[0] }, mx[3] = { x[0], y[0], z[0] };
+    for (int i = 1; i < n; i++) {
+        if (x[i] < mn[0]) mn[0] = x[i]; if (x[i] > mx[0]) mx[0] = x[i];
+        if (y[i] < mn[1]) mn[1] = y[i]; if (y[i] > mx[1]) mx[1] = y[i];
+        if (z[i] < mn[2]) mn[2] = z[i]; if (z[i] > mx[2]) mx[2] = z[i];
+    }
+    double span = fmax(mx[0] - mn[0], fmax(mx[1] - mn[1], mx[2] - mn[2]));
+    double s = (span > 1e-9) ? 2.0 / span : 1.0;
+    double cx = 0.5*(mn[0]+mx[0]), cy = 0.5*(mn[1]+mx[1]), cz = 0.5*(mn[2]+mx[2]);
+    for (int i = 0; i < n; i++) {
+        x[i] = (x[i]-cx)*s; y[i] = (y[i]-cy)*s; z[i] = (z[i]-cz)*s;
+    }
+}
+
+/* Deterministic near-uniform points on the unit sphere (golden-angle spiral). */
+static void fibonacci_sphere(double* x, double* y, double* z, int n) {
+    double golden = M_PI * (3.0 - sqrt(5.0));   /* golden angle                 */
+    for (int i = 0; i < n; i++) {
+        double zt = (n == 1) ? 0.0 : 1.0 - 2.0 * (double)i / (double)(n - 1);
+        double r = sqrt(fmax(0.0, 1.0 - zt * zt));
+        double th = golden * (double)i;
+        x[i] = r * cos(th); y[i] = r * sin(th); z[i] = zt;
+    }
+}
+
+/* 3D Fruchterman-Reingold, seeded on a sphere (deterministic). */
+static void fr3d(const GraphAdj* a, double* x, double* y, double* z, int n) {
+    fibonacci_sphere(x, y, z, n);
+    if (n <= 2) return;
+    double k = pow(8.0 / (double)n, 1.0 / 3.0);    /* natural length in a cube   */
+    double* dx = calloc((size_t)n, sizeof(double));
+    double* dy = calloc((size_t)n, sizeof(double));
+    double* dz = calloc((size_t)n, sizeof(double));
+    if (!dx || !dy || !dz) { free(dx); free(dy); free(dz); return; }
+    int iters = 250;
+    double t = 0.20, cool = t / (double)(iters + 1);
+    for (int it = 0; it < iters; it++) {
+        for (int i = 0; i < n; i++) { dx[i]=dy[i]=dz[i]=0.0; }
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                double ax = x[i]-x[j], ay = y[i]-y[j], az = z[i]-z[j];
+                double d2 = ax*ax + ay*ay + az*az;
+                if (d2 < 1e-9) { ax = 1e-3*(i-j); ay = 1e-3; az = 1e-3*(j-i); d2 = ax*ax+ay*ay+az*az; }
+                double d = sqrt(d2), f = (k*k)/d;
+                double ux=ax/d, uy=ay/d, uz=az/d;
+                dx[i]+=ux*f; dy[i]+=uy*f; dz[i]+=uz*f;
+                dx[j]-=ux*f; dy[j]-=uy*f; dz[j]-=uz*f;
+            }
+        }
+        for (int u = 0; u < n; u++) {
+            for (int e = 0; e < a->outdeg[u]; e++) {
+                int v = a->out[u][e];
+                double ax = x[u]-x[v], ay = y[u]-y[v], az = z[u]-z[v];
+                double d = sqrt(ax*ax+ay*ay+az*az);
+                if (d < 1e-9) continue;
+                double f = (d*d)/k, ux=ax/d, uy=ay/d, uz=az/d;
+                dx[u]-=ux*f; dy[u]-=uy*f; dz[u]-=uz*f;
+                dx[v]+=ux*f; dy[v]+=uy*f; dz[v]+=uz*f;
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            double d = sqrt(dx[i]*dx[i]+dy[i]*dy[i]+dz[i]*dz[i]);
+            if (d > 1e-9) {
+                double cap = fmin(d, t);
+                x[i]+=(dx[i]/d)*cap; y[i]+=(dy[i]/d)*cap; z[i]+=(dz[i]/d)*cap;
+            }
+        }
+        t -= cool;
+    }
+    free(dx); free(dy); free(dz);
+}
+
+void graph_compute_layout3d(const Expr* g, const char* layout,
+                            double* x, double* y, double* z) {
+    const Expr* verts = g->data.function.args[0];
+    int n = (int)verts->data.function.arg_count;
+    if (n <= 0) return;
+    int spherical = (layout && strcmp(layout, "SphericalEmbedding") == 0);
+    GraphAdj* a = graph_build_adj(g);
+    if (!a || spherical) {
+        fibonacci_sphere(x, y, z, n);
+    } else {
+        fr3d(a, x, y, z, n);
+    }
+    if (a) graph_adj_free(a);
+    normalize3d(x, y, z, n);
+}

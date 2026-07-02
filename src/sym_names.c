@@ -618,6 +618,8 @@ const char* SYM_PlotResample = NULL;
 
 /* Graph subsystem (src/graph/). */
 const char* SYM_Graph = NULL;
+const char* SYM_Graph3D = NULL;
+const char* SYM_Graphics3D = NULL;
 const char* SYM_DirectedEdge = NULL;
 const char* SYM_UndirectedEdge = NULL;
 const char* SYM_TwoWayRule = NULL;
@@ -1265,6 +1267,8 @@ void sym_names_init(void) {
 
     /* Graph subsystem (src/graph/). */
     SYM_Graph                      = intern_symbol("Graph");
+    SYM_Graph3D                    = intern_symbol("Graph3D");
+    SYM_Graphics3D                 = intern_symbol("Graphics3D");
     SYM_DirectedEdge               = intern_symbol("DirectedEdge");
     SYM_UndirectedEdge             = intern_symbol("UndirectedEdge");
     SYM_TwoWayRule                 = intern_symbol("TwoWayRule");
