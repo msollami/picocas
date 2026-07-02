@@ -197,38 +197,37 @@
       return;
     }
 
-    // Text cells: navigate out only from the FIRST visual line (up) or the LAST
-    // visual line (down). We compare the caret's rect to the cell's content box
-    // so wrapped multi-line prose works — the previous code only fired at the
-    // absolute start/end of the text, so ArrowDown on the last (non-final) line
-    // did nothing. Fall back to offset checks if the caret rect is unavailable.
+    // Text cells: let the browser attempt the caret move, then check on the
+    // next frame whether it actually moved *to another line*. If it didn't
+    // (already on the first/last visual line — including empty trailing lines
+    // where the caret rect is unavailable), navigate to the adjacent insertion
+    // point. This is robust to contenteditable's block/<br> structure, which
+    // defeats offset- and rect-based heuristics on blank lines.
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return;
-    const range = sel.getRangeAt(0);
-    const caret = range.getBoundingClientRect();
-    const haveCaret = !(caret.top === 0 && caret.bottom === 0 && caret.left === 0);
 
-    const cs = getComputedStyle(proseEl);
-    const lh = parseFloat(cs.lineHeight) || (parseFloat(cs.fontSize) * 1.4) || 20;
-    const box = proseEl.getBoundingClientRect();
-    const contentTop = box.top + (parseFloat(cs.paddingTop) || 0);
-    const contentBottom = box.bottom - (parseFloat(cs.paddingBottom) || 0);
+    const beforeNode = sel.focusNode;
+    const beforeOffset = sel.focusOffset;
+    const caretTop = (): number | null => {
+      const s = window.getSelection();
+      if (!s || s.rangeCount === 0) return null;
+      const r = s.getRangeAt(0).getBoundingClientRect();
+      return (r.top === 0 && r.bottom === 0 && r.left === 0) ? null : r.top;
+    };
+    const beforeTop = caretTop();
+    const key = e.key;
 
-    if (e.key === 'ArrowUp') {
-      const onFirstLine = haveCaret
-        ? (caret.top - contentTop < lh * 0.5)
-        : (range.startOffset === 0);
-      if (onFirstLine) { e.preventDefault(); dispatch('focusPrev', { id: cell.id }); }
-    } else {
-      const node = range.startContainer;
-      const atTextEnd = node.nodeType === Node.TEXT_NODE
-        ? range.startOffset === (node.textContent?.length ?? 0)
-        : range.startOffset >= node.childNodes.length;
-      const onLastLine = haveCaret
-        ? (contentBottom - caret.bottom < lh * 0.5)
-        : atTextEnd;
-      if (onLastLine) { e.preventDefault(); dispatch('focusNext', { id: cell.id }); }
-    }
+    requestAnimationFrame(() => {
+      const s = window.getSelection();
+      if (!s) return;
+      const sameCaret = s.focusNode === beforeNode && s.focusOffset === beforeOffset;
+      const afterTop = caretTop();
+      // Same line = caret didn't move to a new node/offset, OR it stayed on the
+      // same visual row (top unchanged — e.g. jumped to the row's end/start).
+      const sameLine = sameCaret
+        || (beforeTop !== null && afterTop !== null && Math.abs(afterTop - beforeTop) < 1);
+      if (sameLine) dispatch(key === 'ArrowUp' ? 'focusPrev' : 'focusNext', { id: cell.id });
+    });
   }
 
   // Focus ref + contenteditable state management
