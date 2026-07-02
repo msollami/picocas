@@ -232,6 +232,13 @@
     toggleCollapse(nb.id);
   }
 
+  // Close confirmation — guards against accidentally deleting a notebook (and
+  // its unsaved cells) with one click.
+  let confirmingClose = false;
+  function requestClose() { confirmingClose = true; }
+  function cancelClose()  { confirmingClose = false; }
+  function confirmClose() { confirmingClose = false; removeNotebook(nb.id); }
+
   // ---------------------------------------------------------------------------
   // Cell focus registry
 
@@ -553,7 +560,8 @@
       >{nb.title}</span>
     {/if}
 
-    <div class="titlebar-actions">
+    <!-- Left group: run / layout / rename -->
+    <div class="titlebar-actions titlebar-actions-left">
       <button class="tb-btn tb-run-all" title="Run all cells" on:click|stopPropagation={runAll}>▶▶</button>
       <!-- Layout toggle always visible — input/output side-by-side or stacked -->
       <button
@@ -563,14 +571,37 @@
       >{horizontal ? '↕' : '⇄'}</button>
       {#if !focused}
         <button class="tb-btn" title="Rename" on:click|stopPropagation={startRename}>✎</button>
+      {/if}
+    </div>
+
+    <!-- Right group: window controls (maximize / minimize / close) -->
+    {#if !focused}
+      <div class="titlebar-actions titlebar-actions-right">
         <button class="tb-btn tb-focus" title="Full screen" on:click|stopPropagation={() => setFocused(nb.id)}>⤢</button>
         <button class="tb-btn" title="Collapse / expand" on:click|stopPropagation={onToggleCollapse}>
           {nb.collapsed ? '⊟' : '⊞'}
         </button>
-        <button class="tb-btn tb-close" title="Close" on:click|stopPropagation={() => removeNotebook(nb.id)}>✕</button>
-      {/if}
-    </div>
+        <button class="tb-btn tb-close" title="Close" on:click|stopPropagation={requestClose}>✕</button>
+      </div>
+    {/if}
   </div>
+
+  <!-- Close confirmation — closing removes the notebook from the canvas, which
+       loses its cells if the library hasn't been saved, so confirm first. -->
+  {#if confirmingClose}
+    <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+    <div class="close-confirm-backdrop" on:click|stopPropagation={cancelClose}>
+      <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+      <div class="close-confirm" on:click|stopPropagation>
+        <div class="cc-title">Close “{nb.title}”?</div>
+        <div class="cc-msg">This removes the notebook and its cells from the canvas. Save the library first if you want to keep it.</div>
+        <div class="cc-actions">
+          <button class="cc-btn cc-cancel" on:click|stopPropagation={cancelClose}>Cancel</button>
+          <button class="cc-btn cc-delete" on:click|stopPropagation={confirmClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  {/if}
 
   <!-- Right-edge resize handle -->
   {#if !focused}
@@ -837,10 +868,47 @@
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
-    /* Sit the controls (…, full-screen, collapse, close) at the top-right,
-     * with the title centered independently (it is absolutely positioned). */
-    margin-left: auto;
   }
+  /* Left group (run-all, layout, rename) stays at the left; the right group
+   * (full-screen, collapse, close) is pushed to the top-right. Title is
+   * centered independently (absolutely positioned). */
+  .titlebar-actions-right { margin-left: auto; }
+
+  /* ---- Close confirmation dialog ---- */
+  .close-confirm-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: inherit;
+  }
+  .close-confirm {
+    width: min(320px, 82%);
+    background: var(--card-bg, #12131f);
+    border: 1px solid var(--border, rgba(255,255,255,0.12));
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    text-align: left;
+  }
+  .cc-title { font-weight: 700; font-size: 0.95rem; color: var(--text, #cdd6f4); margin-bottom: 6px; }
+  .cc-msg   { font-size: 0.82rem; color: var(--text-muted, #9a9ab0); line-height: 1.45; margin-bottom: 14px; }
+  .cc-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .cc-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .cc-cancel { background: rgba(128,128,128,0.18); color: var(--text, #cdd6f4); }
+  .cc-cancel:hover { background: rgba(128,128,128,0.3); }
+  .cc-delete { background: #e0564f; color: #fff; }
+  .cc-delete:hover { background: #c94640; }
 
   .tb-btn {
     background: none;
