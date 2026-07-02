@@ -263,6 +263,14 @@
   function cancelClose()  { confirmingClose = false; }
   function confirmClose() { confirmingClose = false; removeNotebook(nb.id); }
 
+  // Move a node to <body> so it isn't clipped by the card's overflow:hidden and
+  // isn't trapped by the card's backdrop-filter/transform containing block
+  // (which would break position:fixed). Used for the close-confirm modal.
+  function portal(node: HTMLElement) {
+    document.body.appendChild(node);
+    return { destroy() { if (node.parentNode) node.parentNode.removeChild(node); } };
+  }
+
   // ---------------------------------------------------------------------------
   // Cell focus registry
 
@@ -614,7 +622,7 @@
        loses its cells if the library hasn't been saved, so confirm first. -->
   {#if confirmingClose}
     <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
-    <div class="close-confirm-backdrop" on:click|stopPropagation={cancelClose}>
+    <div class="close-confirm-backdrop" use:portal on:click|stopPropagation={cancelClose}>
       <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
       <div class="close-confirm" on:click|stopPropagation>
         <div class="cc-title">Close “{nb.title}”?</div>
@@ -906,14 +914,13 @@
 
   /* ---- Close confirmation dialog ---- */
   .close-confirm-backdrop {
-    position: absolute;
+    position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.45);
-    border-radius: inherit;
   }
   .close-confirm {
     width: min(320px, 82%);

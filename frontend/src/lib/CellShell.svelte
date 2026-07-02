@@ -605,6 +605,13 @@
     color: var(--text-muted, #a6adc8);
   }
   .prose-rendered :global(hr) { border: none; border-top: 1px solid rgba(255,255,255,0.12); margin: 0.6em 0; }
+  .prose-rendered :global(img) { max-width: 100%; border-radius: 6px; margin: 0.3em 0; }
+  .prose-rendered :global(table) { border-collapse: collapse; margin: 0.5em 0; font-size: 0.9em; }
+  .prose-rendered :global(th),
+  .prose-rendered :global(td) { border: 1px solid rgba(255,255,255,0.15); padding: 4px 10px; text-align: left; }
+  .prose-rendered :global(th) { background: rgba(255,255,255,0.06); font-weight: 700; }
+  .prose-rendered :global(.md-math-display) { margin: 0.6em 0; overflow-x: auto; text-align: center; }
+  .prose-rendered :global(.katex) { font-size: 1.05em; }
   .heading-cell {
     padding: 6px 8px;
     margin: 0;
