@@ -551,13 +551,23 @@
     text-align: left;
     cursor: text;
   }
+  /* Headings match the notebook's own section/subsection heading cells so a
+   * `# Title` / `## Sub` in a text cell renders identically to a section /
+   * subsection cell (see h1.heading-cell / h2.heading-cell below). */
   .prose-rendered :global(h1),
   .prose-rendered :global(h2),
   .prose-rendered :global(h3),
-  .prose-rendered :global(h4) { margin: 0.4em 0 0.3em; font-weight: 700; line-height: 1.3; }
-  .prose-rendered :global(h1) { font-size: 1.25rem; }
-  .prose-rendered :global(h2) { font-size: 1.1rem; }
-  .prose-rendered :global(h3) { font-size: 1.0rem; }
+  .prose-rendered :global(h4) { margin: 0.5em 0 0.3em; font-weight: 700; line-height: 1.3; }
+  .prose-rendered :global(h1) {
+    font-size: 1.15rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 0.3rem;
+  }
+  .prose-rendered :global(h2) { font-size: 1.0rem; }
+  .prose-rendered :global(h3) { font-size: 0.95rem; opacity: 0.9; }
+  .prose-rendered :global(h1:first-child),
+  .prose-rendered :global(h2:first-child),
+  .prose-rendered :global(h3:first-child) { margin-top: 0; }
   .prose-rendered :global(p) { margin: 0.35em 0; }
   .prose-rendered :global(ul),
   .prose-rendered :global(ol) { margin: 0.35em 0; padding-left: 1.4em; }
