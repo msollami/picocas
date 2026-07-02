@@ -30,7 +30,9 @@
     "@tauri-apps/plugin-fs": "^2.5.1",
     "@tauri-apps/plugin-shell": "^2.3.5",
     "codemirror": "^6.0.2",
+    "dompurify": "^3.4.11",
     "katex": "^0.17.0",
+    "marked": "^18.0.5",
     "plotly.js-dist-min": "^3.6.0"
   }
 }

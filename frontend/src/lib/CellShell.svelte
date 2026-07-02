@@ -10,12 +10,14 @@
   All mutation calls go through store.xxx() instead of the global notebook singleton.
 -->
 <script lang="ts">
-  import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+  import { onMount, onDestroy, createEventDispatcher, tick } from 'svelte';
   import { EditorView, keymap } from '@codemirror/view';
   import { EditorState, EditorSelection } from '@codemirror/state';
   import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
   import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
   import Output from './Output.svelte';
+  import { renderMarkdown } from './markdown';
+  import 'katex/dist/katex.min.css';
   import type { Cell, CellType, OutputItem } from './notebook';
   import { selectedCells, selectOnly, toggleSelect, rangeSelect, clearSelection } from './notebook';
 
@@ -167,6 +169,12 @@
   // Arrow navigation for contenteditable cells (section/subsection/text).
   // Dispatches focusPrev/focusNext so the notebook can show the insertion cursor.
   function onProseKeydown(e: KeyboardEvent) {
+    // Escape (or Cmd/Ctrl+Enter) finishes editing a Markdown text cell → render.
+    if (cell.type === 'text' && (e.key === 'Escape' || ((e.metaKey || e.ctrlKey) && e.key === 'Enter'))) {
+      e.preventDefault();
+      textEditEl?.blur();
+      return;
+    }
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
 
     // Section/subsection headings are always single-line → navigate immediately.
@@ -191,6 +199,42 @@
         : range.startOffset >= node.childNodes.length;
       if (atEnd) { e.preventDefault(); dispatch('focusNext', { id: cell.id }); }
     }
+  }
+
+  // ---- Markdown text cell: edit ⇄ render toggle ----
+  // Text cells render Markdown (+ KaTeX math) when not being edited, and expose
+  // a raw contenteditable source view while editing. Headings (section/
+  // subsection) keep their existing always-editable behaviour via proseEl.
+  let editing = false;
+  let textEditEl: HTMLElement;
+  let _lastTextRegId = '';
+
+  $: renderedHtml = cell.type === 'text' ? renderMarkdown(cell.source) : '';
+
+  async function startEditing() {
+    if (cell.type !== 'text') return;
+    editing = true;
+    await tick();
+    if (!textEditEl) return;
+    textEditEl.innerText = cell.source;
+    textEditEl.focus();
+    // Place caret at end of the source.
+    const sel = window.getSelection();
+    if (sel) {
+      const r = document.createRange();
+      r.selectNodeContents(textEditEl);
+      r.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    }
+  }
+  function stopEditing() { editing = false; }
+
+  // Register the focus fn for text cells (used when a cell is added or
+  // navigated into). Re-runs when the cell identity or type changes.
+  $: if (cell.type === 'text' && cell.id !== _lastTextRegId) {
+    _lastTextRegId = cell.id;
+    dispatch('register', { id: cell.id, fn: () => startEditing() });
   }
 
   // Focus ref + contenteditable state management
@@ -289,16 +333,35 @@
       {/if}
 
     {:else if cell.type === 'text'}
-      <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- Content set via JS ($: proseEl update) to avoid contenteditable doubling -->
-      <div
-        class="prose-cell"
-        contenteditable="true"
-        bind:this={proseEl}
-        on:input={onTextInput}
-        on:keydown={onProseKeydown}
-        on:click|stopPropagation
-      ></div>
+      {#if editing}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- Raw Markdown source. innerText set in startEditing() to avoid the
+             contenteditable doubling bug; not re-synced on every keystroke. -->
+        <div
+          class="prose-cell"
+          contenteditable="true"
+          bind:this={textEditEl}
+          on:input={onTextInput}
+          on:keydown={onProseKeydown}
+          on:blur={stopEditing}
+          on:click|stopPropagation
+        ></div>
+      {:else}
+        <!-- Rendered Markdown. Double-click (or click when empty) to edit. -->
+        <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+        <div
+          class="prose-rendered markdown-body"
+          class:empty={cell.source.trim() === ''}
+          on:dblclick|stopPropagation={startEditing}
+          on:click|stopPropagation={() => { if (cell.source.trim() === '') startEditing(); }}
+        >
+          {#if cell.source.trim() === ''}
+            <span class="prose-placeholder">Empty text cell — double-click to edit Markdown</span>
+          {:else}
+            {@html renderedHtml}
+          {/if}
+        </div>
+      {/if}
 
     {:else if cell.type === 'section'}
       <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -496,6 +559,72 @@
     text-align: left;
     white-space: pre-wrap;
   }
+  /* ---- Rendered Markdown (text cell, non-editing) ---- */
+  .prose-rendered {
+    padding: 6px 8px;
+    font-size: 0.95rem;
+    color: var(--text, #cdd6f4);
+    line-height: 1.6;
+    text-align: left;
+    min-height: 2em;
+    cursor: text;
+    overflow-wrap: anywhere;
+  }
+  .prose-rendered.empty { color: var(--text-muted, #585b70); font-style: italic; }
+  .prose-placeholder { user-select: none; }
+
+  /* Markdown element styling — scoped, so :global reaches {@html} content */
+  .markdown-body :global(h1),
+  .markdown-body :global(h2),
+  .markdown-body :global(h3),
+  .markdown-body :global(h4) {
+    margin: 0.6em 0 0.35em;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text, #cdd6f4);
+  }
+  .markdown-body :global(h1) { font-size: 1.3rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.25em; }
+  .markdown-body :global(h2) { font-size: 1.15rem; }
+  .markdown-body :global(h3) { font-size: 1.05rem; }
+  .markdown-body :global(h4) { font-size: 0.98rem; }
+  .markdown-body :global(p) { margin: 0.4em 0; }
+  .markdown-body :global(:first-child) { margin-top: 0; }
+  .markdown-body :global(:last-child) { margin-bottom: 0; }
+  .markdown-body :global(ul),
+  .markdown-body :global(ol) { margin: 0.4em 0; padding-left: 1.5em; }
+  .markdown-body :global(li) { margin: 0.15em 0; }
+  .markdown-body :global(a) { color: var(--accent, #89b4fa); text-decoration: none; }
+  .markdown-body :global(a:hover) { text-decoration: underline; }
+  .markdown-body :global(code) {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.88em;
+    background: rgba(137,180,250,0.10);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+  }
+  .markdown-body :global(pre) {
+    background: rgba(0,0,0,0.28);
+    border: 1px solid var(--border, rgba(255,255,255,0.08));
+    border-radius: 6px;
+    padding: 8px 10px;
+    overflow-x: auto;
+    margin: 0.5em 0;
+  }
+  .markdown-body :global(pre code) { background: none; padding: 0; font-size: 0.85rem; }
+  .markdown-body :global(blockquote) {
+    margin: 0.5em 0;
+    padding: 0.1em 0.9em;
+    border-left: 3px solid var(--accent, #89b4fa);
+    color: var(--text-muted, #a6adc8);
+  }
+  .markdown-body :global(hr) { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 0.8em 0; }
+  .markdown-body :global(table) { border-collapse: collapse; margin: 0.5em 0; font-size: 0.9rem; }
+  .markdown-body :global(th),
+  .markdown-body :global(td) { border: 1px solid var(--border, rgba(255,255,255,0.12)); padding: 4px 9px; text-align: left; }
+  .markdown-body :global(th) { background: rgba(137,180,250,0.08); font-weight: 600; }
+  .markdown-body :global(img) { max-width: 100%; height: auto; border-radius: 4px; }
+  .markdown-body :global(input[type="checkbox"]) { margin-right: 0.4em; }
+
   .heading-cell {
     padding: 6px 8px;
     margin: 0;
