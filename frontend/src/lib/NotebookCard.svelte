@@ -1118,6 +1118,13 @@
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(137,180,250,0.2) transparent;
+    /* Uniform vertical rhythm: a fixed gap between cells regardless of whether
+       a cell has output, so the stack reads evenly (content padding no longer
+       drives inter-cell spacing). */
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 10px 0;
   }
 
   /* In focused (full-screen) mode, remove max-height — let .focused-view scroll */
@@ -1175,7 +1182,9 @@
   /* ---- Insertion cursor between rows ---- */
   .insertion-cursor {
     height: 3px;
-    margin: 0;
+    /* Negative margin absorbs most of the card-body flex gap so the cursor
+       doesn't balloon the spacing where it appears. */
+    margin: -7px 0;
     border-radius: 2px;
     transition: background 0.1s;
     cursor: text;
@@ -1213,9 +1222,8 @@
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    /* No full-width separator — cells are set apart by whitespace and the
-       left spine on .cell-shell (shown on hover/focus/selection). */
-    padding: 3px 0;
+    /* No full-width separator — cells are set apart by the card-body's uniform
+       gap and the left spine on .cell-shell (shown on hover/focus/selection). */
   }
 
   .cell-col { min-width: 0; }
