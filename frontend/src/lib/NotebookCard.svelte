@@ -351,6 +351,7 @@
     return hidden;
   })();
 
+
   // ---------------------------------------------------------------------------
   // 4-directional row/cell add
 
@@ -775,6 +776,9 @@
         style={nb.height != null ? `max-height: none; height: ${nb.height - TITLE_BAR_H}px; overflow-y: auto;` : ''}
 
       >
+       <!-- Inner content wrapper: rubberband translates THIS (not .card-body)
+            so the scrollbar stays anchored; also carries the uniform gap. -->
+       <div class="cb-inner">
         <!-- Insertion point before first row -->
         {#if insertionIdx === 0}
           <div class="insertion-cursor active"></div>
@@ -856,6 +860,7 @@
           <button on:click|stopPropagation={() => addRow('text')}>＋ Text</button>
           <button on:click|stopPropagation={() => addRow('section')}>＋ Section</button>
         </div>
+       </div>
       </div>
     {/if}
   </div>
@@ -1118,14 +1123,16 @@
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: rgba(137,180,250,0.2) transparent;
-    /* Uniform vertical rhythm: a fixed gap between cells regardless of whether
-       a cell has output, so the stack reads evenly (content padding no longer
-       drives inter-cell spacing). */
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    padding: 10px 0;
   }
+  /* Inner wrapper carries the content; .card-body is just the scroll viewport
+     (rubberband translates .cb-inner so the scrollbar stays anchored). Block
+     layout — not flex — so the insertion cursor renders between rows exactly as
+     it always has. Uniform vertical rhythm comes from a fixed row margin
+     (collapsing block margins keep the gap constant regardless of content). */
+  .cb-inner {
+    padding: 6px 0 10px;
+  }
+  .cb-inner > :first-child { margin-top: 0; }
 
   /* In focused (full-screen) mode, remove max-height — let .focused-view scroll */
   .focused-card .card-body {
@@ -1182,9 +1189,9 @@
   /* ---- Insertion cursor between rows ---- */
   .insertion-cursor {
     height: 3px;
-    /* Negative margin absorbs most of the card-body flex gap so the cursor
-       doesn't balloon the spacing where it appears. */
-    margin: -7px 0;
+    /* Sits in the row gap (block layout); margins collapse so it doesn't add
+       space, and it renders normally — no negative-margin occlusion. */
+    margin: 5px 0;
     border-radius: 2px;
     transition: background 0.1s;
     cursor: text;
@@ -1199,9 +1206,11 @@
   .section-row {
     display: flex;
     align-items: flex-start;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    margin-top: 18px;   /* a touch more air above a section heading */
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 2px;
   }
-  .section-row.subsection { padding-left: 1rem; }
+  .section-row.subsection { padding-left: 1rem; margin-top: 14px; }
 
   .section-collapse-btn {
     flex-shrink: 0;
@@ -1222,8 +1231,11 @@
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    /* No full-width separator — cells are set apart by the card-body's uniform
-       gap and the left spine on .cell-shell (shown on hover/focus/selection). */
+    /* Uniform inter-cell gap via a fixed top margin (block margins collapse so
+       the spacing stays constant regardless of a cell's content/output). No
+       full-width separator — cells are set apart by this gap plus the left
+       spine on .cell-shell (shown on hover/focus/selection). */
+    margin-top: 14px;
   }
 
   .cell-col { min-width: 0; }

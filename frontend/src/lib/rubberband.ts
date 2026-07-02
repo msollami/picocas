@@ -1,43 +1,45 @@
 // rubberband.ts — Svelte action adding macOS-style elastic overscroll to a
-// scroll container. WebKit doesn't bounce inner overflow:auto elements, so when
-// a wheel gesture pushes past the top or bottom we stretch the element by a
-// damped, capped offset and let it spring back.
+// scroll container. WebKit doesn't bounce inner overflow:auto elements.
 //
-// The stretch is driven by an rAF loop where the "target" decays every frame.
-// That is the key to not getting stuck: trackpad momentum keeps emitting wheel
-// events with a long, slow tail, and a fixed post-gesture timer would hold the
-// stretch open for that whole tail. Instead each frame pulls the target back
-// toward zero, so the moment the push weakens (finger lifted, momentum fading)
-// the element snaps back promptly.
+// Two things matter for this to feel right:
+//   1. We translate the container's INNER content (its first element child),
+//      NOT the container itself — translating the container drags its scrollbar
+//      away from the top/bottom.
+//   2. Trackpad momentum keeps firing overscroll wheel events for ~1s after the
+//      fingers lift. If every one fed the stretch it would stay stuck open. So
+//      we only feed the stretch for a short window after the gesture starts;
+//      past that the rAF spring (whose target decays each frame) wins and it
+//      snaps back even while momentum is still arriving.
 
 interface Opts {
-  // Only engage when focus is inside the node (matches the canvas rule that a
-  // card scrolls natively only while one of its cells is focused; otherwise the
-  // wheel pans the canvas and must not be intercepted).
-  requireFocus?: boolean;
+  requireFocus?: boolean; // engage only when focus is inside (see Canvas rule)
 }
 
 export function rubberband(node: HTMLElement, opts: Opts = {}) {
-  const MAX = 80;            // px cap on the stretch
-  const PUSH = 0.18;         // how much a wheel delta feeds the stretch
-  const TARGET_DECAY = 0.72; // per-frame pull of target → 0 (momentum can't hold)
-  const EASE = 0.30;         // per-frame ease of offset → target
+  const MAX = 72;            // px cap on the stretch
+  const PUSH = 0.16;         // how much a wheel delta feeds the stretch
+  const TARGET_DECAY = 0.55; // per-frame pull of target → 0
+  const EASE = 0.35;         // per-frame ease of offset → target
+  const HOLD_MS = 140;       // only feed the stretch this long after it starts
 
+  const inner = () => node.firstElementChild as HTMLElement | null;
   let offset = 0;
   let target = 0;
   let raf = 0;
+  let startedAt = 0;
 
   function frame() {
     target *= TARGET_DECAY;
     if (Math.abs(target) < 0.4) target = 0;
     offset += (target - offset) * EASE;
+    const el = inner();
     if (target === 0 && Math.abs(offset) < 0.3) {
       offset = 0;
-      node.style.transform = '';
+      if (el) el.style.transform = '';
       raf = 0;
       return;
     }
-    node.style.transform = `translateY(${offset.toFixed(2)}px)`;
+    if (el) el.style.transform = `translateY(${offset.toFixed(2)}px)`;
     raf = requestAnimationFrame(frame);
   }
 
@@ -46,15 +48,23 @@ export function rubberband(node: HTMLElement, opts: Opts = {}) {
         !(document.activeElement && node.contains(document.activeElement))) {
       return; // let the canvas handle this wheel (pan)
     }
+    // Not actually scrollable (e.g. this card in full-screen mode, where the
+    // outer .focused-view is the scroller) → don't hijack the wheel.
+    if (node.scrollHeight <= node.clientHeight + 1) return;
     const atTop = node.scrollTop <= 0;
     const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - 1;
     const dy = e.deltaY;
     const overscrolling = (atTop && dy < 0) || (atBottom && dy > 0);
-    if (!overscrolling) return; // in range → native scroll; any offset eases out via rAF
+    if (!overscrolling) { startedAt = 0; return; } // in range → native scroll
 
     e.preventDefault();
     e.stopPropagation();
-    target = Math.max(-MAX, Math.min(MAX, target - dy * PUSH));
+    const now = performance.now();
+    if (!startedAt || (!raf && target === 0 && offset === 0)) startedAt = now;
+    // Only stretch during the initial active push; ignore the momentum tail.
+    if (now - startedAt < HOLD_MS) {
+      target = Math.max(-MAX, Math.min(MAX, target - dy * PUSH));
+    }
     if (!raf) raf = requestAnimationFrame(frame);
   }
 
@@ -63,6 +73,8 @@ export function rubberband(node: HTMLElement, opts: Opts = {}) {
     destroy() {
       node.removeEventListener('wheel', onWheel);
       if (raf) cancelAnimationFrame(raf);
+      const el = inner();
+      if (el) el.style.transform = '';
     },
   };
 }
