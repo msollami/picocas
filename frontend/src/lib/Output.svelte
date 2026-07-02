@@ -38,7 +38,18 @@
     return commas > 4 || text.length > 200;
   }
 
+  function esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   function renderOutput(text: string, latex?: string): string {
+    const t = text.trim();
+    // A bare string result ("...") renders as upright monospace text with
+    // straight quotes, not through KaTeX (whose \text{"..."} draws ugly curly
+    // quotes and an italic serif face).
+    if (/^"(?:[^"\\]|\\.)*"$/.test(t)) {
+      return `<span class="out-string">${esc(t)}</span>`;
+    }
     // Long lists: always use wrapping code regardless of latex field.
     // KaTeX renders math spans without line-breaking, so even \{1,2,...\}
     // produces a single wide unbreakable line.
@@ -218,6 +229,15 @@
     padding: 0.25rem 0;
     color: var(--out-text, #222);
     text-align: left;
+  }
+
+  /* Bare string result — upright monospace with straight quotes. */
+  :global(.out-string) {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.98em;
+    color: var(--out-text, #cdd6f4);
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   /* Long list/sequence outputs rendered as wrapping code */

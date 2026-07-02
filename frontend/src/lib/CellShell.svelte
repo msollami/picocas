@@ -401,21 +401,23 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 6px 4px 6px 4px;
-    width: 40px;
+    padding: 6px 3px 6px 3px;
+    width: 52px;
     flex-shrink: 0;
     cursor: pointer;
     user-select: none;
     gap: 2px;
+    overflow: visible;
   }
 
   .exec-label {
-    font-size: 0.58rem;
+    font-size: 0.55rem;
     color: var(--text-muted, #585b70);
     font-family: 'SF Mono', monospace;
     white-space: nowrap;
     writing-mode: horizontal-tb;
     line-height: 1;
+    max-width: 100%;
   }
 
   .run-btn {

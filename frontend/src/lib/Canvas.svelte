@@ -510,9 +510,12 @@
     font-size: 11px;   /* fixed px — immune to root font-size changes */
     color: rgba(255,255,255,0.25);
     pointer-events: none;
+    z-index: 5;
     letter-spacing: 0.02em;
     white-space: nowrap;
   }
+  /* Light mode: white-on-light is invisible, so darken the hint text. */
+  :global(html.light) .canvas-hints { color: rgba(28, 28, 46, 0.55); }
   .hint-new-btn {
     background: rgba(137,180,250,0.15);
     border: 1px solid rgba(137,180,250,0.35);
