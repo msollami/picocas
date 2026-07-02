@@ -33,9 +33,12 @@ const safeUrl = (u: string) => /^(https?:|mailto:|\/|#|\.|data:image\/)/i.test(u
 
 // Inline formatting on RAW text.
 function inline(raw: string): string {
+  // 0. protect escaped dollars (\$) so they don't open a math span
+  let s = raw.replace(/\\\$/g, '\x02');
+
   // 1. inline math $…$ (KaTeX needs the unescaped LaTeX)
   const math: string[] = [];
-  let s = raw.replace(/\$([^$\n]+)\$/g, (_m, e) => {
+  s = s.replace(/\$([^$\n]+)\$/g, (_m, e) => {
     math.push(tex(e, false));
     return `\x01${math.length - 1}\x01`;
   });
@@ -68,6 +71,7 @@ function inline(raw: string): string {
   // 7. restore code then math
   s = s.replace(/\x00(\d+)\x00/g, (_m, i) => code[Number(i)]);
   s = s.replace(/\x01(\d+)\x01/g, (_m, i) => math[Number(i)]);
+  s = s.replace(/\x02/g, '$');   // restore escaped dollars as literal $
   return s;
 }
 
