@@ -60,9 +60,14 @@
   }
 
   function mountPlot(node: HTMLElement, data: object) {
-    import('plotly.js-dist-min').then((Plotly: any) => {
-      const spec = data as any;
+    const spec = data as any;
+    let Plotly: any = null;
+    let lastDark: boolean | null = null;
+
+    const render = () => {
+      if (!Plotly) return;
       const dark = !document.documentElement.classList.contains('light');
+      lastDark = dark;
       const layoutOverride = dark ? {
         plot_bgcolor:  '#181825', paper_bgcolor: '#181825',
         font: { color: '#cdd6f4' },
@@ -77,7 +82,25 @@
       Plotly.react(node, spec.data ?? [spec], { ...(spec.layout ?? {}), ...layoutOverride }, {
         responsive: true, displayModeBar: true,
       });
+    };
+
+    import('plotly.js-dist-min').then((P: any) => { Plotly = P; render(); });
+
+    // Re-render when the app toggles light/dark (the `light` class on <html>),
+    // so already-drawn plots (e.g. graph diagrams) follow the theme instead of
+    // keeping the background they were first rendered with.
+    const obs = new MutationObserver(() => {
+      const dark = !document.documentElement.classList.contains('light');
+      if (dark !== lastDark) render();
     });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return {
+      destroy() {
+        obs.disconnect();
+        try { Plotly?.purge?.(node); } catch { /* ignore */ }
+      },
+    };
   }
 
   // Measure height of a rendered output element to decide if it needs collapse
