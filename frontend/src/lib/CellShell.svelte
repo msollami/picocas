@@ -77,6 +77,8 @@
         doc: cell.source,
         extensions: [
           history(),
+          // Soft-wrap long input lines so they don't run off the page.
+          EditorView.lineWrapping,
           syntaxHighlighting(defaultHighlightStyle),
           keymap.of([
             { key: 'Shift-Enter', run() { dispatch('run', { id: cell.id }); return true; } },

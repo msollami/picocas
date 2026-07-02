@@ -723,6 +723,15 @@
     transform: scale(1);
   }
 
+  /* In full-screen focused mode the overlay itself animates the zoom, so the
+   * card must not also run its scale-in mount animation (double-animation looks
+   * janky). Render it settled immediately. */
+  .nb-card.focused-card {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
   /* Multi-selected via rubber-band */
   .nb-card.selected {
     outline: 2px solid var(--accent, #89b4fa);

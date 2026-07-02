@@ -12,6 +12,8 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { get } from 'svelte/store';
+  import { scale } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
   import NotebookCard from './NotebookCard.svelte';
   import Minimap from './Minimap.svelte';
   import {
@@ -364,6 +366,7 @@
   {#if fnb}
     <div
       class="focused-view"
+      transition:scale={{ duration: 260, start: 0.955, opacity: 0, easing: cubicOut }}
     >
       <div class="focused-view-inner">
         <NotebookCard nb={fnb} currentZoom={1} focused={true} />
@@ -536,6 +539,10 @@
     background: var(--card-bg, #050810);
     overflow-y: auto;
     z-index: 50;
+    /* Scale from the center so the enter/leave zoom reads as coming from the
+     * middle of the screen; will-change keeps it on the compositor (smooth). */
+    transform-origin: center center;
+    will-change: transform, opacity;
   }
   .focused-view-inner {
     width: 100%;
