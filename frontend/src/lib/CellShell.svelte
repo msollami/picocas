@@ -559,7 +559,15 @@
   .prose-rendered :global(h1),
   .prose-rendered :global(h2),
   .prose-rendered :global(h3),
-  .prose-rendered :global(h4) { margin: 0.5em 0 0.3em; font-weight: 700; line-height: 1.3; }
+  .prose-rendered :global(h4) {
+    margin: 0.5em 0 0.3em;
+    font-weight: 700;
+    line-height: 1.3;
+    /* Use --text (the app toggles it for light/dark) rather than inheriting the
+     * global h1/h2 color (--text-h), which the manual light toggle does not
+     * override — that left rendered headings near-white on a light background. */
+    color: var(--text, #cdd6f4);
+  }
   .prose-rendered :global(h1) {
     font-size: 1.15rem;
     border-bottom: 1px solid rgba(255,255,255,0.08);

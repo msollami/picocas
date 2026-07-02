@@ -837,6 +837,9 @@
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
+    /* Sit the controls (…, full-screen, collapse, close) at the top-right,
+     * with the title centered independently (it is absolutely positioned). */
+    margin-left: auto;
   }
 
   .tb-btn {
