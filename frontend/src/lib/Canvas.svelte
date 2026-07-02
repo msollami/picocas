@@ -14,6 +14,7 @@
   import { get } from 'svelte/store';
   import { scale } from 'svelte/transition';
   import { cubicOut } from 'svelte/easing';
+  import { rubberband } from './rubberband';
   import NotebookCard from './NotebookCard.svelte';
   import Minimap from './Minimap.svelte';
   import {
@@ -366,6 +367,7 @@
   {#if fnb}
     <div
       class="focused-view"
+      use:rubberband
       transition:scale={{ duration: 260, start: 0.955, opacity: 0, easing: cubicOut }}
     >
       <div class="focused-view-inner">

@@ -42,6 +42,7 @@
     evaluateCell,
   } from './ipc';
   import type { OutputMessage } from './ipc';
+  import { rubberband } from './rubberband';
 
   export let nb: CanvasNotebook;
   export let currentZoom: number = 1.0;
@@ -480,10 +481,11 @@
     if (selRows.size) { selRows = new Set(); clearSelection(); }
   }
   function applyRowSelection(gap: number) {
-    if (selAnchor === null) selAnchor = gap;
+    // selAnchor is set by the caller to the pre-move gap.
+    const anchor = selAnchor ?? gap;
     insertionIdx = gap;
     const rows = nb.store.getRows();
-    const lo = Math.min(selAnchor, gap), hi = Math.max(selAnchor, gap);
+    const lo = Math.min(anchor, gap), hi = Math.max(anchor, gap);
     selRows = new Set();
     const ids: string[] = [];
     for (let r = lo; r < hi; r++) {
@@ -511,19 +513,31 @@
   async function onCardKeydown(e: KeyboardEvent) {
     const cardFocused = e.target === cardEl;
 
-    // Clipboard / delete on a multi-row selection (must run before the generic
-    // Cmd/Ctrl pass-through below).
-    if ((e.metaKey || e.ctrlKey) && cardFocused && insertionIdx !== null) {
+    // Card-level Cmd/Ctrl shortcuts (only when the card itself is focused, not a
+    // CodeMirror editor — CodeMirror keeps its own text undo). Must run before
+    // the generic Cmd/Ctrl pass-through below.
+    if ((e.metaKey || e.ctrlKey) && cardFocused) {
       const k = e.key.toLowerCase();
-      if (k === 'c' && selRows.size) { e.preventDefault(); e.stopPropagation(); setRowClipboard(selectedRowData()); return; }
-      if (k === 'x' && selRows.size) { e.preventDefault(); e.stopPropagation(); setRowClipboard(selectedRowData()); deleteSelectedRows(); return; }
-      if (k === 'v' && getRowClipboard().length) {
+      // Structural undo/redo (delete / cut / paste / insert of whole cells).
+      if (k === 'z') {
         e.preventDefault(); e.stopPropagation();
-        const data = getRowClipboard();
         clearRowSelection();
-        nb.store.insertRowsAt(insertionIdx, data);
-        insertionIdx = insertionIdx + data.length;
+        if (e.shiftKey) nb.store.redo(); else nb.store.undo();
         return;
+      }
+      if (k === 'y') { e.preventDefault(); e.stopPropagation(); clearRowSelection(); nb.store.redo(); return; }
+      // Clipboard on a multi-row selection / at the insertion point.
+      if (insertionIdx !== null) {
+        if (k === 'c' && selRows.size) { e.preventDefault(); e.stopPropagation(); setRowClipboard(selectedRowData()); return; }
+        if (k === 'x' && selRows.size) { e.preventDefault(); e.stopPropagation(); setRowClipboard(selectedRowData()); deleteSelectedRows(); return; }
+        if (k === 'v' && getRowClipboard().length) {
+          e.preventDefault(); e.stopPropagation();
+          const data = getRowClipboard();
+          clearRowSelection();
+          nb.store.insertRowsAt(insertionIdx, data);
+          insertionIdx = insertionIdx + data.length;
+          return;
+        }
       }
     }
 
@@ -548,11 +562,16 @@
     }
 
     // Shift+Up/Down extends a multi-row selection from the insertion point.
+    // Anchor at the CURRENT gap before moving so the first press already
+    // selects the adjacent cell (not the one after it).
     if (e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
       e.preventDefault();
       const rows = nb.store.getRows();
-      if (e.key === 'ArrowDown') applyRowSelection(Math.min(rows.length, insertionIdx + 1));
-      else                       applyRowSelection(Math.max(0, insertionIdx - 1));
+      if (selAnchor === null) selAnchor = insertionIdx;
+      const gap = e.key === 'ArrowDown'
+        ? Math.min(rows.length, insertionIdx + 1)
+        : Math.max(0, insertionIdx - 1);
+      applyRowSelection(gap);
       return;
     }
 
@@ -752,6 +771,7 @@
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <div
         class="card-body"
+        use:rubberband={{ requireFocus: true }}
         style={nb.height != null ? `max-height: none; height: ${nb.height - TITLE_BAR_H}px; overflow-y: auto;` : ''}
 
       >
