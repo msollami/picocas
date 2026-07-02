@@ -393,7 +393,10 @@
     border-left: 2px solid transparent;
     border-radius: 3px;
     transition: border-color 0.15s, background 0.15s;
-    background: var(--cell-bg, transparent);
+    /* Transparent at rest so cells and the gaps between them read identically
+       (a translucent per-cell background produced faint stripes over the card).
+       Only the interaction states below tint the cell. */
+    background: transparent;
   }
   .cell-shell:hover         { border-left-color: var(--border, rgba(255,255,255,0.09)); }
   .cell-shell:focus-within  { border-left-color: var(--accent, #89b4fa); background: rgba(137,180,250,0.03); }
