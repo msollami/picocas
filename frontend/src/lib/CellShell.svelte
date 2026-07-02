@@ -386,13 +386,18 @@
     position: relative;
     display: flex;
     flex-direction: row;
-    border-top: 1px solid transparent;
-    border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
-    transition: border-color 0.12s, background 0.12s;
+    /* A left "spine" replaces the old full-width separator lines: transparent
+       by default (so cells read as an airy stack separated by whitespace), a
+       faint hairline on hover, and the accent color when the io pair is
+       focused or selected — grouping input+output as one unit without stripes. */
+    border-left: 2px solid transparent;
+    border-radius: 3px;
+    transition: border-color 0.15s, background 0.15s;
     background: var(--cell-bg, transparent);
   }
-  .cell-shell:focus-within  { border-left: 2px solid var(--accent, #89b4fa); }
-  .cell-shell.selected      { border-left: 3px solid var(--accent, #89b4fa); }
+  .cell-shell:hover         { border-left-color: var(--border, rgba(255,255,255,0.09)); }
+  .cell-shell:focus-within  { border-left-color: var(--accent, #89b4fa); background: rgba(137,180,250,0.03); }
+  .cell-shell.selected      { border-left-color: var(--accent, #89b4fa); background: rgba(137,180,250,0.09); }
   .cell-shell.running       { background: rgba(243,156,18,0.04); }
 
   /* ---- Left gutter: run button + exec label stacked, no wasted horizontal space ---- */

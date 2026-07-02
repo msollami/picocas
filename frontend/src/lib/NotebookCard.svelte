@@ -1213,7 +1213,9 @@
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    /* No full-width separator — cells are set apart by whitespace and the
+       left spine on .cell-shell (shown on hover/focus/selection). */
+    padding: 3px 0;
   }
 
   .cell-col { min-width: 0; }

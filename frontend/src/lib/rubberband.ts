@@ -1,27 +1,44 @@
 // rubberband.ts — Svelte action adding macOS-style elastic overscroll to a
 // scroll container. WebKit doesn't bounce inner overflow:auto elements, so when
-// a wheel gesture pushes past the top or bottom we translate the element by a
-// damped, capped offset and spring it back when the gesture stops.
+// a wheel gesture pushes past the top or bottom we stretch the element by a
+// damped, capped offset and let it spring back.
+//
+// The stretch is driven by an rAF loop where the "target" decays every frame.
+// That is the key to not getting stuck: trackpad momentum keeps emitting wheel
+// events with a long, slow tail, and a fixed post-gesture timer would hold the
+// stretch open for that whole tail. Instead each frame pulls the target back
+// toward zero, so the moment the push weakens (finger lifted, momentum fading)
+// the element snaps back promptly.
 
 interface Opts {
-  // Only engage when focus is inside the node (matches the canvas's rule that a
+  // Only engage when focus is inside the node (matches the canvas rule that a
   // card scrolls natively only while one of its cells is focused; otherwise the
   // wheel pans the canvas and must not be intercepted).
   requireFocus?: boolean;
 }
 
 export function rubberband(node: HTMLElement, opts: Opts = {}) {
-  const MAX = 90;      // px cap on the stretch
-  const DAMP = 0.26;   // resistance — smaller = stiffer
-  let offset = 0;
-  let releaseTimer: ReturnType<typeof setTimeout> | null = null;
+  const MAX = 80;            // px cap on the stretch
+  const PUSH = 0.18;         // how much a wheel delta feeds the stretch
+  const TARGET_DECAY = 0.72; // per-frame pull of target → 0 (momentum can't hold)
+  const EASE = 0.30;         // per-frame ease of offset → target
 
-  function release() {
-    if (releaseTimer) { clearTimeout(releaseTimer); releaseTimer = null; }
-    if (offset === 0) return;
-    offset = 0;
-    node.style.transition = 'transform 0.34s cubic-bezier(0.22, 1, 0.36, 1)';
-    node.style.transform = 'translateY(0)';
+  let offset = 0;
+  let target = 0;
+  let raf = 0;
+
+  function frame() {
+    target *= TARGET_DECAY;
+    if (Math.abs(target) < 0.4) target = 0;
+    offset += (target - offset) * EASE;
+    if (target === 0 && Math.abs(offset) < 0.3) {
+      offset = 0;
+      node.style.transform = '';
+      raf = 0;
+      return;
+    }
+    node.style.transform = `translateY(${offset.toFixed(2)}px)`;
+    raf = requestAnimationFrame(frame);
   }
 
   function onWheel(e: WheelEvent) {
@@ -32,26 +49,20 @@ export function rubberband(node: HTMLElement, opts: Opts = {}) {
     const atTop = node.scrollTop <= 0;
     const atBottom = node.scrollTop + node.clientHeight >= node.scrollHeight - 1;
     const dy = e.deltaY;
-    const pushUp = atTop && dy < 0;
-    const pushDown = atBottom && dy > 0;
+    const overscrolling = (atTop && dy < 0) || (atBottom && dy > 0);
+    if (!overscrolling) return; // in range → native scroll; any offset eases out via rAF
 
-    if (!pushUp && !pushDown) { release(); return; }  // in-range → native scroll
-
-    // Overscrolling: resist and stretch instead of scrolling/panning.
     e.preventDefault();
     e.stopPropagation();
-    if (releaseTimer) { clearTimeout(releaseTimer); releaseTimer = null; }
-    offset = Math.max(-MAX, Math.min(MAX, offset - dy * DAMP));
-    node.style.transition = 'none';
-    node.style.transform = `translateY(${offset}px)`;
-    releaseTimer = setTimeout(release, 110);   // spring back shortly after gesture ends
+    target = Math.max(-MAX, Math.min(MAX, target - dy * PUSH));
+    if (!raf) raf = requestAnimationFrame(frame);
   }
 
   node.addEventListener('wheel', onWheel, { passive: false });
   return {
     destroy() {
       node.removeEventListener('wheel', onWheel);
-      if (releaseTimer) clearTimeout(releaseTimer);
+      if (raf) cancelAnimationFrame(raf);
     },
   };
 }
