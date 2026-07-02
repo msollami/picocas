@@ -36,22 +36,23 @@ function inline(raw: string): string {
   // 0. protect escaped dollars (\$) so they don't open a math span
   let s = raw.replace(/\\\$/g, '\x02');
 
-  // 1. inline math $…$ (KaTeX needs the unescaped LaTeX)
+  // 1. protect inline code FIRST (before math), so a `$` inside `code` can't be
+  //    treated as a math delimiter. Store raw content; escape it at restore.
+  const code: string[] = [];
+  s = s.replace(/`([^`]+)`/g, (_m, c) => {
+    code.push(c);
+    return `\x00${code.length - 1}\x00`;
+  });
+
+  // 2. inline math $…$ (KaTeX needs the unescaped LaTeX)
   const math: string[] = [];
   s = s.replace(/\$([^$\n]+)\$/g, (_m, e) => {
     math.push(tex(e, false));
     return `\x01${math.length - 1}\x01`;
   });
 
-  // 2. escape everything else
+  // 3. escape everything else (code/math are placeholders, untouched)
   s = escapeHtml(s);
-
-  // 3. inline code (protect from further markup)
-  const code: string[] = [];
-  s = s.replace(/`([^`]+)`/g, (_m, c) => {
-    code.push(`<code>${c}</code>`);
-    return `\x00${code.length - 1}\x00`;
-  });
 
   // 4. images ![alt](url) before links
   s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_m, alt, url) =>
@@ -68,8 +69,8 @@ function inline(raw: string): string {
   s = s.replace(/(^|[^_])_([^_\s][^_]*)_/g, '$1<em>$2</em>');
   s = s.replace(/~~([^~]+)~~/g, '<del>$1</del>');
 
-  // 7. restore code then math
-  s = s.replace(/\x00(\d+)\x00/g, (_m, i) => code[Number(i)]);
+  // 7. restore code (escaping its raw content now) then math
+  s = s.replace(/\x00(\d+)\x00/g, (_m, i) => `<code>${escapeHtml(code[Number(i)])}</code>`);
   s = s.replace(/\x01(\d+)\x01/g, (_m, i) => math[Number(i)]);
   s = s.replace(/\x02/g, '$');   // restore escaped dollars as literal $
   return s;
