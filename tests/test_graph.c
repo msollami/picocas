@@ -1466,6 +1466,23 @@ static void test_graph_disjoint_union(void) {
     assert_eval_eq("Head[GraphDisjointUnion[5, CycleGraph[3]]]", "GraphDisjointUnion", 0);
 }
 
+static void test_edge_contract(void) {
+    /* Contracting a triangle edge leaves a single edge. */
+    assert_eval_eq("EdgeList[EdgeContract[Graph[{1,2,3},{1<->2,2<->3,3<->1}], 1<->2]]", "{1 <-> 3}", 0);
+    assert_eval_eq("VertexList[EdgeContract[Graph[{1,2,3},{1<->2,2<->3,3<->1}], 1<->2]]", "{1, 3}", 0);
+    assert_eval_eq("EdgeCount[EdgeContract[PathGraph[3], 1<->2]]", "1", 0);
+    /* List form; equals the corresponding VertexContract. */
+    assert_eval_eq("VertexCount[EdgeContract[CompleteGraph[4], {1,2}]]", "3", 0);
+    assert_eval_eq("EdgeContract[CompleteGraph[4], 1<->2] === VertexContract[CompleteGraph[4], {1,2}]", "True", 0);
+    assert_eval_eq("VertexCount[EdgeContract[CompleteGraph[4], 1<->2]]", "3", 0);
+    assert_eval_eq("EdgeCount[EdgeContract[CompleteGraph[4], 1<->2]]", "3", 0);
+    assert_eval_eq("EdgeCount[EdgeContract[Graph[{1,2,3},{1->2,2->3}], 1->2]]", "1", 0);
+    /* Bad edge specs stay unevaluated. */
+    assert_eval_eq("Head[EdgeContract[CycleGraph[3], 1<->1]]", "EdgeContract", 0);
+    assert_eval_eq("Head[EdgeContract[CycleGraph[3], 1<->9]]", "EdgeContract", 0);
+    assert_eval_eq("Head[EdgeContract[5, 1<->2]]", "EdgeContract", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1555,6 +1572,7 @@ int main(void) {
     TEST(test_vertex_add);
     TEST(test_neighborhood_graph);
     TEST(test_graph_disjoint_union);
+    TEST(test_edge_contract);
 
     printf("All graph tests passed!\n");
     return 0;

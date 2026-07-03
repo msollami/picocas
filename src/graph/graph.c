@@ -616,6 +616,12 @@ void graph_init(void) {
         "GraphDisjointUnion[g1, g2] gives the disjoint union of g1 and g2 "
         "(vertices relabeled 1..n1+n2, no edges between the two blocks).");
 
+    symtab_add_builtin("EdgeContract", builtin_edge_contract);
+    symtab_get_def("EdgeContract")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("EdgeContract",
+        "EdgeContract[g, e] contracts edge e, merging its endpoints into one "
+        "vertex, dropping the self-loop, and collapsing parallel edges.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

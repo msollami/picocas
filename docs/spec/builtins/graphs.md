@@ -441,6 +441,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   endpoints realises edge contraction (a triangle becomes a single edge);
   contracting all vertices gives a single isolated vertex. Direction-aware,
   returns a canonical `Graph`.
+- `EdgeContract[g, e]` — contract edge `e`, merging its two endpoints into one
+  vertex, redirecting incident edges, dropping the self-loop, and collapsing
+  parallel edges. `e` may be `DirectedEdge`/`UndirectedEdge`, `a->b`/`a<->b`, or a
+  list `{a, b}`; both endpoints must be vertices. `EdgeContract[g, {u,v}]` equals
+  `VertexContract[g, {u,v}]`. Contracting a triangle edge leaves a single edge.
 - `GraphPower[g, k]` — the k-th power: the graph on the same vertices that joins
   two vertices whenever `g` has a path of length `≤ k` between them (no
   self-loops). A depth-limited BFS per source over the (direction-aware)
