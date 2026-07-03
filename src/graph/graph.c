@@ -268,6 +268,13 @@ void graph_init(void) {
         "all even degrees (undirected), or in-degree = out-degree everywhere "
         "(directed).");
 
+    symtab_add_builtin("ClosenessCentrality", builtin_closeness_centrality);
+    symtab_get_def("ClosenessCentrality")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("ClosenessCentrality",
+        "ClosenessCentrality[g] gives the list of closeness centralities "
+        "c_i = (r_i-1)^2/((n-1) S_i), where r_i vertices are reachable from i at "
+        "total distance S_i; larger means more central.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

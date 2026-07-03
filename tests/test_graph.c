@@ -529,6 +529,20 @@ static void test_grid_hypercube(void) {
     assert_eval_eq("EdgeCount[GridGraph[{2,2,2}]]", "12", 0);
 }
 
+static void test_closeness(void) {
+    /* Exact rationals: complete → all 1; cycle C4 → all 3/4; path P3 → ends 2/3,
+       middle 1; star center 1, leaves 3/5. */
+    assert_eval_eq("ClosenessCentrality[CompleteGraph[4]]", "{1, 1, 1, 1}", 0);
+    assert_eval_eq("ClosenessCentrality[CycleGraph[4]]", "{3/4, 3/4, 3/4, 3/4}", 0);
+    assert_eval_eq("ClosenessCentrality[PathGraph[3]]", "{2/3, 1, 2/3}", 0);
+    assert_eval_eq("ClosenessCentrality[StarGraph[4]]", "{1, 3/5, 3/5, 3/5}", 0);
+    /* Isolated / disconnected vertices score 0. */
+    assert_eval_eq("ClosenessCentrality[Graph[{1,2},{}]]", "{0, 0}", 0);
+    /* Directed: distances follow direction; a sink reaches nobody → 0. */
+    assert_eval_eq("ClosenessCentrality[Graph[{1,2,3},{1->2,2->3}]]", "{2/3, 1/2, 0}", 0);
+    assert_eval_eq("Head[ClosenessCentrality[5]]", "ClosenessCentrality", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -562,6 +576,7 @@ int main(void) {
     TEST(test_star_wheel);
     TEST(test_complete_multipartite);
     TEST(test_grid_hypercube);
+    TEST(test_closeness);
 
     printf("All graph tests passed!\n");
     return 0;

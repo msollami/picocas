@@ -128,6 +128,7 @@ Expr* builtin_kirchhoff_matrix(Expr* res);              /* KirchhoffMatrix      
 Expr* builtin_edge_connectivity(Expr* res);             /* EdgeConnectivity     */
 Expr* builtin_line_graph(Expr* res);                    /* LineGraph            */
 Expr* builtin_eulerian_graph_q(Expr* res);              /* EulerianGraphQ       */
+Expr* builtin_closeness_centrality(Expr* res);          /* ClosenessCentrality  */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
