@@ -898,6 +898,23 @@ static void test_degree_sequence(void) {
     assert_eval_eq("Head[DegreeSequence[5]]", "DegreeSequence", 0);
 }
 
+static void test_tree_graph_q(void) {
+    assert_eval_eq("TreeGraphQ[PathGraph[4]]", "True", 0);
+    assert_eval_eq("TreeGraphQ[StarGraph[5]]", "True", 0);
+    assert_eval_eq("TreeGraphQ[Graph[{1},{}]]", "True", 0);
+    assert_eval_eq("TreeGraphQ[Graph[{1,2,3,4,5},{1<->2,1<->3,2<->4,2<->5}]]", "True", 0);
+    assert_eval_eq("TreeGraphQ[Graph[{1,2,3},{1->2,2->3}]]", "True", 0);
+    /* Not trees: cycles, complete, edgeless multi-vertex, forests. */
+    assert_eval_eq("TreeGraphQ[CycleGraph[4]]", "False", 0);
+    assert_eval_eq("TreeGraphQ[CompleteGraph[4]]", "False", 0);
+    assert_eval_eq("TreeGraphQ[Graph[{1,2,3},{}]]", "False", 0);
+    assert_eval_eq("TreeGraphQ[Graph[{1,2,3,4},{1<->2,3<->4}]]", "False", 0);
+    assert_eval_eq("TreeGraphQ[Graph[{1,2,3},{1<->2,2<->3,3<->1}]]", "False", 0);
+    /* Characterisation: tree ⇔ connected and n-1 edges. */
+    assert_eval_eq("TreeGraphQ[PathGraph[5]] == (ConnectedGraphQ[PathGraph[5]] && EdgeCount[PathGraph[5]]==4)", "True", 0);
+    assert_eval_eq("Head[TreeGraphQ[5]]", "TreeGraphQ", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -953,6 +970,7 @@ int main(void) {
     TEST(test_chromatic_polynomial);
     TEST(test_chromatic_number);
     TEST(test_degree_sequence);
+    TEST(test_tree_graph_q);
 
     printf("All graph tests passed!\n");
     return 0;

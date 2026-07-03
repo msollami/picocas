@@ -267,6 +267,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `GraphCenter[g]` — the vertices whose eccentricity equals the graph radius.
   These derive from a BFS per vertex (`O(V·(V+E))`) and follow edge direction on
   directed graphs.
+- `TreeGraphQ[g]` — `True` iff `g` is a tree: connected with no cycles, i.e.
+  connected on the underlying undirected graph with exactly `n−1` distinct edges
+  (`n ≥ 1`). One BFS plus an edge count, `O(V²)`; a single vertex is a tree, the
+  empty graph and any disconnected or edgeless multi-vertex graph is not.
 - `AcyclicGraphQ[g]` — `True` iff `g` has no cycle: a DAG for a directed graph, a
   forest for an undirected one. `O(V+E)` (Kahn's algorithm for the directed
   case, `E = V − #components` for the undirected case).

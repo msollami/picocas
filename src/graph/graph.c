@@ -408,6 +408,12 @@ void graph_init(void) {
         "DegreeSequence[g] gives the vertex degrees (in-degree + out-degree for "
         "a directed graph) sorted in non-increasing order.");
 
+    symtab_add_builtin("TreeGraphQ", builtin_tree_graph_q);
+    symtab_get_def("TreeGraphQ")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("TreeGraphQ",
+        "TreeGraphQ[g] gives True iff g is a tree: connected with no cycles "
+        "(n-1 edges on n>=1 vertices).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

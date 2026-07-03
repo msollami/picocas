@@ -150,6 +150,7 @@ Expr* builtin_graph_reciprocity(Expr* res);             /* GraphReciprocity[g]  
 Expr* builtin_chromatic_polynomial(Expr* res);          /* ChromaticPolynomial  */
 Expr* builtin_chromatic_number(Expr* res);              /* ChromaticNumber[g]   */
 Expr* builtin_degree_sequence(Expr* res);               /* DegreeSequence[g]    */
+Expr* builtin_tree_graph_q(Expr* res);                  /* TreeGraphQ[g]        */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
