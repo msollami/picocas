@@ -443,6 +443,23 @@ static void test_edge_connectivity(void) {
     assert_eval_eq("Head[EdgeConnectivity[5]]", "EdgeConnectivity", 0);
 }
 
+static void test_line_graph(void) {
+    /* L(P3): the two edges share vertex 2 → one edge; vertices ARE the edges. */
+    assert_eval_eq("VertexCount[LineGraph[PathGraph[3]]]", "2", 0);
+    assert_eval_eq("EdgeCount[LineGraph[PathGraph[3]]]", "1", 0);
+    assert_eval_eq("VertexList[LineGraph[PathGraph[3]]]", "{1 <-> 2, 2 <-> 3}", 0);
+    /* L(C3) = K3; L(Cn) = Cn; L(K4) has 6 vertices and 12 edges. */
+    assert_eval_eq("EdgeCount[LineGraph[CycleGraph[3]]]", "3", 0);
+    assert_eval_eq("EdgeCount[LineGraph[CycleGraph[5]]]", "5", 0);
+    assert_eval_eq("VertexCount[LineGraph[CompleteGraph[4]]]", "6", 0);
+    assert_eval_eq("EdgeCount[LineGraph[CompleteGraph[4]]]", "12", 0);
+    /* Star K1,3 → the three edges pairwise share the center → K3. */
+    assert_eval_eq("EdgeCount[LineGraph[Graph[{0,1,2,3},{0<->1,0<->2,0<->3}]]]", "3", 0);
+    /* Directed line graph joins arcs head-to-tail and stays directed. */
+    assert_eval_eq("EdgeCount[LineGraph[Graph[{1,2,3},{1->2,2->3}]]]", "1", 0);
+    assert_eval_eq("DirectedGraphQ[LineGraph[Graph[{1,2,3},{1->2,2->3}]]]", "True", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -471,6 +488,7 @@ int main(void) {
     TEST(test_complement);
     TEST(test_kirchhoff);
     TEST(test_edge_connectivity);
+    TEST(test_line_graph);
 
     printf("All graph tests passed!\n");
     return 0;

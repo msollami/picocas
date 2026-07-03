@@ -425,6 +425,7 @@ set(COMMON_SRC
     ../src/graph/complement.c
     ../src/graph/kirchhoff.c
     ../src/graph/edgeconnectivity.c
+    ../src/graph/linegraph.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

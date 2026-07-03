@@ -122,6 +122,7 @@ Expr* builtin_topological_sort(Expr* res);              /* TopologicalSort      
 Expr* builtin_graph_complement(Expr* res);              /* GraphComplement      */
 Expr* builtin_kirchhoff_matrix(Expr* res);              /* KirchhoffMatrix      */
 Expr* builtin_edge_connectivity(Expr* res);             /* EdgeConnectivity     */
+Expr* builtin_line_graph(Expr* res);                    /* LineGraph            */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

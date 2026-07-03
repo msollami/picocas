@@ -106,6 +106,9 @@ AdjacencyList[Graph[{1,2,3},{1<->2,2<->3}], 2]       (* {1, 3}              *)
 - `AdjacencyGraph[m]` — the inverse of `AdjacencyMatrix`: builds a graph on
   vertices `1..n` from a 0/1 matrix (undirected if `m` is symmetric, else
   directed). `AdjacencyGraph[AdjacencyMatrix[g]]` reproduces `g`'s edges.
+- `LineGraph[g]` — the line graph: vertices are `g`'s edges, adjacent when they
+  share an endpoint (head-to-tail for directed graphs, which stay directed).
+  `L(C_n) = C_n`, `L(K_4)` has 6 vertices and 12 edges. `O(E²)`.
 
 ```
 AdjacencyMatrix[Graph[{1,2,3,4},{1->2,2->3,3->4,4->1}]]

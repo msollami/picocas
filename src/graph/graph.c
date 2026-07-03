@@ -230,6 +230,12 @@ void graph_init(void) {
         "EdgeConnectivity[g] gives the minimum number of edges whose removal "
         "disconnects g (0 if g is already disconnected).");
 
+    symtab_add_builtin("LineGraph", builtin_line_graph);
+    symtab_get_def("LineGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("LineGraph",
+        "LineGraph[g] gives the line graph of g: its vertices are the edges of "
+        "g, adjacent when they share an endpoint (head-to-tail if directed).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
