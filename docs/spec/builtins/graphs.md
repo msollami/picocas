@@ -176,6 +176,13 @@ All are unweighted and build an integer-indexed adjacency on demand.
   nonzero-degree vertices) with all even degrees for an undirected graph, or
   in-degree = out-degree everywhere for a directed one. `O(V+E)`; isolated
   vertices are ignored and an edgeless graph is vacuously Eulerian.
+- `FindEulerianCycle[g]` — an Eulerian cycle as a vertex list
+  `{v0, v1, …, v0}` (a closed walk using every edge exactly once), or `{}` when
+  none exists. Hierholzer's algorithm, `O(V+E)`: the walk is accepted only when
+  it consumes all edges *and* returns to its start, so a graph with an Eulerian
+  path but no cycle (e.g. `PathGraph[3]`) correctly yields `{}`. Works for
+  directed (follows out-edges) and undirected graphs; agrees with
+  `EulerianGraphQ` on whether a cycle exists.
 - `ClosenessCentrality[g]` — the list of closeness centralities
   `c_i = (r_i−1)² / ((n−1)·S_i)`, where `r_i` vertices are reachable from `i` at
   total distance `S_i` (`(n−1)/S_i` when connected, `0` when isolated). Exact

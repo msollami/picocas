@@ -131,6 +131,7 @@ Expr* builtin_eulerian_graph_q(Expr* res);              /* EulerianGraphQ       
 Expr* builtin_closeness_centrality(Expr* res);          /* ClosenessCentrality  */
 Expr* builtin_transitive_closure(Expr* res);            /* TransitiveClosure    */
 Expr* builtin_betweenness_centrality(Expr* res);        /* BetweennessCentrality*/
+Expr* builtin_find_eulerian_cycle(Expr* res);           /* FindEulerianCycle    */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

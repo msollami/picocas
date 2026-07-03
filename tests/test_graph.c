@@ -572,6 +572,23 @@ static void test_betweenness(void) {
     assert_eval_eq("Head[BetweennessCentrality[5]]", "BetweennessCentrality", 0);
 }
 
+static void test_find_eulerian(void) {
+    /* Eulerian graphs return a closed tour of ne+1 vertices. */
+    assert_eval_eq("FindEulerianCycle[CycleGraph[3]]", "{1, 2, 3, 1}", 0);
+    assert_eval_eq("Length[FindEulerianCycle[CycleGraph[4]]]", "5", 0);
+    assert_eval_eq("Length[FindEulerianCycle[CompleteGraph[5]]]", "11", 0);
+    assert_eval_eq("First[FindEulerianCycle[CycleGraph[4]]] === Last[FindEulerianCycle[CycleGraph[4]]]", "True", 0);
+    /* Directed Eulerian circuit. */
+    assert_eval_eq("Length[FindEulerianCycle[Graph[{1,2,3},{1->2,2->3,3->1}]]]", "4", 0);
+    /* Non-Eulerian (odd degree, disconnected, open directed, edgeless) → {}. */
+    assert_eval_eq("FindEulerianCycle[PathGraph[3]]", "{}", 0);
+    assert_eval_eq("FindEulerianCycle[CompleteGraph[4]]", "{}", 0);
+    assert_eval_eq("FindEulerianCycle[Graph[{1,2,3,4,5,6},{1<->2,2<->3,3<->1,4<->5,5<->6,6<->4}]]", "{}", 0);
+    assert_eval_eq("FindEulerianCycle[Graph[{1,2,3},{1->2,2->3}]]", "{}", 0);
+    assert_eval_eq("FindEulerianCycle[Graph[{1,2},{}]]", "{}", 0);
+    assert_eval_eq("Head[FindEulerianCycle[5]]", "FindEulerianCycle", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -608,6 +625,7 @@ int main(void) {
     TEST(test_closeness);
     TEST(test_transitive_closure);
     TEST(test_betweenness);
+    TEST(test_find_eulerian);
 
     printf("All graph tests passed!\n");
     return 0;

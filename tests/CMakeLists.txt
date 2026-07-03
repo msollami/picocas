@@ -430,6 +430,7 @@ set(COMMON_SRC
     ../src/graph/centrality.c
     ../src/graph/transitiveclosure.c
     ../src/graph/betweenness.c
+    ../src/graph/findeuler.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

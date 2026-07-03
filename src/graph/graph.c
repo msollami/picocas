@@ -289,6 +289,12 @@ void graph_init(void) {
         "paths passing through it (fractional when paths tie); undirected pairs "
         "counted once.");
 
+    symtab_add_builtin("FindEulerianCycle", builtin_find_eulerian_cycle);
+    symtab_get_def("FindEulerianCycle")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FindEulerianCycle",
+        "FindEulerianCycle[g] gives an Eulerian cycle (a closed walk using every "
+        "edge once) as a vertex list, or {} if g has none.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
