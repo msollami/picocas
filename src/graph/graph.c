@@ -574,6 +574,12 @@ void graph_init(void) {
         "TransitiveReductionGraph[g] gives the transitive reduction of a directed "
         "acyclic graph: the fewest-edge graph with the same reachability.");
 
+    symtab_add_builtin("Subgraph", builtin_subgraph);
+    symtab_get_def("Subgraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("Subgraph",
+        "Subgraph[g, {v1, ...}] gives the subgraph of g induced by the listed "
+        "vertices (edges with both endpoints among them).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

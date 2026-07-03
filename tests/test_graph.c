@@ -1356,6 +1356,22 @@ static void test_transitive_reduction(void) {
     assert_eval_eq("Head[TransitiveReductionGraph[5]]", "TransitiveReductionGraph", 0);
 }
 
+static void test_subgraph(void) {
+    /* Induced subgraph: keep vertices and edges with both endpoints kept. */
+    assert_eval_eq("CompleteGraphQ[Subgraph[CompleteGraph[4], {1,2,3}]]", "True", 0);
+    assert_eval_eq("VertexCount[Subgraph[CompleteGraph[4], {1,2,3}]]", "3", 0);
+    assert_eval_eq("EdgeCount[Subgraph[CompleteGraph[4], {1,2,3}]]", "3", 0);
+    assert_eval_eq("EdgeList[Subgraph[CycleGraph[5], {1,2,3}]]", "{1 <-> 2, 2 <-> 3}", 0);
+    assert_eval_eq("VertexCount[Subgraph[CompleteGraph[4], {}]]", "0", 0);
+    assert_eval_eq("EdgeCount[Subgraph[CompleteGraph[4], {1}]]", "0", 0);
+    /* Order preserved, non-vertices ignored, duplicates collapsed. */
+    assert_eval_eq("VertexList[Subgraph[CompleteGraph[4], {3,1}]]", "{3, 1}", 0);
+    assert_eval_eq("VertexList[Subgraph[CompleteGraph[3], {1,2,9}]]", "{1, 2}", 0);
+    assert_eval_eq("VertexCount[Subgraph[CompleteGraph[3], {1,1,2}]]", "2", 0);
+    assert_eval_eq("EdgeList[Subgraph[Graph[{1,2,3},{1->2,2->3,1->3}], {1,2}]]", "{1 -> 2}", 0);
+    assert_eval_eq("Head[Subgraph[5, {1}]]", "Subgraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1438,6 +1454,7 @@ int main(void) {
     TEST(test_friendship_graph);
     TEST(test_vertex_coreness);
     TEST(test_transitive_reduction);
+    TEST(test_subgraph);
 
     printf("All graph tests passed!\n");
     return 0;

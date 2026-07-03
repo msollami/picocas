@@ -377,6 +377,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   Tensor), or `"Lexicographic"` (`a1~a2`, or `a1=a2 & b1~b2`). `O((n1·n2)²)`.
   `P₂ □ P₂ = C₄`, `C₄ □ K₂` is the 3-regular cube, `K₂ ⊠ K₂ = K₄`. Left
   unevaluated for an unknown type.
+- `Subgraph[g, {v1, …}]` — the subgraph of `g` induced by the listed vertices
+  (in listed order, de-duplicated, restricted to vertices of `g`) together with
+  exactly the edges of `g` whose both endpoints are among them. Edge kinds
+  preserved. `Subgraph[K₄, {1,2,3}] = K₃`, `Subgraph[C₅, {1,2,3}]` is a path.
 - `GraphUnion[g1, g2]` — the graph whose vertex set is the union of the two
   vertex sets and whose edge set is the union of the two edge sets, matched by
   vertex identity. Vertices from `g1` keep their order, new ones from `g2` are

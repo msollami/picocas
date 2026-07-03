@@ -477,6 +477,7 @@ set(COMMON_SRC
     ../src/graph/friendshipgraph.c
     ../src/graph/vertexcoreness.c
     ../src/graph/transitivereduction.c
+    ../src/graph/subgraph.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled
