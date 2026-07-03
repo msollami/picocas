@@ -462,6 +462,12 @@ void graph_init(void) {
         "ReverseGraph[g] reverses the direction of every edge of g (undirected "
         "edges are unchanged).");
 
+    symtab_add_builtin("PathGraphQ", builtin_path_graph_q);
+    symtab_get_def("PathGraphQ")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("PathGraphQ",
+        "PathGraphQ[g] gives True iff g is a path graph (a tree with maximum "
+        "degree at most 2).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

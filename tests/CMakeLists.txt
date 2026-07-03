@@ -458,6 +458,7 @@ set(COMMON_SRC
     ../src/graph/graphintersection.c
     ../src/graph/graphdifference.c
     ../src/graph/graphreverse.c
+    ../src/graph/pathgraphq.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

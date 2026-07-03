@@ -1047,6 +1047,23 @@ static void test_graph_reverse(void) {
     assert_eval_eq("Head[ReverseGraph[5]]", "ReverseGraph", 0);
 }
 
+static void test_path_graph_q(void) {
+    assert_eval_eq("PathGraphQ[PathGraph[4]]", "True", 0);
+    assert_eval_eq("PathGraphQ[Graph[{1},{}]]", "True", 0);
+    assert_eval_eq("PathGraphQ[Graph[{1,2},{1<->2}]]", "True", 0);
+    assert_eval_eq("PathGraphQ[Graph[{1,2,3},{1->2,2->3}]]", "True", 0);
+    /* Not paths: cycles, stars, branches, disconnected, edgeless. */
+    assert_eval_eq("PathGraphQ[CycleGraph[4]]", "False", 0);
+    assert_eval_eq("PathGraphQ[StarGraph[4]]", "False", 0);
+    assert_eval_eq("PathGraphQ[CompleteGraph[3]]", "False", 0);
+    assert_eval_eq("PathGraphQ[Graph[{1,2,3,4},{1<->2,2<->3,2<->4}]]", "False", 0);
+    assert_eval_eq("PathGraphQ[Graph[{1,2,3,4},{1<->2,3<->4}]]", "False", 0);
+    assert_eval_eq("PathGraphQ[Graph[{1,2,3},{}]]", "False", 0);
+    /* A path is a tree. */
+    assert_eval_eq("PathGraphQ[PathGraph[5]] && TreeGraphQ[PathGraph[5]]", "True", 0);
+    assert_eval_eq("Head[PathGraphQ[5]]", "PathGraphQ", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1111,6 +1128,7 @@ int main(void) {
     TEST(test_graph_intersection);
     TEST(test_graph_difference);
     TEST(test_graph_reverse);
+    TEST(test_path_graph_q);
 
     printf("All graph tests passed!\n");
     return 0;

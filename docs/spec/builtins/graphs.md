@@ -280,6 +280,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   2-regular, `K_n` is `(n−1)`-regular, `K_{3,3}` is 3-regular, an edgeless graph
   0-regular; paths, stars, and wheels are not. A graph with ≤ 1 vertex is
   vacuously regular.
+- `PathGraphQ[g]` — `True` iff `g` is a path graph: a tree with maximum degree
+  `≤ 2` (connected, `n−1` edges, no branching or cycle). `O(V²)`; direction
+  ignored. A single vertex/edge and `PathGraph[n]` qualify; cycles, stars,
+  branches, and disconnected graphs do not.
 - `TreeGraphQ[g]` — `True` iff `g` is a tree: connected with no cycles, i.e.
   connected on the underlying undirected graph with exactly `n−1` distinct edges
   (`n ≥ 1`). One BFS plus an edge count, `O(V²)`; a single vertex is a tree, the
