@@ -1510,6 +1510,21 @@ static void test_find_dominating_set(void) {
     assert_eval_eq("Head[FindDominatingSet[5]]", "FindDominatingSet", 0);
 }
 
+static void test_find_edge_cover(void) {
+    assert_eval_eq("Length[FindEdgeCover[PathGraph[4]]]", "2", 0);
+    assert_eval_eq("Length[FindEdgeCover[StarGraph[5]]]", "4", 0);   /* every leaf edge */
+    assert_eval_eq("Length[FindEdgeCover[CompleteGraph[4]]]", "2", 0);
+    assert_eval_eq("Length[FindEdgeCover[CompleteGraph[3]]]", "2", 0);
+    assert_eval_eq("Length[FindEdgeCover[CycleGraph[6]]]", "3", 0);
+    assert_eval_eq("Length[FindEdgeCover[Graph[{1,2},{1<->2}]]]", "1", 0);
+    /* No cover when there is an isolated vertex. */
+    assert_eval_eq("FindEdgeCover[Graph[{1,2},{}]]", "{}", 0);
+    /* Gallai: |min edge cover| = n - |max matching|; cover touches every vertex. */
+    assert_eval_eq("Length[FindEdgeCover[PathGraph[5]]] == 5 - Length[FindIndependentEdgeSet[PathGraph[5]]]", "True", 0);
+    assert_eval_eq("With[{ec=FindEdgeCover[CycleGraph[5]]}, Length[Union[Flatten[ec/.UndirectedEdge->List]]] == 5]", "True", 0);
+    assert_eval_eq("Head[FindEdgeCover[5]]", "FindEdgeCover", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1602,6 +1617,7 @@ int main(void) {
     TEST(test_edge_contract);
     TEST(test_find_matching);
     TEST(test_find_dominating_set);
+    TEST(test_find_edge_cover);
 
     printf("All graph tests passed!\n");
     return 0;

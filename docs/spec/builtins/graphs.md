@@ -320,6 +320,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   vertices. Computed as a maximum clique of the complement — the same
   branch-and-bound search run over the non-adjacency. A star returns its leaves,
   a complete graph a singleton; direction ignored, deterministic.
+- `FindEdgeCover[g]` — a minimum edge cover: a smallest set of edges such that
+  every vertex is incident to at least one, as a list of edges. By Gallai it is a
+  maximum matching plus one incident edge per still-uncovered vertex, so
+  `|cover| = n − |max matching|`. Exists iff `g` has no isolated vertex (else
+  `{}`). A star needs all its edges; direction irrelevant.
 - `FindDominatingSet[g]` — a minimum dominating set: a smallest set of vertices
   such that every vertex is in it or adjacent to it, as a vertex list. Each vertex
   gets a closed-neighbourhood bitmask and subsets are searched by increasing size

@@ -634,6 +634,12 @@ void graph_init(void) {
         "FindDominatingSet[g] gives a minimum dominating set: a smallest set of "
         "vertices such that every vertex is in it or adjacent to it.");
 
+    symtab_add_builtin("FindEdgeCover", builtin_find_edge_cover);
+    symtab_get_def("FindEdgeCover")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FindEdgeCover",
+        "FindEdgeCover[g] gives a minimum edge cover: a smallest set of edges "
+        "such that every vertex is incident to at least one ({} if none exists).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
