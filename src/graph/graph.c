@@ -474,6 +474,12 @@ void graph_init(void) {
         "VertexContract[g, {v1, v2, ...}] merges the listed vertices into one, "
         "redirecting edges, dropping self-loops, and collapsing parallel edges.");
 
+    symtab_add_builtin("PageRankCentrality", builtin_pagerank_centrality);
+    symtab_get_def("PageRankCentrality")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("PageRankCentrality",
+        "PageRankCentrality[g] gives the PageRank of each vertex (damping 17/20) "
+        "as an exact rational probability vector summing to 1.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

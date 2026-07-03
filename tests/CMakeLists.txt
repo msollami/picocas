@@ -460,6 +460,7 @@ set(COMMON_SRC
     ../src/graph/graphreverse.c
     ../src/graph/pathgraphq.c
     ../src/graph/vertexcontract.c
+    ../src/graph/pagerank.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

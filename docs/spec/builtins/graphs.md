@@ -229,6 +229,13 @@ All are unweighted and build an integer-indexed adjacency on demand.
   graph) sorted in non-increasing order; `{3,3,3,3}` for `K₄`, `{4,1,1,1,1}` for a
   4-leaf star. `O(V+E+V log V)`, exact integers — a sorted permutation of
   `DegreeCentrality[g]`.
+- `PageRankCentrality[g]` — the PageRank of each vertex (random surfer with
+  damping `d = 17/20`), as an **exact rational** probability vector summing to 1.
+  Rather than iterating to a float, it solves the defining linear system
+  `(I − dM)π = (1−d)/n·1` (with `M` the column-stochastic transition matrix,
+  dangling vertices teleporting uniformly) through the exact `LinearSolve`.
+  Follows edge direction; regular and all-dangling graphs give the uniform `1/n`,
+  a star's centre outranks its leaves. `O(V³)`.
 - `BetweennessCentrality[g]` — for each vertex, the number of shortest paths
   through it, `Σ σ_sv·σ_vt/σ_st` (fractional when paths tie — every C₄ vertex is
   `1/2`). Undirected pairs are counted once; directed keeps the ordered sum.

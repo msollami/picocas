@@ -1085,6 +1085,24 @@ static void test_vertex_contract(void) {
     assert_eval_eq("Head[VertexContract[5, {1}]]", "VertexContract", 0);
 }
 
+static void test_pagerank_centrality(void) {
+    /* Exact rational vector summing to 1. */
+    assert_eval_eq("Total[PageRankCentrality[CycleGraph[4]]]", "1", 0);
+    assert_eval_eq("Total[PageRankCentrality[StarGraph[5]]]", "1", 0);
+    assert_eval_eq("Total[PageRankCentrality[Graph[{1,2,3},{1->2,2->3,3->1}]]]", "1", 0);
+    /* Regular graphs / all-dangling → uniform 1/n. */
+    assert_eval_eq("PageRankCentrality[CycleGraph[4]]", "{1/4, 1/4, 1/4, 1/4}", 0);
+    assert_eval_eq("PageRankCentrality[CompleteGraph[5]]", "{1/5, 1/5, 1/5, 1/5, 1/5}", 0);
+    assert_eval_eq("PageRankCentrality[Graph[{1,2,3},{}]]", "{1/3, 1/3, 1/3}", 0);
+    assert_eval_eq("PageRankCentrality[Graph[{1},{}]]", "{1}", 0);
+    /* Star: exact rationals, centre outranks the leaves. */
+    assert_eval_eq("PageRankCentrality[StarGraph[4]]", "{71/148, 77/444, 77/444, 77/444}", 0);
+    assert_eval_eq("First[PageRankCentrality[StarGraph[5]]] > PageRankCentrality[StarGraph[5]][[2]]", "True", 0);
+    /* Directed hub. */
+    assert_eval_eq("PageRankCentrality[Graph[{1,2,3},{1->2,1->3}]]", "{20/77, 57/154, 57/154}", 0);
+    assert_eval_eq("Head[PageRankCentrality[5]]", "PageRankCentrality", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1151,6 +1169,7 @@ int main(void) {
     TEST(test_graph_reverse);
     TEST(test_path_graph_q);
     TEST(test_vertex_contract);
+    TEST(test_pagerank_centrality);
 
     printf("All graph tests passed!\n");
     return 0;
