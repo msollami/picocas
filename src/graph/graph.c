@@ -420,6 +420,12 @@ void graph_init(void) {
         "StronglyConnectedGraphQ[g] gives True iff every vertex is reachable "
         "from every other following edge directions.");
 
+    symtab_add_builtin("HamiltonianGraphQ", builtin_hamiltonian_graph_q);
+    symtab_get_def("HamiltonianGraphQ")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("HamiltonianGraphQ",
+        "HamiltonianGraphQ[g] gives True iff g has a Hamiltonian cycle (a closed "
+        "walk visiting every vertex once).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

@@ -932,6 +932,23 @@ static void test_strongly_connected_q(void) {
     assert_eval_eq("Head[StronglyConnectedGraphQ[5]]", "StronglyConnectedGraphQ", 0);
 }
 
+static void test_hamiltonian_graph_q(void) {
+    assert_eval_eq("HamiltonianGraphQ[CycleGraph[5]]", "True", 0);
+    assert_eval_eq("HamiltonianGraphQ[CompleteGraph[4]]", "True", 0);
+    assert_eval_eq("HamiltonianGraphQ[WheelGraph[5]]", "True", 0);
+    assert_eval_eq("HamiltonianGraphQ[Graph[{1,2,3},{1->2,2->3,3->1}]]", "True", 0);
+    /* Not Hamiltonian: paths, stars, broken directed, edgeless, n<3. */
+    assert_eval_eq("HamiltonianGraphQ[PathGraph[4]]", "False", 0);
+    assert_eval_eq("HamiltonianGraphQ[StarGraph[5]]", "False", 0);
+    assert_eval_eq("HamiltonianGraphQ[Graph[{1,2,3},{1->2,2->3,1->3}]]", "False", 0);
+    assert_eval_eq("HamiltonianGraphQ[Graph[{1,2,3},{}]]", "False", 0);
+    assert_eval_eq("HamiltonianGraphQ[Graph[{1,2},{1<->2}]]", "False", 0);
+    /* Agrees with FindHamiltonianCycle. */
+    assert_eval_eq("HamiltonianGraphQ[CycleGraph[5]] == (FindHamiltonianCycle[CycleGraph[5]] =!= {})", "True", 0);
+    assert_eval_eq("HamiltonianGraphQ[PathGraph[4]] == (FindHamiltonianCycle[PathGraph[4]] =!= {})", "True", 0);
+    assert_eval_eq("Head[HamiltonianGraphQ[5]]", "HamiltonianGraphQ", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -989,6 +1006,7 @@ int main(void) {
     TEST(test_degree_sequence);
     TEST(test_tree_graph_q);
     TEST(test_strongly_connected_q);
+    TEST(test_hamiltonian_graph_q);
 
     printf("All graph tests passed!\n");
     return 0;

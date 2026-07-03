@@ -176,6 +176,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   nonzero-degree vertices) with all even degrees for an undirected graph, or
   in-degree = out-degree everywhere for a directed one. `O(V+E)`; isolated
   vertices are ignored and an edgeless graph is vacuously Eulerian.
+- `HamiltonianGraphQ[g]` — `True` iff `g` has a Hamiltonian cycle (a closed walk
+  visiting every vertex once); the predicate companion to `FindHamiltonianCycle`
+  and Hamiltonian counterpart of `EulerianGraphQ`. Depth-first backtracking with
+  degree/size prunes; direction-aware. `C_n`/`K_n`/wheels are Hamiltonian, paths
+  and stars are not.
 - `FindEulerianCycle[g]` — an Eulerian cycle as a vertex list
   `{v0, v1, …, v0}` (a closed walk using every edge exactly once), or `{}` when
   none exists. Hierholzer's algorithm, `O(V+E)`: the walk is accepted only when
