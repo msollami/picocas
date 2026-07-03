@@ -117,6 +117,8 @@ Expr* builtin_vertex_eccentricity(Expr* res);           /* VertexEccentricity   
 Expr* builtin_graph_diameter(Expr* res);                /* GraphDiameter        */
 Expr* builtin_graph_radius(Expr* res);                  /* GraphRadius          */
 Expr* builtin_graph_center(Expr* res);                  /* GraphCenter          */
+Expr* builtin_acyclic_graph_q(Expr* res);               /* AcyclicGraphQ        */
+Expr* builtin_topological_sort(Expr* res);              /* TopologicalSort      */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

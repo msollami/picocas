@@ -156,6 +156,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `GraphCenter[g]` — the vertices whose eccentricity equals the graph radius.
   These derive from a BFS per vertex (`O(V·(V+E))`) and follow edge direction on
   directed graphs.
+- `AcyclicGraphQ[g]` — `True` iff `g` has no cycle: a DAG for a directed graph, a
+  forest for an undirected one. `O(V+E)` (Kahn's algorithm for the directed
+  case, `E = V − #components` for the undirected case).
+- `TopologicalSort[g]` — a vertex ordering in which every edge points forward
+  (Kahn's algorithm), or `$Failed` if `g` is not a directed acyclic graph
+  (undirected edges act as 2-cycles, so they give `$Failed`).
 - `VertexConnectivity[g]` — the minimum number of vertices whose removal
   disconnects `g` (`n-1` for `K_n`, `0` if already disconnected). Exact
   brute-force over vertex subsets, intended for small graphs.

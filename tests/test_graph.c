@@ -379,6 +379,27 @@ static void test_metrics(void) {
     assert_eval_eq("Head[GraphDiameter[5]]", "GraphDiameter", 0);
 }
 
+static void test_acyclic(void) {
+    /* Directed DAG: a valid order + acyclic. */
+    assert_eval_eq("TopologicalSort[Graph[{1,2,3},{1->2,2->3,1->3}]]", "{1, 2, 3}", 0);
+    assert_eval_eq("AcyclicGraphQ[Graph[{1,2,3},{1->2,2->3,1->3}]]", "True", 0);
+    /* Directed cycle: $Failed + not acyclic. */
+    assert_eval_eq("TopologicalSort[Graph[{1,2,3},{1->2,2->3,3->1}]]", "$Failed", 0);
+    assert_eval_eq("AcyclicGraphQ[Graph[{1,2,3},{1->2,2->3,3->1}]]", "False", 0);
+    assert_eval_eq("AcyclicGraphQ[Graph[{1,2},{1->2,2->1}]]", "False", 0);
+    /* Undirected forest is acyclic; an undirected cycle is not. Topological
+       sort is $Failed for undirected edges (they act as 2-cycles). */
+    assert_eval_eq("AcyclicGraphQ[PathGraph[4]]", "True", 0);
+    assert_eval_eq("AcyclicGraphQ[Graph[{1,2,3,4,5},{1<->2,2<->3,4<->5}]]", "True", 0);
+    assert_eval_eq("AcyclicGraphQ[CycleGraph[4]]", "False", 0);
+    assert_eval_eq("TopologicalSort[PathGraph[4]]", "$Failed", 0);
+    /* Edgeless graph: acyclic, order is all vertices. */
+    assert_eval_eq("AcyclicGraphQ[Graph[{1,2,3},{}]]", "True", 0);
+    assert_eval_eq("TopologicalSort[Graph[{1,2,3},{}]]", "{1, 2, 3}", 0);
+    /* Non-graph. */
+    assert_eval_eq("AcyclicGraphQ[5]", "False", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -403,6 +424,7 @@ int main(void) {
     TEST(test_graph3d);
     TEST(test_bipartite);
     TEST(test_metrics);
+    TEST(test_acyclic);
 
     printf("All graph tests passed!\n");
     return 0;

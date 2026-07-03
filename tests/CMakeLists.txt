@@ -421,6 +421,7 @@ set(COMMON_SRC
     ../src/graph/render3d.c
     ../src/graph/bipartiteq.c
     ../src/graph/metrics.c
+    ../src/graph/acyclic.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

@@ -200,6 +200,18 @@ void graph_init(void) {
         "GraphCenter[g] gives the vertices whose eccentricity equals the graph "
         "radius.");
 
+    symtab_add_builtin("AcyclicGraphQ", builtin_acyclic_graph_q);
+    symtab_get_def("AcyclicGraphQ")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("AcyclicGraphQ",
+        "AcyclicGraphQ[g] gives True if g has no cycle: a DAG for a directed "
+        "graph, a forest for an undirected one.");
+
+    symtab_add_builtin("TopologicalSort", builtin_topological_sort);
+    symtab_get_def("TopologicalSort")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("TopologicalSort",
+        "TopologicalSort[g] gives a vertex ordering in which every edge points "
+        "forward, or $Failed if g is not a directed acyclic graph.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
