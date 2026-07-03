@@ -1675,6 +1675,20 @@ static void test_gear_graph(void) {
     assert_eval_eq("Head[GearGraph[2]]", "GearGraph", 0);
 }
 
+static void test_edge_betweenness(void) {
+    assert_eval_eq("EdgeBetweennessCentrality[PathGraph[3]]", "{2, 2}", 0);
+    assert_eval_eq("EdgeBetweennessCentrality[PathGraph[4]]", "{3, 4, 3}", 0);
+    assert_eval_eq("EdgeBetweennessCentrality[StarGraph[4]]", "{3, 3, 3}", 0);
+    assert_eval_eq("EdgeBetweennessCentrality[CycleGraph[4]]", "{2, 2, 2, 2}", 0);
+    assert_eval_eq("EdgeBetweennessCentrality[CycleGraph[5]]", "{3, 3, 3, 3, 3}", 0);
+    assert_eval_eq("EdgeBetweennessCentrality[CompleteGraph[4]]", "{1, 1, 1, 1, 1, 1}", 0);
+    assert_eval_eq("EdgeBetweennessCentrality[Graph[{1,2},{1<->2}]]", "{1}", 0);
+    assert_eval_eq("EdgeBetweennessCentrality[Graph[{1,2,3},{}]]", "{}", 0);
+    assert_eval_eq("EdgeBetweennessCentrality[Graph[{1,2,3},{1->2,2->3}]]", "{2, 2}", 0);
+    assert_eval_eq("Length[EdgeBetweennessCentrality[CompleteGraph[5]]]", "10", 0);
+    assert_eval_eq("Head[EdgeBetweennessCentrality[5]]", "EdgeBetweennessCentrality", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1778,6 +1792,7 @@ int main(void) {
     TEST(test_sunlet_graph);
     TEST(test_helm_graph);
     TEST(test_gear_graph);
+    TEST(test_edge_betweenness);
 
     printf("All graph tests passed!\n");
     return 0;

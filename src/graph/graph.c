@@ -705,6 +705,12 @@ void graph_init(void) {
         "GearGraph[n] gives the gear graph: a hub joined to alternate vertices of "
         "a 2n-cycle (2n+1 vertices, 3n edges; bipartite).");
 
+    symtab_add_builtin("EdgeBetweennessCentrality", builtin_edge_betweenness_centrality);
+    symtab_get_def("EdgeBetweennessCentrality")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("EdgeBetweennessCentrality",
+        "EdgeBetweennessCentrality[g] gives, for each edge, the number of "
+        "shortest paths through it (exact rationals when paths tie).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

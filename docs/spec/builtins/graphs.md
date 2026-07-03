@@ -288,6 +288,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   coefficients, `(1/n)Σ C_v` (every vertex counts equally, low-degree ones
   contributing `0`); equals `Mean[LocalClusteringCoefficient[g]]`. Exact rational,
   generally different from the global transitivity above.
+- `EdgeBetweennessCentrality[g]` — for each edge, the number of shortest paths
+  running along it, `Σ σ_sa·σ_bt/σ_st` over pairs whose shortest path uses the
+  edge; the edge analogue of `BetweennessCentrality` (and the Girvan–Newman
+  score). Undirected edges carry paths both ways and the ordered sum is halved;
+  exact rationals from all-pairs BFS counts. `P₄ → {3,4,3}`, `K₄` → all `1`.
 - `DegreeCentrality[g]` — for each vertex, the number of incident edges: the
   ordinary degree for an undirected graph, in-degree + out-degree for a directed
   one. The simplest centrality; one pass over the edges (`O(V+E)`), exact
