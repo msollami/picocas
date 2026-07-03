@@ -687,6 +687,12 @@ void graph_init(void) {
         "PrismGraph[n] gives the n-gonal prism: two n-cycles joined by rungs "
         "(3-regular, 3n edges; n=4 is the cube).");
 
+    symtab_add_builtin("SunletGraph", builtin_sunlet_graph);
+    symtab_get_def("SunletGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("SunletGraph",
+        "SunletGraph[n] gives the n-sunlet: a cycle C_n with a pendant vertex "
+        "attached to each cycle vertex (2n vertices, 2n edges).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

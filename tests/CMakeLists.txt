@@ -494,6 +494,7 @@ set(COMMON_SRC
     ../src/graph/vertexcomponents.c
     ../src/graph/antiprismgraph.c
     ../src/graph/prismgraph.c
+    ../src/graph/sunletgraph.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

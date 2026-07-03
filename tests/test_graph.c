@@ -1632,6 +1632,20 @@ static void test_prism_graph(void) {
     assert_eval_eq("Head[PrismGraph[2]]", "PrismGraph", 0);
 }
 
+static void test_sunlet_graph(void) {
+    assert_eval_eq("VertexCount[SunletGraph[3]]", "6", 0);
+    assert_eval_eq("EdgeCount[SunletGraph[3]]", "6", 0);
+    assert_eval_eq("VertexCount[SunletGraph[5]]", "10", 0);
+    assert_eval_eq("EdgeCount[SunletGraph[5]] == 2*5", "True", 0);
+    assert_eval_eq("RegularGraphQ[SunletGraph[4]]", "False", 0);
+    assert_eval_eq("First[DegreeCentrality[SunletGraph[4]]]", "3", 0);   /* cycle vertex */
+    assert_eval_eq("Last[DegreeCentrality[SunletGraph[4]]]", "1", 0);    /* pendant */
+    assert_eval_eq("ConnectedGraphQ[SunletGraph[5]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[SunletGraph[4]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[SunletGraph[3]]", "False", 0);
+    assert_eval_eq("Head[SunletGraph[2]]", "SunletGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1732,6 +1746,7 @@ int main(void) {
     TEST(test_graph_periphery);
     TEST(test_antiprism_graph);
     TEST(test_prism_graph);
+    TEST(test_sunlet_graph);
 
     printf("All graph tests passed!\n");
     return 0;
