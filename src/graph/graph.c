@@ -384,6 +384,12 @@ void graph_init(void) {
         "FindVertexCover[g] gives a minimum vertex cover (a smallest set of "
         "vertices touching every edge) as a vertex list.");
 
+    symtab_add_builtin("GraphReciprocity", builtin_graph_reciprocity);
+    symtab_get_def("GraphReciprocity")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphReciprocity",
+        "GraphReciprocity[g] gives the fraction of arcs whose reverse is also "
+        "present (1 for an undirected graph), as an exact rational.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

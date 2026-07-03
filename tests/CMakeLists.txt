@@ -445,6 +445,7 @@ set(COMMON_SRC
     ../src/graph/findclique.c
     ../src/graph/findindependent.c
     ../src/graph/findvertexcover.c
+    ../src/graph/reciprocity.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

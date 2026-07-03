@@ -229,6 +229,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   unreachable). One BFS per source over the direction-aware adjacency,
   `O(V·(V+E))`; symmetric for undirected graphs, generally asymmetric for
   directed ones. Row/column `i, j` agrees with `GraphDistance[g, i, j]`.
+- `GraphReciprocity[g]` — the fraction of arcs whose reverse arc is also present,
+  an exact rational in `[0, 1]`: `1` for any undirected graph (every edge is
+  mutual), and for a directed graph the usual fraction of reciprocated edges
+  (`{1->2, 2->1}` → `1`, a directed cycle → `0`). `0` when there are no edges.
+  Modelled as a directed-arc matrix, `O(V²)`.
 - `GraphDensity[g]` — the fraction of possible edges present, an exact rational
   in `[0, 1]`: `2m/(n(n−1))` for an undirected graph, `m/(n(n−1))` for a directed
   one (`1` for a complete graph, `0` for an empty one or fewer than two

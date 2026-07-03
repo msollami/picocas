@@ -828,6 +828,22 @@ static void test_find_vertex_cover(void) {
     assert_eval_eq("Head[FindVertexCover[5]]", "FindVertexCover", 0);
 }
 
+static void test_graph_reciprocity(void) {
+    /* Undirected graphs are fully reciprocal. */
+    assert_eval_eq("GraphReciprocity[CycleGraph[4]]", "1", 0);
+    assert_eval_eq("GraphReciprocity[CompleteGraph[5]]", "1", 0);
+    assert_eval_eq("GraphReciprocity[Graph[{1,2},{1<->2}]]", "1", 0);
+    /* Directed reciprocity is the fraction of reciprocated arcs. */
+    assert_eval_eq("GraphReciprocity[Graph[{1,2,3},{1->2,2->3,3->1}]]", "0", 0);
+    assert_eval_eq("GraphReciprocity[Graph[{1,2},{1->2,2->1}]]", "1", 0);
+    assert_eval_eq("GraphReciprocity[Graph[{1,2,3},{1->2,2->1,2->3}]]", "2/3", 0);
+    assert_eval_eq("GraphReciprocity[Graph[{1,2,3,4},{1->2,2->1,3->4}]]", "2/3", 0);
+    assert_eval_eq("GraphReciprocity[Graph[{1,2},{1->2}]]", "0", 0);
+    /* No edges → 0 by convention. */
+    assert_eval_eq("GraphReciprocity[Graph[{1,2,3},{}]]", "0", 0);
+    assert_eval_eq("Head[GraphReciprocity[5]]", "GraphReciprocity", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -879,6 +895,7 @@ int main(void) {
     TEST(test_find_clique);
     TEST(test_find_independent);
     TEST(test_find_vertex_cover);
+    TEST(test_graph_reciprocity);
 
     printf("All graph tests passed!\n");
     return 0;
