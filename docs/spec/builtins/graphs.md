@@ -248,6 +248,13 @@ All are unweighted and build an integer-indexed adjacency on demand.
   adjacency, `O(V·(V+E))`; directed graphs stay directed. `k` must be a positive
   integer, else the call is left unevaluated. `PathGraph[4]³` and `CycleGraph[5]²`
   are complete; `k = 1` returns `g` unchanged.
+- `KCoreComponents[g, k]` — the connected components of the k-core of `g` (the
+  maximal subgraph in which every vertex has degree `≥ k`), as a list of vertex
+  lists. Found by repeatedly peeling any vertex whose degree drops below `k`
+  until stable, `O(V+E)`, then splitting the survivors into components by BFS.
+  Edge direction is ignored (the k-core is defined on the underlying undirected
+  graph); components are ordered by least vertex index. `k` must be a
+  non-negative integer, else the call is left unevaluated.
 - `VertexConnectivity[g]` — the minimum number of vertices whose removal
   disconnects `g` (`n-1` for `K_n`, `0` if already disconnected). Exact
   brute-force over vertex subsets, intended for small graphs.

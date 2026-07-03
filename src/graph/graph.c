@@ -339,6 +339,13 @@ void graph_init(void) {
         "FindHamiltonianPath[g] gives a Hamiltonian path (a walk visiting every "
         "vertex once) as a vertex list, or {} if g has none.");
 
+    symtab_add_builtin("KCoreComponents", builtin_kcore_components);
+    symtab_get_def("KCoreComponents")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("KCoreComponents",
+        "KCoreComponents[g, k] gives the connected components of the k-core of g "
+        "(the maximal subgraph in which every vertex has degree at least k), as "
+        "a list of vertex lists.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

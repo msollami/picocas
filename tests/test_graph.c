@@ -709,6 +709,27 @@ static void test_find_hamiltonian_path(void) {
     assert_eval_eq("Head[FindHamiltonianPath[5]]", "FindHamiltonianPath", 0);
 }
 
+static void test_kcore_components(void) {
+    /* Complete/cycle cores: whole graph at the degree, empty just above. */
+    assert_eval_eq("KCoreComponents[CompleteGraph[4], 3]", "{{1, 2, 3, 4}}", 0);
+    assert_eval_eq("KCoreComponents[CompleteGraph[4], 4]", "{}", 0);
+    assert_eval_eq("KCoreComponents[CycleGraph[5], 2]", "{{1, 2, 3, 4, 5}}", 0);
+    assert_eval_eq("KCoreComponents[CycleGraph[5], 3]", "{}", 0);
+    /* Cascade peeling: a path collapses entirely at k = 2. */
+    assert_eval_eq("KCoreComponents[PathGraph[4], 1]", "{{1, 2, 3, 4}}", 0);
+    assert_eval_eq("KCoreComponents[PathGraph[4], 2]", "{}", 0);
+    /* k = 0 keeps every vertex; edgeless → singletons, empty at k = 1. */
+    assert_eval_eq("KCoreComponents[Graph[{1,2,3},{}], 0]", "{{1}, {2}, {3}}", 0);
+    assert_eval_eq("KCoreComponents[Graph[{1,2,3},{}], 1]", "{}", 0);
+    /* Multiple components and pendant removal. */
+    assert_eval_eq("KCoreComponents[Graph[{1,2,3,4,5,6},{1<->2,2<->3,3<->1,4<->5,5<->6,6<->4}], 2]", "{{1, 2, 3}, {4, 5, 6}}", 0);
+    assert_eval_eq("KCoreComponents[Graph[{1,2,3,4},{1<->2,2<->3,3<->1,3<->4}], 2]", "{{1, 2, 3}}", 0);
+    /* Direction ignored (underlying undirected graph). */
+    assert_eval_eq("KCoreComponents[Graph[{1,2,3},{1->2,2->3,3->1}], 2]", "{{1, 2, 3}}", 0);
+    assert_eval_eq("Head[KCoreComponents[CycleGraph[3], k]]", "KCoreComponents", 0);
+    assert_eval_eq("Head[KCoreComponents[5, 2]]", "KCoreComponents", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -753,6 +774,7 @@ int main(void) {
     TEST(test_graph_density);
     TEST(test_degree_centrality);
     TEST(test_find_hamiltonian_path);
+    TEST(test_kcore_components);
 
     printf("All graph tests passed!\n");
     return 0;

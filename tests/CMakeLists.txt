@@ -438,6 +438,7 @@ set(COMMON_SRC
     ../src/graph/density.c
     ../src/graph/degreecentrality.c
     ../src/graph/findhamiltonpath.c
+    ../src/graph/kcore.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled
