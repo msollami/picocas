@@ -125,6 +125,10 @@ Each builds a canonical graph (vertices `1..n`, undirected edges) via the
 constructor path:
 
 - `CompleteGraph[n]` — `K_n`, all `n(n-1)/2` edges.
+- `CompleteGraph[{n1, n2, …}]` — the complete multipartite graph: parts of the
+  given sizes with an edge between every pair in different parts.
+  `CompleteGraph[{m, n}]` is complete bipartite `K_{m,n}`; `CompleteGraph[{2,2,2}]`
+  is the octahedron.
 - `CycleGraph[n]` — the cycle on `1..n`.
 - `PathGraph[n]` — the path `1-2-...-n`; `PathGraph[{v1,...}]` uses the given
   vertices.

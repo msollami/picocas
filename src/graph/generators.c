@@ -46,9 +46,41 @@ static Expr** int_vertices(long n) {
     return v;
 }
 
+/* CompleteGraph[{n1,n2,...}] - the complete multipartite graph: vertices split
+ * into parts of the given sizes, with an edge between every pair in DIFFERENT
+ * parts and none within a part. CompleteGraph[{m,n}] is complete bipartite. */
+static Expr* complete_multipartite(const Expr* spec) {
+    size_t parts = spec->data.function.arg_count;
+    long total = 0;
+    for (size_t p = 0; p < parts; p++) {
+        long s = as_count(spec->data.function.args[p]);
+        if (s < 0) return NULL;
+        total += s;
+    }
+    if (total <= 0) return make_graph(int_vertices(total > 0 ? total : 0),
+                                      (size_t)(total > 0 ? total : 0), NULL, 0);
+    /* group[v] = index of the part vertex v (0-based) belongs to. */
+    int* group = malloc((size_t)total * sizeof(int));
+    long v = 0;
+    for (size_t p = 0; p < parts; p++) {
+        long s = as_count(spec->data.function.args[p]);
+        for (long i = 0; i < s; i++) group[v++] = (int)p;
+    }
+    size_t cap = (size_t)total * (size_t)(total - 1) / 2;
+    Expr** edges = (cap > 0) ? calloc(cap, sizeof(Expr*)) : NULL;
+    size_t k = 0;
+    for (long i = 0; i < total; i++)
+        for (long j = i + 1; j < total; j++)
+            if (group[i] != group[j]) edges[k++] = undirected_edge(i + 1, j + 1);
+    free(group);
+    return make_graph(int_vertices(total), (size_t)total, edges, k);
+}
+
 Expr* builtin_complete_graph(Expr* res) {
     if (res->data.function.arg_count != 1) return NULL;
-    long n = as_count(res->data.function.args[0]);
+    const Expr* arg = res->data.function.args[0];
+    if (graph_is_list(arg)) return complete_multipartite(arg);   /* K_{n1,n2,...} */
+    long n = as_count(arg);
     if (n < 0) return NULL;
     size_t ne = (size_t)n * (size_t)(n - 1) / 2;
     Expr** edges = (ne > 0) ? calloc(ne, sizeof(Expr*)) : NULL;

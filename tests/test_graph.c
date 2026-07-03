@@ -496,6 +496,20 @@ static void test_star_wheel(void) {
     assert_eval_eq("Head[WheelGraph[3]]", "WheelGraph", 0);
 }
 
+static void test_complete_multipartite(void) {
+    /* CompleteGraph[{m,n}] is complete bipartite K_{m,n}. */
+    assert_eval_eq("VertexCount[CompleteGraph[{2,3}]]", "5", 0);
+    assert_eval_eq("EdgeCount[CompleteGraph[{2,3}]]", "6", 0);
+    assert_eval_eq("BipartiteGraphQ[CompleteGraph[{2,3}]]", "True", 0);
+    assert_eval_eq("EdgeCount[CompleteGraph[{3,3}]]", "9", 0);
+    assert_eval_eq("VertexDegree[CompleteGraph[{2,3}], 1]", "3", 0);
+    /* Complete multipartite: K_{2,2,2} is the octahedron (12 edges, not bip.). */
+    assert_eval_eq("EdgeCount[CompleteGraph[{2,2,2}]]", "12", 0);
+    assert_eval_eq("BipartiteGraphQ[CompleteGraph[{2,2,2}]]", "False", 0);
+    /* The integer form is unchanged. */
+    assert_eval_eq("EdgeCount[CompleteGraph[5]]", "10", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -527,6 +541,7 @@ int main(void) {
     TEST(test_line_graph);
     TEST(test_eulerian);
     TEST(test_star_wheel);
+    TEST(test_complete_multipartite);
 
     printf("All graph tests passed!\n");
     return 0;
