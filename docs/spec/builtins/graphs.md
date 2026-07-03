@@ -202,6 +202,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
   (Tarjan). For undirected graphs this coincides with the weak components.
 - `FindSpanningTree[g]` — a spanning tree/forest as a graph (`VertexCount - 1`
   edges when connected); tree edges keep their original direction.
+- `TransitiveReductionGraph[g]` — the transitive reduction of a directed acyclic
+  graph: the fewest-edge graph on the same vertices with the same reachability
+  (unique for a DAG). Keeps `u→v` iff there is no length-`≥2` path `u ⇝ w ⇝ v`;
+  reachability comes from a BFS per vertex, `O(V·(V+E) + E·V)`. Left unevaluated
+  when `g` has a directed cycle (an undirected edge is a 2-cycle, so it declines
+  too) — the inverse operation to `TransitiveClosure`.
 - `TransitiveClosure[g]` — adds an edge `u→v` whenever `v` is reachable from `u`
   (directed, `O(V·(V+E))`); for an undirected graph each connected component
   becomes a complete graph.

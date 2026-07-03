@@ -568,6 +568,12 @@ void graph_init(void) {
         "VertexCoreness[g] gives, for each vertex, its coreness: the largest k "
         "such that it lies in the k-core of g.");
 
+    symtab_add_builtin("TransitiveReductionGraph", builtin_transitive_reduction_graph);
+    symtab_get_def("TransitiveReductionGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("TransitiveReductionGraph",
+        "TransitiveReductionGraph[g] gives the transitive reduction of a directed "
+        "acyclic graph: the fewest-edge graph with the same reachability.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

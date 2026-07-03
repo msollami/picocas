@@ -1339,6 +1339,23 @@ static void test_vertex_coreness(void) {
     assert_eval_eq("Head[VertexCoreness[5]]", "VertexCoreness", 0);
 }
 
+static void test_transitive_reduction(void) {
+    /* Removes shortcut/transitive edges. */
+    assert_eval_eq("EdgeList[TransitiveReductionGraph[Graph[{1,2,3},{1->2,2->3,1->3}]]]", "{1 -> 2, 2 -> 3}", 0);
+    assert_eval_eq("EdgeCount[TransitiveReductionGraph[Graph[{1,2,3},{1->2,2->3}]]]", "2", 0);
+    assert_eval_eq("EdgeCount[TransitiveReductionGraph[Graph[{1,2,3,4},{1->2,2->3,3->4,1->4}]]]", "3", 0);
+    assert_eval_eq("EdgeCount[TransitiveReductionGraph[Graph[{1,2,3},{1->2,1->3,2->3}]]]", "2", 0);
+    assert_eval_eq("EdgeCount[TransitiveReductionGraph[Graph[{1,2,3,4},{1->2,1->3,2->4,3->4}]]]", "4", 0);
+    assert_eval_eq("VertexCount[TransitiveReductionGraph[Graph[{1,2,3,4},{1->2,2->3,3->4,1->4}]]]", "4", 0);
+    /* Reduction preserves reachability (same transitive closure). */
+    assert_eval_eq("EdgeCount[TransitiveClosure[TransitiveReductionGraph[Graph[{1,2,3},{1->2,2->3,1->3}]]]] == EdgeCount[TransitiveClosure[Graph[{1,2,3},{1->2,2->3,1->3}]]]", "True", 0);
+    assert_eval_eq("EdgeCount[TransitiveReductionGraph[Graph[{1,2,3},{}]]]", "0", 0);
+    /* Cyclic / undirected inputs stay unevaluated. */
+    assert_eval_eq("Head[TransitiveReductionGraph[Graph[{1,2,3},{1->2,2->3,3->1}]]]", "TransitiveReductionGraph", 0);
+    assert_eval_eq("Head[TransitiveReductionGraph[CycleGraph[4]]]", "TransitiveReductionGraph", 0);
+    assert_eval_eq("Head[TransitiveReductionGraph[5]]", "TransitiveReductionGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1420,6 +1437,7 @@ int main(void) {
     TEST(test_generalized_petersen_graph);
     TEST(test_friendship_graph);
     TEST(test_vertex_coreness);
+    TEST(test_transitive_reduction);
 
     printf("All graph tests passed!\n");
     return 0;
