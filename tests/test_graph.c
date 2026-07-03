@@ -965,6 +965,21 @@ static void test_regular_graph_q(void) {
     assert_eval_eq("Head[RegularGraphQ[5]]", "RegularGraphQ", 0);
 }
 
+static void test_complete_graph_q(void) {
+    assert_eval_eq("CompleteGraphQ[CompleteGraph[4]]", "True", 0);
+    assert_eval_eq("CompleteGraphQ[CompleteGraph[5]]", "True", 0);
+    assert_eval_eq("CompleteGraphQ[CycleGraph[3]]", "True", 0);   /* C3 = K3 */
+    assert_eval_eq("CompleteGraphQ[Graph[{1,2},{1<->2}]]", "True", 0);
+    assert_eval_eq("CompleteGraphQ[Graph[{1},{}]]", "True", 0);
+    assert_eval_eq("CompleteGraphQ[Graph[{1,2,3},{1->2,2->3,3->1}]]", "True", 0);
+    /* Not complete. */
+    assert_eval_eq("CompleteGraphQ[CycleGraph[4]]", "False", 0);
+    assert_eval_eq("CompleteGraphQ[PathGraph[4]]", "False", 0);
+    assert_eval_eq("CompleteGraphQ[Graph[{1,2,3},{}]]", "False", 0);
+    assert_eval_eq("CompleteGraphQ[Graph[{1,2,3,4},{1<->2,1<->3,1<->4,2<->3,2<->4}]]", "False", 0);
+    assert_eval_eq("Head[CompleteGraphQ[5]]", "CompleteGraphQ", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1024,6 +1039,7 @@ int main(void) {
     TEST(test_strongly_connected_q);
     TEST(test_hamiltonian_graph_q);
     TEST(test_regular_graph_q);
+    TEST(test_complete_graph_q);
 
     printf("All graph tests passed!\n");
     return 0;

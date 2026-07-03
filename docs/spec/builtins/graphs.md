@@ -272,6 +272,9 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `GraphCenter[g]` — the vertices whose eccentricity equals the graph radius.
   These derive from a BFS per vertex (`O(V·(V+E))`) and follow edge direction on
   directed graphs.
+- `CompleteGraphQ[g]` — `True` iff every pair of distinct vertices is adjacent
+  (the underlying undirected graph is `K_n`); `O(V²)`. `K_n` and a triangle are
+  complete, a `K_n` missing an edge is not, a graph with ≤ 1 vertex vacuously so.
 - `RegularGraphQ[g]` — `True` iff every vertex has the same degree (equal
   in-degrees and equal out-degrees for a directed graph); `O(V)`. A cycle is
   2-regular, `K_n` is `(n−1)`-regular, `K_{3,3}` is 3-regular, an edgeless graph

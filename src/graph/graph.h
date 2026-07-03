@@ -154,6 +154,7 @@ Expr* builtin_tree_graph_q(Expr* res);                  /* TreeGraphQ[g]        
 Expr* builtin_strongly_connected_graph_q(Expr* res);    /* StronglyConnectedGraphQ */
 Expr* builtin_hamiltonian_graph_q(Expr* res);           /* HamiltonianGraphQ[g]  */
 Expr* builtin_regular_graph_q(Expr* res);               /* RegularGraphQ[g]     */
+Expr* builtin_complete_graph_q(Expr* res);              /* CompleteGraphQ[g]    */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
