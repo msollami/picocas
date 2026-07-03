@@ -132,3 +132,30 @@ Expr* builtin_random_graph(Expr* res) {
                        sampled };
     return expr_new_function(expr_new_symbol(SYM_Graph), gargs, 2);
 }
+
+/* StarGraph[n] - a central vertex 1 joined to the n-1 leaves 2..n (K_{1,n-1}). */
+Expr* builtin_star_graph(Expr* res) {
+    if (res->data.function.arg_count != 1) return NULL;
+    long n = as_count(res->data.function.args[0]);
+    if (n < 1) return NULL;
+    size_t ne = (size_t)(n - 1);
+    Expr** edges = (ne > 0) ? calloc(ne, sizeof(Expr*)) : NULL;
+    for (long i = 2; i <= n; i++) edges[i - 2] = undirected_edge(1, i);
+    return make_graph(int_vertices(n), (size_t)n, edges, ne);
+}
+
+/* WheelGraph[n] - a rim cycle on vertices 1..n-1 plus a hub n joined to every
+ * rim vertex (2(n-1) edges). Needs n >= 4 for a rim cycle of length >= 3
+ * (W_4 = K_4); smaller n is left unevaluated. */
+Expr* builtin_wheel_graph(Expr* res) {
+    if (res->data.function.arg_count != 1) return NULL;
+    long n = as_count(res->data.function.args[0]);
+    if (n < 4) return NULL;
+    long rim = n - 1;                       /* rim vertices 1..rim; hub = n */
+    size_t ne = (size_t)(2 * rim);
+    Expr** edges = calloc(ne, sizeof(Expr*));
+    size_t k = 0;
+    for (long i = 1; i <= rim; i++) edges[k++] = undirected_edge(i, (i < rim) ? i + 1 : 1);
+    for (long i = 1; i <= rim; i++) edges[k++] = undirected_edge(n, i);
+    return make_graph(int_vertices(n), (size_t)n, edges, ne);
+}

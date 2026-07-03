@@ -479,6 +479,23 @@ static void test_eulerian(void) {
     assert_eval_eq("EulerianGraphQ[5]", "False", 0);
 }
 
+static void test_star_wheel(void) {
+    /* Star K_{1,n-1}: center joined to n-1 leaves; bipartite. */
+    assert_eval_eq("VertexCount[StarGraph[5]]", "5", 0);
+    assert_eval_eq("EdgeCount[StarGraph[5]]", "4", 0);
+    assert_eval_eq("VertexDegree[StarGraph[5], 1]", "4", 0);
+    assert_eval_eq("BipartiteGraphQ[StarGraph[5]]", "True", 0);
+    assert_eval_eq("EdgeList[StarGraph[4]]", "{1 <-> 2, 1 <-> 3, 1 <-> 4}", 0);
+    /* Wheel: rim cycle + hub; 2(n-1) edges, hub degree n-1, has triangles so
+       it is not bipartite; W_4 = K_4. Small n stays unevaluated. */
+    assert_eval_eq("VertexCount[WheelGraph[5]]", "5", 0);
+    assert_eval_eq("EdgeCount[WheelGraph[5]]", "8", 0);
+    assert_eval_eq("VertexDegree[WheelGraph[5], 5]", "4", 0);
+    assert_eval_eq("BipartiteGraphQ[WheelGraph[5]]", "False", 0);
+    assert_eval_eq("EdgeCount[WheelGraph[4]]", "6", 0);
+    assert_eval_eq("Head[WheelGraph[3]]", "WheelGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -509,6 +526,7 @@ int main(void) {
     TEST(test_edge_connectivity);
     TEST(test_line_graph);
     TEST(test_eulerian);
+    TEST(test_star_wheel);
 
     printf("All graph tests passed!\n");
     return 0;

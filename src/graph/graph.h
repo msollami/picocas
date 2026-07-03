@@ -80,6 +80,8 @@ Expr* builtin_complete_graph(Expr* res);   /* CompleteGraph[n]                 *
 Expr* builtin_cycle_graph(Expr* res);      /* CycleGraph[n]                    */
 Expr* builtin_path_graph(Expr* res);       /* PathGraph[n] / PathGraph[{...}]  */
 Expr* builtin_random_graph(Expr* res);     /* RandomGraph[{n, m}]              */
+Expr* builtin_star_graph(Expr* res);       /* StarGraph[n]                     */
+Expr* builtin_wheel_graph(Expr* res);      /* WheelGraph[n]                    */
 
 /* ---- Phase 5: shared adjacency scaffolding (graph_util.c) ------------------
  * Integer-indexed adjacency derived from a validated graph. Vertex i is

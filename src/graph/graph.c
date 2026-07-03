@@ -123,6 +123,18 @@ void graph_init(void) {
         "RandomGraph[{n, m}] gives a random undirected graph with n vertices "
         "and m edges.");
 
+    symtab_add_builtin("StarGraph", builtin_star_graph);
+    symtab_get_def("StarGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("StarGraph",
+        "StarGraph[n] gives the star K_{1,n-1}: a central vertex joined to n-1 "
+        "leaves.");
+
+    symtab_add_builtin("WheelGraph", builtin_wheel_graph);
+    symtab_get_def("WheelGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("WheelGraph",
+        "WheelGraph[n] gives the wheel on n vertices: a cycle of n-1 rim "
+        "vertices plus a hub joined to all of them (n >= 4).");
+
     /* ---- Phase 5: search & computation algorithms ------------------------ */
     symtab_add_builtin("FindShortestPath", builtin_find_shortest_path);
     symtab_get_def("FindShortestPath")->attributes |= ATTR_PROTECTED;
