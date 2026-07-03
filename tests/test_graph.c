@@ -997,6 +997,23 @@ static void test_graph_union(void) {
     assert_eval_eq("Head[GraphUnion[5, CycleGraph[3]]]", "GraphUnion", 0);
 }
 
+static void test_graph_intersection(void) {
+    /* Common vertices and common edges. */
+    assert_eval_eq("VertexList[GraphIntersection[Graph[{1,2,3},{1<->2,2<->3}], Graph[{2,3,4},{2<->3,3<->4}]]]", "{2, 3}", 0);
+    assert_eval_eq("EdgeList[GraphIntersection[Graph[{1,2,3},{1<->2,2<->3}], Graph[{2,3,4},{2<->3,3<->4}]]]", "{2 <-> 3}", 0);
+    /* Identical graphs → self. */
+    assert_eval_eq("EdgeCount[GraphIntersection[CycleGraph[4], CycleGraph[4]]]", "4", 0);
+    assert_eval_eq("VertexCount[GraphIntersection[CycleGraph[4], CycleGraph[4]]]", "4", 0);
+    /* Disjoint / no shared edges. */
+    assert_eval_eq("VertexCount[GraphIntersection[Graph[{1,2},{1<->2}], Graph[{3,4},{3<->4}]]]", "0", 0);
+    assert_eval_eq("EdgeCount[GraphIntersection[Graph[{1,2,3},{1<->2}], Graph[{1,2,3},{2<->3}]]]", "0", 0);
+    /* Symmetric undirected common; directed not symmetric. */
+    assert_eval_eq("EdgeCount[GraphIntersection[Graph[{1,2},{1<->2}], Graph[{1,2},{2<->1}]]]", "1", 0);
+    assert_eval_eq("EdgeCount[GraphIntersection[Graph[{1,2},{1->2}], Graph[{1,2},{2->1}]]]", "0", 0);
+    assert_eval_eq("EdgeCount[GraphIntersection[CompleteGraph[4], CycleGraph[4]]]", "4", 0);
+    assert_eval_eq("Head[GraphIntersection[5, CycleGraph[3]]]", "GraphIntersection", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1058,6 +1075,7 @@ int main(void) {
     TEST(test_regular_graph_q);
     TEST(test_complete_graph_q);
     TEST(test_graph_union);
+    TEST(test_graph_intersection);
 
     printf("All graph tests passed!\n");
     return 0;

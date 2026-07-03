@@ -455,6 +455,7 @@ set(COMMON_SRC
     ../src/graph/regulargraphq.c
     ../src/graph/completegraphq.c
     ../src/graph/graphunion.c
+    ../src/graph/graphintersection.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

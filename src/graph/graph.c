@@ -444,6 +444,12 @@ void graph_init(void) {
         "GraphUnion[g1, g2] gives the graph with the union of the vertices and "
         "the union of the edges of g1 and g2.");
 
+    symtab_add_builtin("GraphIntersection", builtin_graph_intersection);
+    symtab_get_def("GraphIntersection")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphIntersection",
+        "GraphIntersection[g1, g2] gives the graph with the vertices common to "
+        "g1 and g2 and the edges present in both.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
