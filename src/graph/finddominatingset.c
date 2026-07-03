@@ -5,9 +5,10 @@
  * Each vertex gets a closed-neighbourhood bitmask (itself plus its neighbours);
  * a set dominates iff the OR of its masks is all-ones. We search by increasing
  * size k = 1, 2, ... over the C(n,k) subsets and return the first dominating one,
- * so the result is a minimum dominating set. Edge direction is ignored. Bitmasks
- * cap n at 62 and the exponential subset search is bounded to modest n; the call
- * is left unevaluated for larger graphs.
+ * so the result is a minimum dominating set. Edge direction is ignored. The
+ * exponential subset search is bounded to modest n (DOM_MAX_N below, which also
+ * keeps the vertex bitmasks within one 64-bit word); the call is left
+ * unevaluated for larger graphs.
  *
  * A star is dominated by its centre; K_n by any single vertex; an edgeless graph
  * needs all its vertices. Memory (SPEC section 4): returns a fresh List; frees
@@ -42,7 +43,7 @@ Expr* builtin_find_dominating_set(Expr* res) {
         if (a < 0 || b < 0 || a == b) continue;
         mask[a] |= 1ULL << b; mask[b] |= 1ULL << a;
     }
-    unsigned long long full = (n == 64) ? ~0ULL : ((1ULL << n) - 1);
+    unsigned long long full = (1ULL << n) - 1;   /* n <= DOM_MAX_N, so no overflow */
 
     /* Search subsets by increasing size; first dominating set is minimum. */
     int* idx = malloc((size_t)n * sizeof(int));
