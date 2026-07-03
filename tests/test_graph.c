@@ -1569,6 +1569,24 @@ static void test_incidence_list(void) {
     assert_eval_eq("Head[IncidenceList[5, 1]]", "IncidenceList", 0);
 }
 
+static void test_vertex_components(void) {
+    /* Directed path 1->2->3. */
+    assert_eval_eq("VertexOutComponent[Graph[{1,2,3},{1->2,2->3}], 1]", "{1, 2, 3}", 0);
+    assert_eval_eq("VertexOutComponent[Graph[{1,2,3},{1->2,2->3}], 2]", "{2, 3}", 0);
+    assert_eval_eq("VertexOutComponent[Graph[{1,2,3},{1->2,2->3}], 3]", "{3}", 0);
+    assert_eval_eq("VertexInComponent[Graph[{1,2,3},{1->2,2->3}], 3]", "{1, 2, 3}", 0);
+    assert_eval_eq("VertexInComponent[Graph[{1,2,3},{1->2,2->3}], 1]", "{1}", 0);
+    assert_eval_eq("VertexInComponent[Graph[{1,2,3},{1->2,2->3}], 2]", "{1, 2}", 0);
+    /* Undirected: both give v's connected component. */
+    assert_eval_eq("VertexOutComponent[CycleGraph[4], 1]", "{1, 2, 3, 4}", 0);
+    assert_eval_eq("VertexInComponent[CycleGraph[4], 1]", "{1, 2, 3, 4}", 0);
+    assert_eval_eq("VertexOutComponent[Graph[{1,2,3},{1<->2}], 1]", "{1, 2}", 0);
+    /* Directed cycle: every vertex reaches every other. */
+    assert_eval_eq("VertexOutComponent[Graph[{1,2,3},{1->2,2->3,3->1}], 2]", "{1, 2, 3}", 0);
+    assert_eval_eq("Head[VertexOutComponent[CycleGraph[3], 9]]", "VertexOutComponent", 0);
+    assert_eval_eq("Head[VertexInComponent[5, 1]]", "VertexInComponent", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1665,6 +1683,7 @@ int main(void) {
     TEST(test_find_vertex_coloring);
     TEST(test_graph_assortativity);
     TEST(test_incidence_list);
+    TEST(test_vertex_components);
 
     printf("All graph tests passed!\n");
     return 0;

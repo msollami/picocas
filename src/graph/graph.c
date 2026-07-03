@@ -657,6 +657,18 @@ void graph_init(void) {
     symtab_set_docstring("IncidenceList",
         "IncidenceList[g, v] gives the list of edges of g incident to vertex v.");
 
+    symtab_add_builtin("VertexOutComponent", builtin_vertex_out_component);
+    symtab_get_def("VertexOutComponent")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("VertexOutComponent",
+        "VertexOutComponent[g, v] gives the vertices reachable from v (including "
+        "v) following edge directions.");
+
+    symtab_add_builtin("VertexInComponent", builtin_vertex_in_component);
+    symtab_get_def("VertexInComponent")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("VertexInComponent",
+        "VertexInComponent[g, v] gives the vertices from which v is reachable "
+        "(including v).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

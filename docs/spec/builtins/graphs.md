@@ -204,6 +204,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   underlying undirected graph.
 - `StronglyConnectedComponents[g]` — components following edge directions
   (Tarjan). For undirected graphs this coincides with the weak components.
+- `VertexOutComponent[g, v]` / `VertexInComponent[g, v]` — the vertices reachable
+  from `v` (over out-edges) / from which `v` is reachable (over in-edges), each
+  including `v`. A single BFS, `O(V+E)`; for an undirected graph both give `v`'s
+  connected component, while a directed path distinguishes them. An unknown vertex
+  leaves the call unevaluated.
 - `FindSpanningTree[g]` — a spanning tree/forest as a graph (`VertexCount - 1`
   edges when connected); tree edges keep their original direction.
 - `TransitiveReductionGraph[g]` — the transitive reduction of a directed acyclic

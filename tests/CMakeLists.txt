@@ -491,6 +491,7 @@ set(COMMON_SRC
     ../src/graph/findvertexcoloring.c
     ../src/graph/graphassortativity.c
     ../src/graph/incidencelist.c
+    ../src/graph/vertexcomponents.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled
