@@ -423,6 +423,7 @@ set(COMMON_SRC
     ../src/graph/metrics.c
     ../src/graph/acyclic.c
     ../src/graph/complement.c
+    ../src/graph/kirchhoff.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

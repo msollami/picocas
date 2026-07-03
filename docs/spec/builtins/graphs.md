@@ -93,6 +93,11 @@ AdjacencyList[Graph[{1,2,3},{1<->2,2<->3}], 2]       (* {1, 3}              *)
 
 ## Matrix views (linear-algebra interop)
 
+- `KirchhoffMatrix[g]` — the graph Laplacian `L = D − A` (degree diagonal minus
+  adjacency): `L[i][i] = deg(i)`, `L[i][j] = −1` for an edge `i→j`. Every row
+  sums to 0. Being an ordinary matrix it feeds `Eigenvalues`/`Det` directly: the
+  zero-eigenvalue multiplicity is the number of connected components, and any
+  cofactor is the number of spanning trees (Matrix-Tree theorem).
 - `AdjacencyMatrix[g]` — the dense 0/1 adjacency matrix (`n x n`, canonical
   vertex order), symmetric for undirected graphs. It is an ordinary matrix, so
   `Det`, `Tr`, `Eigenvalues`, etc. apply directly.

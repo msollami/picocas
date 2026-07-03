@@ -415,6 +415,18 @@ static void test_complement(void) {
     assert_eval_eq("GraphQ[GraphComplement[PathGraph[4]]]", "True", 0);
 }
 
+static void test_kirchhoff(void) {
+    /* Laplacian = D - A, exact small cases. */
+    assert_eval_eq("KirchhoffMatrix[PathGraph[3]]", "{{1, -1, 0}, {-1, 2, -1}, {0, -1, 1}}", 0);
+    assert_eval_eq("KirchhoffMatrix[CycleGraph[3]]", "{{2, -1, -1}, {-1, 2, -1}, {-1, -1, 2}}", 0);
+    /* Every row sums to 0; trace = sum of degrees = 2|E|. */
+    assert_eval_eq("Total[KirchhoffMatrix[CycleGraph[4]]]", "{0, 0, 0, 0}", 0);
+    assert_eval_eq("Tr[KirchhoffMatrix[CycleGraph[4]]]", "8", 0);
+    /* Interop: Laplacian eigenvalues include 0 (once, since connected). */
+    assert_eval_eq("Eigenvalues[KirchhoffMatrix[PathGraph[3]]]", "{3, 1, 0}", 0);
+    assert_eval_eq("Head[KirchhoffMatrix[5]]", "KirchhoffMatrix", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -441,6 +453,7 @@ int main(void) {
     TEST(test_metrics);
     TEST(test_acyclic);
     TEST(test_complement);
+    TEST(test_kirchhoff);
 
     printf("All graph tests passed!\n");
     return 0;

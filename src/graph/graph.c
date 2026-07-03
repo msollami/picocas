@@ -218,6 +218,12 @@ void graph_init(void) {
         "GraphComplement[g] gives the graph on the same vertices whose edges are "
         "exactly the non-edges of g (directed graphs stay directed).");
 
+    symtab_add_builtin("KirchhoffMatrix", builtin_kirchhoff_matrix);
+    symtab_get_def("KirchhoffMatrix")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("KirchhoffMatrix",
+        "KirchhoffMatrix[g] gives the graph Laplacian D - A (degree diagonal "
+        "minus adjacency matrix); each row sums to 0.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
