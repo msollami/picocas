@@ -532,6 +532,12 @@ void graph_init(void) {
         "CirculantGraph[n, {j1, ...}] gives the circulant graph on n vertices "
         "joining vertex i to i +/- jk (mod n) for each jump jk.");
 
+    symtab_add_builtin("LadderGraph", builtin_ladder_graph);
+    symtab_get_def("LadderGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("LadderGraph",
+        "LadderGraph[n] gives the ladder graph: two n-vertex paths joined by n "
+        "rungs (the product P_n x P_2).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

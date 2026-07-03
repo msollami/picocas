@@ -162,6 +162,9 @@ constructor path:
   vertices `1..n` joining `i` to `i ± jₖ (mod n)` for each jump. Vertex-transitive
   and regular; `C_n({1})` is the cycle, `C_n({1,…,⌊n/2⌋})` is `Kₙ`, and a jump of
   exactly `n/2` adds one matching edge per vertex. `O(n·#jumps + n²)`.
+- `LadderGraph[n]` — the ladder `Lₙ`: two `n`-vertex path rails joined by `n`
+  rungs (`= Pₙ □ P₂`); `2n` vertices, `3n−2` edges, bipartite. `L₁` is an edge,
+  `L₂ = C₄`. `O(n)`.
 
 ```
 EdgeCount[CompleteGraph[5]]      (* 10                        *)

@@ -470,6 +470,7 @@ set(COMMON_SRC
     ../src/graph/turangraph.c
     ../src/graph/completekarytree.c
     ../src/graph/circulantgraph.c
+    ../src/graph/laddergraph.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

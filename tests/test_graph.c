@@ -1240,6 +1240,22 @@ static void test_circulant_graph(void) {
     assert_eval_eq("Head[CirculantGraph[5,{x}]]", "CirculantGraph", 0);
 }
 
+static void test_ladder_graph(void) {
+    assert_eval_eq("EdgeCount[LadderGraph[1]]", "1", 0);      /* K2 */
+    assert_eval_eq("VertexCount[LadderGraph[1]]", "2", 0);
+    assert_eval_eq("EdgeCount[LadderGraph[2]]", "4", 0);      /* C4 */
+    assert_eval_eq("VertexCount[LadderGraph[3]]", "6", 0);
+    assert_eval_eq("EdgeCount[LadderGraph[3]]", "7", 0);
+    assert_eval_eq("EdgeCount[LadderGraph[5]] == 3*5-2", "True", 0);
+    assert_eval_eq("ConnectedGraphQ[LadderGraph[4]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[LadderGraph[4]]", "True", 0);
+    assert_eval_eq("TreeGraphQ[LadderGraph[3]]", "False", 0);
+    /* Matches the Cartesian product P_n x P_2. */
+    assert_eval_eq("EdgeCount[LadderGraph[3]] == EdgeCount[GraphProduct[PathGraph[3], Graph[{1,2},{1<->2}], \"Cartesian\"]]", "True", 0);
+    assert_eval_eq("Head[LadderGraph[0]]", "LadderGraph", 0);
+    assert_eval_eq("Head[LadderGraph[x]]", "LadderGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1315,6 +1331,7 @@ int main(void) {
     TEST(test_turan_graph);
     TEST(test_complete_kary_tree);
     TEST(test_circulant_graph);
+    TEST(test_ladder_graph);
 
     printf("All graph tests passed!\n");
     return 0;
