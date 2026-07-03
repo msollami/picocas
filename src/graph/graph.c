@@ -468,6 +468,12 @@ void graph_init(void) {
         "PathGraphQ[g] gives True iff g is a path graph (a tree with maximum "
         "degree at most 2).");
 
+    symtab_add_builtin("VertexContract", builtin_vertex_contract);
+    symtab_get_def("VertexContract")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("VertexContract",
+        "VertexContract[g, {v1, v2, ...}] merges the listed vertices into one, "
+        "redirecting edges, dropping self-loops, and collapsing parallel edges.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

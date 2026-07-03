@@ -335,6 +335,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `GraphComplement[g]` — the graph on the same vertices whose edges are exactly
   the non-edges of `g`; edgeless → complete graph, complete → edgeless, and
   applying it twice restores `g`. Directed graphs stay directed (`O(V²)`).
+- `VertexContract[g, {v1, v2, …}]` — merges the listed vertices into one (the
+  first), redirecting every incident edge to the representative, deleting the
+  resulting self-loops, and collapsing parallel edges. Contracting an edge's two
+  endpoints realises edge contraction (a triangle becomes a single edge);
+  contracting all vertices gives a single isolated vertex. Direction-aware,
+  returns a canonical `Graph`.
 - `GraphPower[g, k]` — the k-th power: the graph on the same vertices that joins
   two vertices whenever `g` has a path of length `≤ k` between them (no
   self-loops). A depth-limited BFS per source over the (direction-aware)

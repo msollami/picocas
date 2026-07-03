@@ -1064,6 +1064,27 @@ static void test_path_graph_q(void) {
     assert_eval_eq("Head[PathGraphQ[5]]", "PathGraphQ", 0);
 }
 
+static void test_vertex_contract(void) {
+    /* Contracting an edge of a triangle yields a single edge. */
+    assert_eval_eq("EdgeList[VertexContract[Graph[{1,2,3},{1<->2,2<->3,3<->1}], {1,2}]]", "{1 <-> 3}", 0);
+    assert_eval_eq("VertexList[VertexContract[Graph[{1,2,3},{1<->2,2<->3,3<->1}], {1,2}]]", "{1, 3}", 0);
+    /* Singleton contraction is a no-op. */
+    assert_eval_eq("EdgeCount[VertexContract[CycleGraph[4], {1}]]", "4", 0);
+    assert_eval_eq("VertexCount[VertexContract[CycleGraph[4], {1}]]", "4", 0);
+    /* Contracting a path's endpoints closes it into a triangle. */
+    assert_eval_eq("EdgeCount[VertexContract[PathGraph[4], {1,4}]]", "3", 0);
+    assert_eval_eq("VertexCount[VertexContract[PathGraph[4], {1,4}]]", "3", 0);
+    /* Contract all → one vertex, no edges. */
+    assert_eval_eq("VertexCount[VertexContract[CompleteGraph[4], {1,2,3,4}]]", "1", 0);
+    assert_eval_eq("EdgeCount[VertexContract[CompleteGraph[4], {1,2,3,4}]]", "0", 0);
+    /* Parallel edges collapse; directed self-loops drop. */
+    assert_eval_eq("EdgeCount[VertexContract[Graph[{1,2,3},{1<->3,2<->3}], {1,2}]]", "1", 0);
+    assert_eval_eq("EdgeCount[VertexContract[Graph[{1,2,3},{1->2,2->3}], {1,2}]]", "1", 0);
+    assert_eval_eq("GraphQ[VertexContract[CompleteGraph[4], {1,2}]]", "True", 0);
+    assert_eval_eq("Head[VertexContract[CycleGraph[3], {9}]]", "VertexContract", 0);
+    assert_eval_eq("Head[VertexContract[5, {1}]]", "VertexContract", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1129,6 +1150,7 @@ int main(void) {
     TEST(test_graph_difference);
     TEST(test_graph_reverse);
     TEST(test_path_graph_q);
+    TEST(test_vertex_contract);
 
     printf("All graph tests passed!\n");
     return 0;

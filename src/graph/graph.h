@@ -160,6 +160,7 @@ Expr* builtin_graph_intersection(Expr* res);            /* GraphIntersection    
 Expr* builtin_graph_difference(Expr* res);              /* GraphDifference      */
 Expr* builtin_graph_reverse(Expr* res);                 /* ReverseGraph[g]      */
 Expr* builtin_path_graph_q(Expr* res);                  /* PathGraphQ[g]        */
+Expr* builtin_vertex_contract(Expr* res);               /* VertexContract[g,vs] */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
