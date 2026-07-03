@@ -212,6 +212,12 @@ void graph_init(void) {
         "TopologicalSort[g] gives a vertex ordering in which every edge points "
         "forward, or $Failed if g is not a directed acyclic graph.");
 
+    symtab_add_builtin("GraphComplement", builtin_graph_complement);
+    symtab_get_def("GraphComplement")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphComplement",
+        "GraphComplement[g] gives the graph on the same vertices whose edges are "
+        "exactly the non-edges of g (directed graphs stay directed).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

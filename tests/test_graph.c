@@ -400,6 +400,21 @@ static void test_acyclic(void) {
     assert_eval_eq("AcyclicGraphQ[5]", "False", 0);
 }
 
+static void test_complement(void) {
+    /* Complement of a path keeps the one non-edge; complement of empty is K_n;
+       complement of complete is edgeless. */
+    assert_eval_eq("EdgeList[GraphComplement[PathGraph[3]]]", "{1 <-> 3}", 0);
+    assert_eval_eq("EdgeCount[GraphComplement[Graph[{1,2,3},{}]]]", "3", 0);
+    assert_eval_eq("EdgeCount[GraphComplement[CompleteGraph[4]]]", "0", 0);
+    assert_eval_eq("EdgeCount[GraphComplement[CycleGraph[4]]]", "2", 0);
+    /* Double complement restores the edge count. */
+    assert_eval_eq("EdgeCount[GraphComplement[GraphComplement[CycleGraph[5]]]]", "5", 0);
+    /* Directed complement stays directed (all ordered non-self pairs minus 1->2). */
+    assert_eval_eq("EdgeCount[GraphComplement[Graph[{1,2,3},{1->2}]]]", "5", 0);
+    assert_eval_eq("DirectedGraphQ[GraphComplement[Graph[{1,2,3},{1->2}]]]", "True", 0);
+    assert_eval_eq("GraphQ[GraphComplement[PathGraph[4]]]", "True", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -425,6 +440,7 @@ int main(void) {
     TEST(test_bipartite);
     TEST(test_metrics);
     TEST(test_acyclic);
+    TEST(test_complement);
 
     printf("All graph tests passed!\n");
     return 0;

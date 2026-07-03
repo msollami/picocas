@@ -119,6 +119,7 @@ Expr* builtin_graph_radius(Expr* res);                  /* GraphRadius          
 Expr* builtin_graph_center(Expr* res);                  /* GraphCenter          */
 Expr* builtin_acyclic_graph_q(Expr* res);               /* AcyclicGraphQ        */
 Expr* builtin_topological_sort(Expr* res);              /* TopologicalSort      */
+Expr* builtin_graph_complement(Expr* res);              /* GraphComplement      */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

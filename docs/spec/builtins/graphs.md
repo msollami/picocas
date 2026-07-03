@@ -162,6 +162,9 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `TopologicalSort[g]` — a vertex ordering in which every edge points forward
   (Kahn's algorithm), or `$Failed` if `g` is not a directed acyclic graph
   (undirected edges act as 2-cycles, so they give `$Failed`).
+- `GraphComplement[g]` — the graph on the same vertices whose edges are exactly
+  the non-edges of `g`; edgeless → complete graph, complete → edgeless, and
+  applying it twice restores `g`. Directed graphs stay directed (`O(V²)`).
 - `VertexConnectivity[g]` — the minimum number of vertices whose removal
   disconnects `g` (`n-1` for `K_n`, `0` if already disconnected). Exact
   brute-force over vertex subsets, intended for small graphs.
