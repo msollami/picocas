@@ -526,6 +526,12 @@ void graph_init(void) {
         "CompleteKaryTree[L] / CompleteKaryTree[L, k] gives the complete k-ary "
         "tree with L levels (k=2 by default).");
 
+    symtab_add_builtin("CirculantGraph", builtin_circulant_graph);
+    symtab_get_def("CirculantGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("CirculantGraph",
+        "CirculantGraph[n, {j1, ...}] gives the circulant graph on n vertices "
+        "joining vertex i to i +/- jk (mod n) for each jump jk.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

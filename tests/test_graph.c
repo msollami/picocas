@@ -1222,6 +1222,24 @@ static void test_complete_kary_tree(void) {
     assert_eval_eq("Head[CompleteKaryTree[x]]", "CompleteKaryTree", 0);
 }
 
+static void test_circulant_graph(void) {
+    /* C_n({1}) is the cycle; single-offset integer form too. */
+    assert_eval_eq("EdgeCount[CirculantGraph[5,{1}]]", "5", 0);
+    assert_eval_eq("EdgeCount[CirculantGraph[6,1]]", "6", 0);
+    assert_eval_eq("EdgeCount[CirculantGraph[7,{1}]] == EdgeCount[CycleGraph[7]]", "True", 0);
+    assert_eval_eq("RegularGraphQ[CirculantGraph[5,{1}]]", "True", 0);
+    /* Full jump set → complete; other regular cases. */
+    assert_eval_eq("CompleteGraphQ[CirculantGraph[6,{1,2,3}]]", "True", 0);
+    assert_eval_eq("RegularGraphQ[CirculantGraph[8,{1,2}]]", "True", 0);
+    assert_eval_eq("EdgeCount[CirculantGraph[8,{1,2}]]", "16", 0);
+    /* A jump of n/2 contributes a single matching edge per vertex. */
+    assert_eval_eq("EdgeCount[CirculantGraph[6,{3}]]", "3", 0);
+    assert_eval_eq("VertexCount[CirculantGraph[7,{1,2}]]", "7", 0);
+    /* Bad arguments stay unevaluated. */
+    assert_eval_eq("Head[CirculantGraph[0,{1}]]", "CirculantGraph", 0);
+    assert_eval_eq("Head[CirculantGraph[5,{x}]]", "CirculantGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1296,6 +1314,7 @@ int main(void) {
     TEST(test_graph_product);
     TEST(test_turan_graph);
     TEST(test_complete_kary_tree);
+    TEST(test_circulant_graph);
 
     printf("All graph tests passed!\n");
     return 0;

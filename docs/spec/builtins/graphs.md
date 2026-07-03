@@ -158,6 +158,10 @@ constructor path:
   children, filled to depth `L`. Vertices `1..V` in breadth-first order,
   `V = (kᴸ−1)/(k−1)` (or `L` when `k = 1`, a path); `V−1` tree edges. Always a
   tree; left unevaluated beyond a size cap.
+- `CirculantGraph[n, {j1, …}]` / `CirculantGraph[n, j]` — the circulant graph on
+  vertices `1..n` joining `i` to `i ± jₖ (mod n)` for each jump. Vertex-transitive
+  and regular; `C_n({1})` is the cycle, `C_n({1,…,⌊n/2⌋})` is `Kₙ`, and a jump of
+  exactly `n/2` adds one matching edge per vertex. `O(n·#jumps + n²)`.
 
 ```
 EdgeCount[CompleteGraph[5]]      (* 10                        *)
