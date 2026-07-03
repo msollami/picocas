@@ -239,6 +239,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   over candidates adjacent to all of it, pruning the branch when the remaining
   candidates cannot beat the best clique found. Exponential worst case but fast
   on real graphs; direction ignored; deterministic (first maximum kept).
+- `FindIndependentVertexSet[g]` — a largest independent vertex set (pairwise
+  non-adjacent) as a list containing one vertex list, or `{}` when `g` has no
+  vertices. Computed as a maximum clique of the complement — the same
+  branch-and-bound search run over the non-adjacency. A star returns its leaves,
+  a complete graph a singleton; direction ignored, deterministic.
 - `VertexEccentricity[g, v]` — the greatest shortest-path distance from `v` to
   any vertex (`Infinity` if some vertex is unreachable); `VertexEccentricity[g]`
   gives the list for all vertices.

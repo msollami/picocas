@@ -371,6 +371,13 @@ void graph_init(void) {
         "FindClique[g] gives a largest clique (a set of pairwise-adjacent "
         "vertices) as a list containing one vertex list.");
 
+    symtab_add_builtin("FindIndependentVertexSet", builtin_find_independent_vertex_set);
+    symtab_get_def("FindIndependentVertexSet")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FindIndependentVertexSet",
+        "FindIndependentVertexSet[g] gives a largest independent vertex set (a "
+        "set of pairwise non-adjacent vertices) as a list containing one vertex "
+        "list.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

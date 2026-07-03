@@ -794,6 +794,22 @@ static void test_find_clique(void) {
     assert_eval_eq("Head[FindClique[5]]", "FindClique", 0);
 }
 
+static void test_find_independent(void) {
+    /* Edgeless → all vertices; complete → a singleton. */
+    assert_eval_eq("FindIndependentVertexSet[Graph[{1,2,3},{}]]", "{{1, 2, 3}}", 0);
+    assert_eval_eq("Length[First[FindIndependentVertexSet[CompleteGraph[4]]]]", "1", 0);
+    /* Cycles / paths / star sizes. */
+    assert_eval_eq("FindIndependentVertexSet[CycleGraph[4]]", "{{1, 3}}", 0);
+    assert_eval_eq("Length[First[FindIndependentVertexSet[CycleGraph[5]]]]", "2", 0);
+    assert_eval_eq("FindIndependentVertexSet[StarGraph[5]]", "{{2, 3, 4, 5}}", 0);
+    assert_eval_eq("Length[First[FindIndependentVertexSet[PathGraph[4]]]]", "2", 0);
+    /* Duality: max independent set of g = max clique of the complement. */
+    assert_eval_eq("Length[First[FindIndependentVertexSet[CycleGraph[5]]]] == Length[First[FindClique[GraphComplement[CycleGraph[5]]]]]", "True", 0);
+    /* Direction ignored. */
+    assert_eval_eq("Length[First[FindIndependentVertexSet[Graph[{1,2,3},{1->2,2->3}]]]]", "2", 0);
+    assert_eval_eq("Head[FindIndependentVertexSet[5]]", "FindIndependentVertexSet", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -843,6 +859,7 @@ int main(void) {
     TEST(test_global_clustering);
     TEST(test_mean_clustering);
     TEST(test_find_clique);
+    TEST(test_find_independent);
 
     printf("All graph tests passed!\n");
     return 0;
