@@ -299,6 +299,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   mutual), and for a directed graph the usual fraction of reciprocated edges
   (`{1->2, 2->1}` → `1`, a directed cycle → `0`). `0` when there are no edges.
   Modelled as a directed-arc matrix, `O(V²)`.
+- `GraphAssortativity[g]` — the degree assortativity coefficient: the correlation
+  between the degrees of adjacent vertices, an exact rational in `[−1, 1]`.
+  Newman's edge-list form reduces to `(4MA − S₁²)/(2M·S_q − S₁²)` over integer
+  degree sums; `Indeterminate` for a regular or edgeless graph (zero variance). A
+  star is `−1`; direction ignored.
 - `GraphDensity[g]` — the fraction of possible edges present, an exact rational
   in `[0, 1]`: `2m/(n(n−1))` for an undirected graph, `m/(n(n−1))` for a directed
   one (`1` for a complete graph, `0` for an empty one or fewer than two

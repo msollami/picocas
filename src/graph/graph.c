@@ -646,6 +646,12 @@ void graph_init(void) {
         "FindVertexColoring[g] gives a proper coloring of g using the fewest "
         "colors, as a list of color indices (one per vertex).");
 
+    symtab_add_builtin("GraphAssortativity", builtin_graph_assortativity);
+    symtab_get_def("GraphAssortativity")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphAssortativity",
+        "GraphAssortativity[g] gives the degree assortativity coefficient of g "
+        "(exact rational in [-1,1]; Indeterminate for a regular graph).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

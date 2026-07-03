@@ -1540,6 +1540,20 @@ static void test_find_vertex_coloring(void) {
     assert_eval_eq("Head[FindVertexColoring[5]]", "FindVertexColoring", 0);
 }
 
+static void test_graph_assortativity(void) {
+    /* Stars are perfectly disassortative; a path P4 is -1/2. */
+    assert_eval_eq("GraphAssortativity[StarGraph[4]]", "-1", 0);
+    assert_eval_eq("GraphAssortativity[StarGraph[5]]", "-1", 0);
+    assert_eval_eq("GraphAssortativity[PathGraph[4]]", "-1/2", 0);
+    /* Regular / edgeless graphs have Indeterminate assortativity (zero variance). */
+    assert_eval_eq("GraphAssortativity[CycleGraph[5]]", "Indeterminate", 0);
+    assert_eval_eq("GraphAssortativity[CompleteGraph[4]]", "Indeterminate", 0);
+    assert_eval_eq("GraphAssortativity[Graph[{1,2,3},{}]]", "Indeterminate", 0);
+    assert_eval_eq("GraphAssortativity[Graph[{1,2,3},{1->2,2->3,3->1}]]", "Indeterminate", 0);
+    assert_eval_eq("With[{r=GraphAssortativity[PathGraph[5]]}, -1<=r<=1]", "True", 0);
+    assert_eval_eq("Head[GraphAssortativity[5]]", "GraphAssortativity", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1634,6 +1648,7 @@ int main(void) {
     TEST(test_find_dominating_set);
     TEST(test_find_edge_cover);
     TEST(test_find_vertex_coloring);
+    TEST(test_graph_assortativity);
 
     printf("All graph tests passed!\n");
     return 0;

@@ -190,6 +190,7 @@ Expr* builtin_find_independent_edge_set(Expr* res);     /* FindIndependentEdgeSe
 Expr* builtin_find_dominating_set(Expr* res);           /* FindDominatingSet[g] */
 Expr* builtin_find_edge_cover(Expr* res);               /* FindEdgeCover[g]     */
 Expr* builtin_find_vertex_coloring(Expr* res);          /* FindVertexColoring   */
+Expr* builtin_graph_assortativity(Expr* res);           /* GraphAssortativity   */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
