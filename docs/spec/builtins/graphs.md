@@ -303,6 +303,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
   in `[0, 1]`: `2m/(n(n−1))` for an undirected graph, `m/(n(n−1))` for a directed
   one (`1` for a complete graph, `0` for an empty one or fewer than two
   vertices). Reduced by the evaluator, so it prints as a clean integer/`Rational`.
+- `FindIndependentEdgeSet[g]` — a maximum matching: a largest set of edges no two
+  of which share a vertex, as a list of edges. Depth-first branch-and-bound over
+  the edges (take/skip) with a size bound; direction is irrelevant to
+  independence. `K_{2k}` and even paths/cycles give perfect/near-perfect
+  matchings, a star size 1. Deterministic, exponential worst case but fast on real
+  graphs.
 - `FindClique[g]` — a largest clique (a set of pairwise-adjacent vertices) as a
   list containing one vertex list (`{{1, 2, 3, 4}}` for `K₄`), or `{}` when `g`
   has no vertices. A max-clique specialisation of Bron–Kerbosch: grow a clique

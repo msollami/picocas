@@ -1483,6 +1483,20 @@ static void test_edge_contract(void) {
     assert_eval_eq("Head[EdgeContract[5, 1<->2]]", "EdgeContract", 0);
 }
 
+static void test_find_matching(void) {
+    assert_eval_eq("Length[FindIndependentEdgeSet[CompleteGraph[4]]]", "2", 0);
+    assert_eval_eq("Length[FindIndependentEdgeSet[CompleteGraph[6]]]", "3", 0);   /* perfect */
+    assert_eval_eq("Length[FindIndependentEdgeSet[PathGraph[4]]]", "2", 0);
+    assert_eval_eq("Length[FindIndependentEdgeSet[CycleGraph[4]]]", "2", 0);
+    assert_eval_eq("Length[FindIndependentEdgeSet[CycleGraph[5]]]", "2", 0);
+    assert_eval_eq("Length[FindIndependentEdgeSet[StarGraph[5]]]", "1", 0);
+    assert_eval_eq("Length[FindIndependentEdgeSet[CompleteGraph[3]]]", "1", 0);
+    assert_eval_eq("FindIndependentEdgeSet[Graph[{1,2,3},{}]]", "{}", 0);
+    /* Independence: the matching covers 2*size distinct vertices. */
+    assert_eval_eq("With[{mm=FindIndependentEdgeSet[PathGraph[4]]}, Length[Union[Flatten[mm/.UndirectedEdge->List]]] == 2*Length[mm]]", "True", 0);
+    assert_eval_eq("Head[FindIndependentEdgeSet[5]]", "FindIndependentEdgeSet", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1573,6 +1587,7 @@ int main(void) {
     TEST(test_neighborhood_graph);
     TEST(test_graph_disjoint_union);
     TEST(test_edge_contract);
+    TEST(test_find_matching);
 
     printf("All graph tests passed!\n");
     return 0;

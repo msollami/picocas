@@ -186,6 +186,7 @@ Expr* builtin_vertex_add(Expr* res);                    /* VertexAdd[g, v]      
 Expr* builtin_neighborhood_graph(Expr* res);            /* NeighborhoodGraph    */
 Expr* builtin_graph_disjoint_union(Expr* res);          /* GraphDisjointUnion   */
 Expr* builtin_edge_contract(Expr* res);                 /* EdgeContract[g, e]   */
+Expr* builtin_find_independent_edge_set(Expr* res);     /* FindIndependentEdgeSet */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

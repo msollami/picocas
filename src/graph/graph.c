@@ -622,6 +622,12 @@ void graph_init(void) {
         "EdgeContract[g, e] contracts edge e, merging its endpoints into one "
         "vertex, dropping the self-loop, and collapsing parallel edges.");
 
+    symtab_add_builtin("FindIndependentEdgeSet", builtin_find_independent_edge_set);
+    symtab_get_def("FindIndependentEdgeSet")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FindIndependentEdgeSet",
+        "FindIndependentEdgeSet[g] gives a maximum matching of g: a largest set "
+        "of edges no two of which share a vertex.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
