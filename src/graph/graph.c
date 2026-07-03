@@ -544,6 +544,12 @@ void graph_init(void) {
         "CocktailPartyGraph[n] gives the cocktail-party graph K_{n x 2}: 2n "
         "vertices in n couples, each joined to all but its partner.");
 
+    symtab_add_builtin("KneserGraph", builtin_kneser_graph);
+    symtab_get_def("KneserGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("KneserGraph",
+        "KneserGraph[n, k] gives the Kneser graph: k-subsets of {1..n} as "
+        "vertices, adjacent iff disjoint (K(5,2) is the Petersen graph).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

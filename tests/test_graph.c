@@ -1271,6 +1271,24 @@ static void test_cocktail_party_graph(void) {
     assert_eval_eq("Head[CocktailPartyGraph[x]]", "CocktailPartyGraph", 0);
 }
 
+static void test_kneser_graph(void) {
+    /* K(5,2) is the Petersen graph. */
+    assert_eval_eq("VertexCount[KneserGraph[5,2]]", "10", 0);
+    assert_eval_eq("EdgeCount[KneserGraph[5,2]]", "15", 0);
+    assert_eval_eq("RegularGraphQ[KneserGraph[5,2]]", "True", 0);
+    assert_eval_eq("ConnectedGraphQ[KneserGraph[5,2]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[KneserGraph[5,2]]", "False", 0);
+    /* K(n,1) = K_n; K(4,2) = perfect matching; vertex labels are subsets. */
+    assert_eval_eq("CompleteGraphQ[KneserGraph[5,1]]", "True", 0);
+    assert_eval_eq("EdgeCount[KneserGraph[4,2]]", "3", 0);
+    assert_eval_eq("RegularGraphQ[KneserGraph[4,2]]", "True", 0);
+    assert_eval_eq("First[VertexList[KneserGraph[4,2]]]", "{1, 2}", 0);
+    assert_eval_eq("VertexCount[KneserGraph[3,0]]", "1", 0);
+    /* Bad arguments stay unevaluated. */
+    assert_eval_eq("Head[KneserGraph[2,3]]", "KneserGraph", 0);
+    assert_eval_eq("Head[KneserGraph[5,x]]", "KneserGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1348,6 +1366,7 @@ int main(void) {
     TEST(test_circulant_graph);
     TEST(test_ladder_graph);
     TEST(test_cocktail_party_graph);
+    TEST(test_kneser_graph);
 
     printf("All graph tests passed!\n");
     return 0;

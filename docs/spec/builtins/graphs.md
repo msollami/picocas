@@ -169,6 +169,10 @@ constructor path:
   `n` couples, each joined to all but its partner (complement of a perfect
   matching). `(2n−2)`-regular with `2n(n−1)` edges. `CocktailPartyGraph[2] = C₄`,
   `CocktailPartyGraph[3]` is the octahedron; equals `TuranGraph[2n, n]`. `O(n²)`.
+- `KneserGraph[n, k]` — the Kneser graph `K(n, k)`: the `C(n,k)` k-subsets of
+  `{1..n}` (each a `List` label), adjacent iff disjoint. `K(n,1) = Kₙ`,
+  `K(5,2)` is the Petersen graph, `K(2k,k)` a perfect matching. Disjointness via
+  element bitmasks, `O(C(n,k)²)`; left unevaluated beyond a vertex cap.
 
 ```
 EdgeCount[CompleteGraph[5]]      (* 10                        *)
