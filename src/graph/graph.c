@@ -681,6 +681,12 @@ void graph_init(void) {
         "AntiprismGraph[n] gives the n-antiprism: two offset n-cycles with cross "
         "edges (4-regular, 4n edges; n=3 is the octahedron).");
 
+    symtab_add_builtin("PrismGraph", builtin_prism_graph);
+    symtab_get_def("PrismGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("PrismGraph",
+        "PrismGraph[n] gives the n-gonal prism: two n-cycles joined by rungs "
+        "(3-regular, 3n edges; n=4 is the cube).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

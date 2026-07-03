@@ -1618,6 +1618,20 @@ static void test_antiprism_graph(void) {
     assert_eval_eq("Head[AntiprismGraph[2]]", "AntiprismGraph", 0);
 }
 
+static void test_prism_graph(void) {
+    assert_eval_eq("VertexCount[PrismGraph[3]]", "6", 0);
+    assert_eval_eq("EdgeCount[PrismGraph[3]]", "9", 0);
+    assert_eval_eq("RegularGraphQ[PrismGraph[3]]", "True", 0);
+    assert_eval_eq("EdgeCount[PrismGraph[4]]", "12", 0);          /* cube */
+    assert_eval_eq("BipartiteGraphQ[PrismGraph[4]]", "True", 0);
+    assert_eval_eq("EdgeCount[PrismGraph[5]] == 3*5", "True", 0);
+    assert_eval_eq("First[DegreeCentrality[PrismGraph[5]]]", "3", 0);
+    assert_eval_eq("ConnectedGraphQ[PrismGraph[6]]", "True", 0);
+    /* Isomorphic to GeneralizedPetersenGraph[n,1] (same edge count). */
+    assert_eval_eq("EdgeCount[PrismGraph[5]] == EdgeCount[GeneralizedPetersenGraph[5,1]]", "True", 0);
+    assert_eval_eq("Head[PrismGraph[2]]", "PrismGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1717,6 +1731,7 @@ int main(void) {
     TEST(test_vertex_components);
     TEST(test_graph_periphery);
     TEST(test_antiprism_graph);
+    TEST(test_prism_graph);
 
     printf("All graph tests passed!\n");
     return 0;
