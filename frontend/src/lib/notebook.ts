@@ -47,6 +47,12 @@ function makeRow(type: CellType = 'code', source = ''): NotebookRow {
 export const selectedCells = writable<Set<string>>(new Set());
 export let lastSelectedId: string | null = null;
 
+// Shared row clipboard for cut/copy/paste of whole cells across notebooks.
+type RowData = { cells: Array<{ type: string; source: string }> };
+let _rowClipboard: RowData[] = [];
+export function setRowClipboard(rows: RowData[]) { _rowClipboard = rows; }
+export function getRowClipboard(): RowData[] { return _rowClipboard; }
+
 export function selectOnly(id: string) {
   lastSelectedId = id;
   selectedCells.set(new Set([id]));
@@ -82,6 +88,21 @@ export function rangeSelect(toId: string) {
 export function createNotebook() {
   const { subscribe, update, set } = writable<NotebookRow[]>([makeRow()]);
 
+  // --- undo/redo history (structural edits only) ---
+  // Text edits inside a cell are undone by CodeMirror; this stack covers
+  // row-level structure: insert, delete, and paste of whole cells. We snapshot
+  // the whole notebook before each structural mutation.
+  const MAX_UNDO = 100;
+  let undoStack: NotebookRow[][] = [];
+  let redoStack: NotebookRow[][] = [];
+  const cloneRows = (rows: NotebookRow[]): NotebookRow[] =>
+    rows.map(r => ({ id: r.id, cells: r.cells.map(c => ({ ...c, output: [...c.output] })) }));
+  function snapshot() {
+    undoStack.push(cloneRows(get({ subscribe })));
+    if (undoStack.length > MAX_UNDO) undoStack.shift();
+    redoStack = [];
+  }
+
   // --- helpers ---
 
   function findCell(cells: NotebookRow[], cellId: string): { row: NotebookRow; rowIdx: number; cellIdx: number } | null {
@@ -99,13 +120,26 @@ export function createNotebook() {
 
     /** Insert a new row at absolute row index. Returns new cell id. */
     insertRowAt(rowIdx: number, type: CellType = 'code', source = ''): string {
+      snapshot();
       const row = makeRow(type, source);
       update(rows => [...rows.slice(0, rowIdx), row, ...rows.slice(rowIdx)]);
       return row.cells[0].id;
     },
 
+    /** Insert whole rows (each with its cells) at absolute row index. */
+    insertRowsAt(rowIdx: number, rowsData: Array<{ cells: Array<{ type: string; source: string }> }>) {
+      snapshot();
+      const newRows: NotebookRow[] = rowsData.map(rd => ({
+        id: newRowId(),
+        cells: (rd.cells.length ? rd.cells : [{ type: 'code', source: '' }]).map(c =>
+          makeCell((c.type as CellType) ?? 'code', c.source ?? '')),
+      }));
+      update(rows => [...rows.slice(0, rowIdx), ...newRows, ...rows.slice(rowIdx)]);
+    },
+
     /** Append a row at the end. Returns new cell id. */
     addRow(type: CellType = 'code', source = ''): string {
+      snapshot();
       const row = makeRow(type, source);
       update(rows => [...rows, row]);
       return row.cells[0].id;
@@ -115,6 +149,7 @@ export function createNotebook() {
 
     /** Insert a cell at position cellIdx inside the row identified by rowId. Returns new cell id. */
     insertCellInRow(rowId: string, cellIdx: number, type: CellType = 'code', source = ''): string {
+      snapshot();
       const cell = makeCell(type, source);
       update(rows => rows.map(row => {
         if (row.id !== rowId) return row;
@@ -127,6 +162,7 @@ export function createNotebook() {
     // --- removal ---
 
     removeCell(cellId: string) {
+      snapshot();
       update(rows => {
         const next = rows.map(row => ({
           ...row,
@@ -138,6 +174,7 @@ export function createNotebook() {
     },
 
     removeCells(ids: Set<string>) {
+      snapshot();
       update(rows => {
         const next = rows.map(row => ({
           ...row,
@@ -158,6 +195,7 @@ export function createNotebook() {
     },
 
     setCellType(id: string, type: CellType) {
+      snapshot();
       update(rows => rows.map(row => ({
         ...row,
         cells: row.cells.map(c => c.id === id ? { ...c, type, output: [], execIdx: undefined } : c),
@@ -235,6 +273,7 @@ export function createNotebook() {
       }));
       set(rows.length > 0 ? rows : [makeRow()]);
       selectedCells.set(new Set());
+      undoStack = []; redoStack = [];
     },
 
     // Legacy single-cell serialization (for .mathilda files without row structure)
@@ -248,6 +287,7 @@ export function createNotebook() {
       _execCounter = 0;
       set(cells.map(cd => ({ id: newRowId(), cells: [makeCell(cd.type as CellType, cd.source)] })));
       selectedCells.set(new Set());
+      undoStack = []; redoStack = [];
     },
 
     allCells(): Cell[] {
@@ -259,6 +299,23 @@ export function createNotebook() {
     },
 
     getRows(): NotebookRow[] { return get({ subscribe }); },
+
+    // --- undo / redo (structural edits) ---
+    undo(): boolean {
+      if (undoStack.length === 0) return false;
+      redoStack.push(cloneRows(get({ subscribe })));
+      set(undoStack.pop()!);
+      selectedCells.set(new Set());
+      return true;
+    },
+    redo(): boolean {
+      if (redoStack.length === 0) return false;
+      undoStack.push(cloneRows(get({ subscribe })));
+      set(redoStack.pop()!);
+      selectedCells.set(new Set());
+      return true;
+    },
+    clearHistory() { undoStack = []; redoStack = []; },
   };
 }
 

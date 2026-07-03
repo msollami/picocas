@@ -38,7 +38,18 @@
     return commas > 4 || text.length > 200;
   }
 
+  function esc(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
   function renderOutput(text: string, latex?: string): string {
+    const t = text.trim();
+    // A bare string result ("...") renders as upright monospace text with
+    // straight quotes, not through KaTeX (whose \text{"..."} draws ugly curly
+    // quotes and an italic serif face).
+    if (/^"(?:[^"\\]|\\.)*"$/.test(t)) {
+      return `<span class="out-string">${esc(t)}</span>`;
+    }
     // Long lists: always use wrapping code regardless of latex field.
     // KaTeX renders math spans without line-breaking, so even \{1,2,...\}
     // produces a single wide unbreakable line.
@@ -60,9 +71,14 @@
   }
 
   function mountPlot(node: HTMLElement, data: object) {
-    import('plotly.js-dist-min').then((Plotly: any) => {
-      const spec = data as any;
+    const spec = data as any;
+    let Plotly: any = null;
+    let lastDark: boolean | null = null;
+
+    const render = () => {
+      if (!Plotly) return;
       const dark = !document.documentElement.classList.contains('light');
+      lastDark = dark;
       const layoutOverride = dark ? {
         plot_bgcolor:  '#181825', paper_bgcolor: '#181825',
         font: { color: '#cdd6f4' },
@@ -77,7 +93,40 @@
       Plotly.react(node, spec.data ?? [spec], { ...(spec.layout ?? {}), ...layoutOverride }, {
         responsive: true, displayModeBar: true,
       });
+    };
+
+    import('plotly.js-dist-min').then((P: any) => { Plotly = P; render(); resize(); });
+
+    // Re-render when the app toggles light/dark (the `light` class on <html>),
+    // so already-drawn plots (e.g. graph diagrams) follow the theme instead of
+    // keeping the background they were first rendered with.
+    const obs = new MutationObserver(() => {
+      const dark = !document.documentElement.classList.contains('light');
+      if (dark !== lastDark) render();
     });
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    // Plotly's `responsive` only refits on window resize, not when the plot's
+    // CONTAINER changes size — so toggling horizontal cell mode or dragging the
+    // input/output split left the plot at its original width, overflowing the
+    // narrower pane. A ResizeObserver refits it to the container instead.
+    let raf = 0;
+    const resize = () => {
+      if (!Plotly) return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => { try { Plotly.Plots.resize(node); } catch { /* ignore */ } });
+    };
+    const ro = new ResizeObserver(resize);
+    ro.observe(node);
+
+    return {
+      destroy() {
+        obs.disconnect();
+        ro.disconnect();
+        cancelAnimationFrame(raf);
+        try { Plotly?.purge?.(node); } catch { /* ignore */ }
+      },
+    };
   }
 
   // Measure height of a rendered output element to decide if it needs collapse
@@ -180,6 +229,15 @@
     padding: 0.25rem 0;
     color: var(--out-text, #222);
     text-align: left;
+  }
+
+  /* Bare string result — upright monospace with straight quotes. */
+  :global(.out-string) {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.98em;
+    color: var(--out-text, #cdd6f4);
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   /* Long list/sequence outputs rendered as wrapping code */

@@ -53,13 +53,25 @@ static Expr* normalize_edge(const Expr* e) {
 
 /* Assemble the canonical Graph from `res`, or NULL if the shape is wrong or the
  * result would be invalid. */
-static Expr* try_build_canonical(Expr* res) {
+static Expr* try_build_canonical_head(Expr* res, const char* head_sym) {
     size_t argc = res->data.function.arg_count;
     const Expr* verts_in = NULL;
     const Expr* edges_in = NULL;
 
     if (argc == 1) {
-        edges_in = res->data.function.args[0];
+        const Expr* arg = res->data.function.args[0];
+        const char* ah = fn_head(arg);
+        /* Graph3D[existing graph] / Graph[graph]: reuse its vertex & edge
+         * lists (converts a 2D graph to 3D and vice versa). */
+        if ((ah == SYM_Graph || ah == SYM_Graph3D)
+            && arg->data.function.arg_count == 2
+            && graph_is_list(arg->data.function.args[0])
+            && graph_is_list(arg->data.function.args[1])) {
+            verts_in = arg->data.function.args[0];
+            edges_in = arg->data.function.args[1];
+        } else {
+            edges_in = arg;
+        }
     } else if (argc == 2) {
         verts_in = res->data.function.args[0];
         edges_in = res->data.function.args[1];
@@ -114,10 +126,10 @@ static Expr* try_build_canonical(Expr* res) {
     free(verts);
     free(edges);
     Expr* gargs[2] = { vlist, elist };
-    Expr* g = expr_new_function(expr_new_symbol(SYM_Graph), gargs, 2);
+    Expr* g = expr_new_function(expr_new_symbol(head_sym), gargs, 2);
 
     /* 4. Validate (self-loops, parallel edges, endpoint membership). */
-    if (!graph_is_valid(g)) { expr_free(g); return NULL; }
+    if (!graph_is_valid_head(g, head_sym)) { expr_free(g); return NULL; }
     return g;
 
 fail_edges:
@@ -127,11 +139,20 @@ fail_edges:
 }
 
 Expr* builtin_graph(Expr* res) {
-    Expr* canonical = try_build_canonical(res);
+    Expr* canonical = try_build_canonical_head(res, SYM_Graph);
     if (!canonical) return NULL;                 /* malformed: leave unevaluated */
     if (expr_eq(canonical, res)) {               /* already canonical: fixed point */
         expr_free(canonical);
         return NULL;
     }
+    return canonical;
+}
+
+/* Graph3D[...] normalizes/validates exactly like Graph but produces a value
+ * with head Graph3D, which the REPL auto-displays as a 3D node-link diagram. */
+Expr* builtin_graph3d(Expr* res) {
+    Expr* canonical = try_build_canonical_head(res, SYM_Graph3D);
+    if (!canonical) return NULL;
+    if (expr_eq(canonical, res)) { expr_free(canonical); return NULL; }
     return canonical;
 }

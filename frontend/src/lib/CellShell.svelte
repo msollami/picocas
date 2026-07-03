@@ -10,7 +10,8 @@
   All mutation calls go through store.xxx() instead of the global notebook singleton.
 -->
 <script lang="ts">
-  import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+  import { onMount, onDestroy, createEventDispatcher, tick } from 'svelte';
+  import { renderMarkdown } from './markdown';
   import { EditorView, keymap } from '@codemirror/view';
   import { EditorState, EditorSelection } from '@codemirror/state';
   import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -76,6 +77,8 @@
         doc: cell.source,
         extensions: [
           history(),
+          // Soft-wrap long input lines so they don't run off the page.
+          EditorView.lineWrapping,
           syntaxHighlighting(defaultHighlightStyle),
           keymap.of([
             { key: 'Shift-Enter', run() { dispatch('run', { id: cell.id }); return true; } },
@@ -164,9 +167,29 @@
     dispatch('change', { id: cell.id, source: (e.target as HTMLElement).innerText });
   }
 
-  // Arrow navigation for contenteditable cells (section/subsection/text).
-  // Dispatches focusPrev/focusNext so the notebook can show the insertion cursor.
+  // Markdown render state for text cells (Shift+Enter renders; click edits).
+  let rendered = false;
+
+  async function editProse() {
+    rendered = false;
+    await tick();
+    if (proseEl) { proseEl.innerText = cell.source; proseEl.focus(); }
+  }
+
+  // Arrow navigation for contenteditable cells (section/subsection/text), plus
+  // Shift+Enter to render a text cell's markdown. Dispatches focusPrev/focusNext
+  // so the notebook can show the insertion cursor.
   function onProseKeydown(e: KeyboardEvent) {
+    // Shift+Enter renders the markdown of a text cell and advances to the next
+    // insertion point, mirroring how running a code cell moves on.
+    if (e.key === 'Enter' && e.shiftKey && cell.type === 'text') {
+      e.preventDefault();
+      dispatch('change', { id: cell.id, source: (proseEl?.innerText ?? cell.source) });
+      rendered = true;
+      dispatch('focusNext', { id: cell.id });
+      return;
+    }
+
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
 
     // Section/subsection headings are always single-line → navigate immediately.
@@ -176,21 +199,37 @@
       return;
     }
 
-    // Text cells: only navigate when the cursor is at the very start or end.
+    // Text cells: let the browser attempt the caret move, then check on the
+    // next frame whether it actually moved *to another line*. If it didn't
+    // (already on the first/last visual line — including empty trailing lines
+    // where the caret rect is unavailable), navigate to the adjacent insertion
+    // point. This is robust to contenteditable's block/<br> structure, which
+    // defeats offset- and rect-based heuristics on blank lines.
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || !sel.isCollapsed) return;
-    const range = sel.getRangeAt(0);
 
-    if (e.key === 'ArrowUp' && range.startOffset === 0) {
-      e.preventDefault();
-      dispatch('focusPrev', { id: cell.id });
-    } else if (e.key === 'ArrowDown') {
-      const node = range.startContainer;
-      const atEnd = node.nodeType === Node.TEXT_NODE
-        ? range.startOffset === (node.textContent?.length ?? 0)
-        : range.startOffset >= node.childNodes.length;
-      if (atEnd) { e.preventDefault(); dispatch('focusNext', { id: cell.id }); }
-    }
+    const beforeNode = sel.focusNode;
+    const beforeOffset = sel.focusOffset;
+    const caretTop = (): number | null => {
+      const s = window.getSelection();
+      if (!s || s.rangeCount === 0) return null;
+      const r = s.getRangeAt(0).getBoundingClientRect();
+      return (r.top === 0 && r.bottom === 0 && r.left === 0) ? null : r.top;
+    };
+    const beforeTop = caretTop();
+    const key = e.key;
+
+    requestAnimationFrame(() => {
+      const s = window.getSelection();
+      if (!s) return;
+      const sameCaret = s.focusNode === beforeNode && s.focusOffset === beforeOffset;
+      const afterTop = caretTop();
+      // Same line = caret didn't move to a new node/offset, OR it stayed on the
+      // same visual row (top unchanged — e.g. jumped to the row's end/start).
+      const sameLine = sameCaret
+        || (beforeTop !== null && afterTop !== null && Math.abs(afterTop - beforeTop) < 1);
+      if (sameLine) dispatch(key === 'ArrowUp' ? 'focusPrev' : 'focusNext', { id: cell.id });
+    });
   }
 
   // Focus ref + contenteditable state management
@@ -204,10 +243,11 @@
   $: if (proseEl && cell.id !== _lastCellId) {
     proseEl.innerText = cell.source;
     _lastCellId = cell.id;
-    // Register focus fn once the element exists
+    // Register focus fn once the element exists. If the cell is currently
+    // showing rendered markdown, focusing it re-enters edit mode.
     dispatch('register', {
       id: cell.id,
-      fn: () => { proseEl?.focus(); },
+      fn: () => { if (rendered) editProse(); else proseEl?.focus(); },
     });
   }
 </script>
@@ -290,15 +330,22 @@
 
     {:else if cell.type === 'text'}
       <!-- svelte-ignore a11y-click-events-have-key-events -->
-      <!-- Content set via JS ($: proseEl update) to avoid contenteditable doubling -->
-      <div
-        class="prose-cell"
-        contenteditable="true"
-        bind:this={proseEl}
-        on:input={onTextInput}
-        on:keydown={onProseKeydown}
-        on:click|stopPropagation
-      ></div>
+      {#if rendered}
+        <!-- Rendered markdown (Shift+Enter). Click to edit again. -->
+        <div class="prose-rendered" on:click|stopPropagation={editProse}>
+          {@html renderMarkdown(cell.source)}
+        </div>
+      {:else}
+        <!-- Content set via JS ($: proseEl update) to avoid contenteditable doubling -->
+        <div
+          class="prose-cell"
+          contenteditable="true"
+          bind:this={proseEl}
+          on:input={onTextInput}
+          on:keydown={onProseKeydown}
+          on:click|stopPropagation
+        ></div>
+      {/if}
 
     {:else if cell.type === 'section'}
       <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -339,13 +386,21 @@
     position: relative;
     display: flex;
     flex-direction: row;
-    border-top: 1px solid transparent;
-    border-bottom: 1px solid var(--border, rgba(255,255,255,0.06));
-    transition: border-color 0.12s, background 0.12s;
-    background: var(--cell-bg, transparent);
+    /* A left "spine" replaces the old full-width separator lines: transparent
+       by default (so cells read as an airy stack separated by whitespace), a
+       faint hairline on hover, and the accent color when the io pair is
+       focused or selected — grouping input+output as one unit without stripes. */
+    border-left: 2px solid transparent;
+    border-radius: 3px;
+    transition: border-color 0.15s, background 0.15s;
+    /* Transparent at rest so cells and the gaps between them read identically
+       (a translucent per-cell background produced faint stripes over the card).
+       Only the interaction states below tint the cell. */
+    background: transparent;
   }
-  .cell-shell:focus-within  { border-left: 2px solid var(--accent, #89b4fa); }
-  .cell-shell.selected      { border-left: 3px solid var(--accent, #89b4fa); }
+  .cell-shell:hover         { border-left-color: var(--border, rgba(255,255,255,0.09)); }
+  .cell-shell:focus-within  { border-left-color: var(--accent, #89b4fa); background: rgba(137,180,250,0.03); }
+  .cell-shell.selected      { border-left-color: var(--accent, #89b4fa); background: rgba(137,180,250,0.09); }
   .cell-shell.running       { background: rgba(243,156,18,0.04); }
 
   /* ---- Left gutter: run button + exec label stacked, no wasted horizontal space ---- */
@@ -354,21 +409,23 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 6px 4px 6px 4px;
-    width: 40px;
+    padding: 6px 3px 6px 3px;
+    width: 52px;
     flex-shrink: 0;
     cursor: pointer;
     user-select: none;
     gap: 2px;
+    overflow: visible;
   }
 
   .exec-label {
-    font-size: 0.58rem;
+    font-size: 0.55rem;
     color: var(--text-muted, #585b70);
     font-family: 'SF Mono', monospace;
     white-space: nowrap;
     writing-mode: horizontal-tb;
     line-height: 1;
+    max-width: 100%;
   }
 
   .run-btn {
@@ -496,6 +553,75 @@
     text-align: left;
     white-space: pre-wrap;
   }
+  /* Rendered markdown view (Shift+Enter on a text cell). */
+  .prose-rendered {
+    padding: 6px 8px;
+    font-size: 0.95rem;
+    color: var(--text, #cdd6f4);
+    min-height: 2em;
+    line-height: 1.6;
+    text-align: left;
+    cursor: text;
+  }
+  /* Headings match the notebook's own section/subsection heading cells so a
+   * `# Title` / `## Sub` in a text cell renders identically to a section /
+   * subsection cell (see h1.heading-cell / h2.heading-cell below). */
+  .prose-rendered :global(h1),
+  .prose-rendered :global(h2),
+  .prose-rendered :global(h3),
+  .prose-rendered :global(h4) {
+    margin: 0.5em 0 0.3em;
+    font-weight: 700;
+    line-height: 1.3;
+    /* Use --text (the app toggles it for light/dark) rather than inheriting the
+     * global h1/h2 color (--text-h), which the manual light toggle does not
+     * override — that left rendered headings near-white on a light background. */
+    color: var(--text, #cdd6f4);
+  }
+  .prose-rendered :global(h1) {
+    font-size: 1.15rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: 0.3rem;
+  }
+  .prose-rendered :global(h2) { font-size: 1.0rem; }
+  .prose-rendered :global(h3) { font-size: 0.95rem; opacity: 0.9; }
+  .prose-rendered :global(h1:first-child),
+  .prose-rendered :global(h2:first-child),
+  .prose-rendered :global(h3:first-child) { margin-top: 0; }
+  .prose-rendered :global(p) { margin: 0.35em 0; }
+  .prose-rendered :global(ul),
+  .prose-rendered :global(ol) { margin: 0.35em 0; padding-left: 1.4em; }
+  .prose-rendered :global(li) { margin: 0.15em 0; }
+  .prose-rendered :global(a) { color: var(--accent, #89b4fa); text-decoration: underline; }
+  .prose-rendered :global(code) {
+    font-family: 'SF Mono', ui-monospace, monospace;
+    font-size: 0.88em;
+    background: rgba(255,255,255,0.08);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+  }
+  .prose-rendered :global(pre) {
+    background: rgba(255,255,255,0.06);
+    padding: 0.6em 0.8em;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin: 0.4em 0;
+  }
+  .prose-rendered :global(pre code) { background: none; padding: 0; }
+  .prose-rendered :global(blockquote) {
+    margin: 0.4em 0;
+    padding-left: 0.8em;
+    border-left: 3px solid rgba(255,255,255,0.18);
+    color: var(--text-muted, #a6adc8);
+  }
+  .prose-rendered :global(hr) { border: none; border-top: 1px solid rgba(255,255,255,0.12); margin: 0.6em 0; }
+  .prose-rendered :global(img) { max-width: 100%; border-radius: 6px; margin: 0.3em 0; }
+  .prose-rendered :global(table) { border-collapse: collapse; margin: 0.5em 0; font-size: 0.9em; }
+  .prose-rendered :global(th),
+  .prose-rendered :global(td) { border: 1px solid rgba(255,255,255,0.15); padding: 4px 10px; text-align: left; }
+  .prose-rendered :global(th) { background: rgba(255,255,255,0.06); font-weight: 700; }
+  .prose-rendered :global(.md-math-display) { margin: 0.6em 0; overflow-x: auto; text-align: center; }
+  .prose-rendered :global(.katex) { font-size: 1.05em; }
   .heading-cell {
     padding: 6px 8px;
     margin: 0;

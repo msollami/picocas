@@ -19,7 +19,7 @@
 -->
 <script lang="ts">
   import { onMount, tick, createEventDispatcher } from 'svelte';
-  import { setFocused, setNotebookWidth, setNotebookHeight } from './canvas';
+  import { setFocused, setNotebookWidth, setNotebookHeight, setNotebookPos } from './canvas';
   const dispatch = createEventDispatcher();
   import { get } from 'svelte/store';
   import CellShell from './CellShell.svelte';
@@ -34,12 +34,15 @@
     kernelStatus,
     selectedCells,
     clearSelection,
+    setRowClipboard,
+    getRowClipboard,
   } from './notebook';
   import type { OutputItem, CellType } from './notebook';
   import {
     evaluateCell,
   } from './ipc';
   import type { OutputMessage } from './ipc';
+  import { rubberband } from './rubberband';
 
   export let nb: CanvasNotebook;
   export let currentZoom: number = 1.0;
@@ -106,7 +109,6 @@
   // Bottom / corner resize handles
 
   let resizingBottom  = false;
-  let resizingCorner  = false;
   let resizeStartY    = 0;
   let resizeStartH    = 0;
 
@@ -127,31 +129,56 @@
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }
 
-  function onCornerResizeDown(e: PointerEvent) {
-    if (e.button !== 0) return;
-    e.stopPropagation();
-    resizingCorner = true;
-    resizeStartY   = e.clientY;
-    resizeStartH   = currentHeight();
-    resizeStartX   = e.clientX;
-    resizeStartW   = nb.width;
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }
-
   function onBottomResizeMove(e: PointerEvent) {
-    if (!resizingBottom && !resizingCorner) return;
+    if (!resizingBottom) return;
     e.stopPropagation();
     const dy = (e.clientY - resizeStartY) / (currentZoom || 1);
     setNotebookHeight(nb.id, resizeStartH + dy);
-    if (resizingCorner) {
-      const dx = (e.clientX - resizeStartX) / (currentZoom || 1);
-      setNotebookWidth(nb.id, resizeStartW + dx);
-    }
   }
+
+  // ---- Four-corner diagonal resize ------------------------------------------
+  // Each corner keeps its opposite corner fixed: dragging changes width/height
+  // and, for the west/north corners, also the notebook's x/y so the anchored
+  // edge stays put.
+  type Corner = 'nw' | 'ne' | 'sw' | 'se';
+  const MIN_W = 220, MIN_H = 140;
+  let resizeCorner: Corner | null = null;
+  let cornerStartX = 0, cornerStartY = 0;   // pointer at grab (screen)
+  let cornerNbX = 0, cornerNbY = 0;         // notebook pos at grab (world)
+
+  function onCornerDown(e: PointerEvent, corner: Corner) {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+    resizeCorner = corner;
+    cornerStartX = e.clientX; cornerStartY = e.clientY;
+    cornerNbX = nb.x; cornerNbY = nb.y;
+    resizeStartW = nb.width;
+    resizeStartH = currentHeight();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function onCornerMove(e: PointerEvent) {
+    if (!resizeCorner) return;
+    e.stopPropagation();
+    const z = currentZoom || 1;
+    const dx = (e.clientX - cornerStartX) / z;
+    const dy = (e.clientY - cornerStartY) / z;
+    const east  = resizeCorner === 'ne' || resizeCorner === 'se';
+    const south = resizeCorner === 'se' || resizeCorner === 'sw';
+    const newW = Math.max(MIN_W, east  ? resizeStartW + dx : resizeStartW - dx);
+    const newH = Math.max(MIN_H, south ? resizeStartH + dy : resizeStartH - dy);
+    // Keep the anchored (opposite) edge fixed when growing west/north.
+    const newX = east  ? cornerNbX : cornerNbX + (resizeStartW - newW);
+    const newY = south ? cornerNbY : cornerNbY + (resizeStartH - newH);
+    setNotebookWidth(nb.id, newW);
+    setNotebookHeight(nb.id, newH);
+    setNotebookPos(nb.id, newX, newY);
+  }
+
+  function onCornerUp(_e: PointerEvent) { resizeCorner = null; }
 
   function onBottomResizeUp(_e: PointerEvent) {
     resizingBottom = false;
-    resizingCorner = false;
   }
 
   function onTitlePointerDown(e: PointerEvent) {
@@ -232,6 +259,21 @@
     toggleCollapse(nb.id);
   }
 
+  // Close confirmation — guards against accidentally deleting a notebook (and
+  // its unsaved cells) with one click.
+  let confirmingClose = false;
+  function requestClose() { confirmingClose = true; }
+  function cancelClose()  { confirmingClose = false; }
+  function confirmClose() { confirmingClose = false; removeNotebook(nb.id); }
+
+  // Move a node to <body> so it isn't clipped by the card's overflow:hidden and
+  // isn't trapped by the card's backdrop-filter/transform containing block
+  // (which would break position:fixed). Used for the close-confirm modal.
+  function portal(node: HTMLElement) {
+    document.body.appendChild(node);
+    return { destroy() { if (node.parentNode) node.parentNode.removeChild(node); } };
+  }
+
   // ---------------------------------------------------------------------------
   // Cell focus registry
 
@@ -308,6 +350,7 @@
     }
     return hidden;
   })();
+
 
   // ---------------------------------------------------------------------------
   // 4-directional row/cell add
@@ -427,7 +470,78 @@
   // ---------------------------------------------------------------------------
   // Keyboard (scoped to card — stop propagation so canvas doesn't eat keys)
 
+  // ---- Multi-row selection from the insertion point (Shift+Up/Down) --------
+  // selAnchor is the gap where a shift-selection started; the selected rows are
+  // those between selAnchor and insertionIdx. Selection drives selectedCells
+  // (for highlight) and enables delete / cut / copy / paste to reorder cells.
+  let selAnchor: number | null = null;
+  let selRows = new Set<number>();
+
+  function clearRowSelection() {
+    selAnchor = null;
+    if (selRows.size) { selRows = new Set(); clearSelection(); }
+  }
+  function applyRowSelection(gap: number) {
+    // selAnchor is set by the caller to the pre-move gap.
+    const anchor = selAnchor ?? gap;
+    insertionIdx = gap;
+    const rows = nb.store.getRows();
+    const lo = Math.min(anchor, gap), hi = Math.max(anchor, gap);
+    selRows = new Set();
+    const ids: string[] = [];
+    for (let r = lo; r < hi; r++) {
+      selRows.add(r);
+      rows[r]?.cells.forEach(c => ids.push(c.id));
+    }
+    selectedCells.set(new Set(ids));
+  }
+  function selectedRowData() {
+    const rows = nb.store.getRows();
+    return [...selRows].sort((a, b) => a - b)
+      .map(r => ({ cells: rows[r].cells.map(c => ({ type: c.type, source: c.source })) }));
+  }
+  function deleteSelectedRows() {
+    if (!selRows.size) return;
+    const rows = nb.store.getRows();
+    const lo = Math.min(...selRows);
+    const ids = new Set<string>();
+    selRows.forEach(r => rows[r]?.cells.forEach(c => ids.add(c.id)));
+    nb.store.removeCells(ids);
+    clearRowSelection();
+    insertionIdx = lo;
+  }
+
   async function onCardKeydown(e: KeyboardEvent) {
+    const cardFocused = e.target === cardEl;
+
+    // Card-level Cmd/Ctrl shortcuts (only when the card itself is focused, not a
+    // CodeMirror editor — CodeMirror keeps its own text undo). Must run before
+    // the generic Cmd/Ctrl pass-through below.
+    if ((e.metaKey || e.ctrlKey) && cardFocused) {
+      const k = e.key.toLowerCase();
+      // Structural undo/redo (delete / cut / paste / insert of whole cells).
+      if (k === 'z') {
+        e.preventDefault(); e.stopPropagation();
+        clearRowSelection();
+        if (e.shiftKey) nb.store.redo(); else nb.store.undo();
+        return;
+      }
+      if (k === 'y') { e.preventDefault(); e.stopPropagation(); clearRowSelection(); nb.store.redo(); return; }
+      // Clipboard on a multi-row selection / at the insertion point.
+      if (insertionIdx !== null) {
+        if (k === 'c' && selRows.size) { e.preventDefault(); e.stopPropagation(); setRowClipboard(selectedRowData()); return; }
+        if (k === 'x' && selRows.size) { e.preventDefault(); e.stopPropagation(); setRowClipboard(selectedRowData()); deleteSelectedRows(); return; }
+        if (k === 'v' && getRowClipboard().length) {
+          e.preventDefault(); e.stopPropagation();
+          const data = getRowClipboard();
+          clearRowSelection();
+          nb.store.insertRowsAt(insertionIdx, data);
+          insertionIdx = insertionIdx + data.length;
+          return;
+        }
+      }
+    }
+
     // Let Cmd+0 and Cmd+N pass through to Canvas for fit-all / add notebook
     // Let ALL Cmd/Ctrl combos pass through to App.svelte's window handler
     // (Cmd+0 fit-all, Cmd+N new notebook, Cmd+=/- ui scale, Cmd+S/O save/open)
@@ -441,9 +555,30 @@
     // itself has focus) to navigate further.
     if (insertionIdx === null || e.target !== cardEl) return;
 
-    if (e.key === 'Escape') { e.preventDefault(); insertionIdx = null; return; }
+    if (e.key === 'Escape') { e.preventDefault(); clearRowSelection(); insertionIdx = null; return; }
+
+    // Delete/Backspace removes the selected rows.
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selRows.size) {
+      e.preventDefault(); deleteSelectedRows(); return;
+    }
+
+    // Shift+Up/Down extends a multi-row selection from the insertion point.
+    // Anchor at the CURRENT gap before moving so the first press already
+    // selects the adjacent cell (not the one after it).
+    if (e.shiftKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+      e.preventDefault();
+      const rows = nb.store.getRows();
+      if (selAnchor === null) selAnchor = insertionIdx;
+      const gap = e.key === 'ArrowDown'
+        ? Math.min(rows.length, insertionIdx + 1)
+        : Math.max(0, insertionIdx - 1);
+      applyRowSelection(gap);
+      return;
+    }
+
     if (e.key === 'ArrowUp') {
       e.preventDefault();
+      clearRowSelection();
       const rows = nb.store.getRows();
       // Arrow up from insertion point → enter the cell ABOVE the cursor
       // insertionIdx N = gap between row[N-1] and row[N].
@@ -465,6 +600,7 @@
     }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
+      clearRowSelection();
       const rows = nb.store.getRows();
       // Arrow down from insertion point → enter the cell BELOW the cursor
       // insertionIdx N = gap between row[N-1] and row[N].
@@ -484,6 +620,7 @@
       return;
     }
     if (e.key === 'Enter') {
+      clearRowSelection();
       e.preventDefault();
       const idx = insertionIdx; insertionIdx = null;
       const id = nb.store.insertRowAt(idx);
@@ -511,9 +648,9 @@
   bind:this={cardEl}
   tabindex="-1"
   on:keydown={onCardKeydown}
-  on:pointermove={(e) => { onTitlePointerMove(e); onBottomResizeMove(e); }}
-  on:pointerup={(e) => { onTitlePointerUp(e); onBottomResizeUp(e); }}
-  on:pointercancel={(e) => { onTitlePointerUp(e); onBottomResizeUp(e); }}
+  on:pointermove={(e) => { onTitlePointerMove(e); onBottomResizeMove(e); onCornerMove(e); }}
+  on:pointerup={(e) => { onTitlePointerUp(e); onBottomResizeUp(e); onCornerUp(e); }}
+  on:pointercancel={(e) => { onTitlePointerUp(e); onBottomResizeUp(e); onCornerUp(e); }}
 >
   <!-- Title bar — only pointerdown here; move/up handled by cardEl after setPointerCapture -->
   <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -553,7 +690,8 @@
       >{nb.title}</span>
     {/if}
 
-    <div class="titlebar-actions">
+    <!-- Left group: run / layout / rename -->
+    <div class="titlebar-actions titlebar-actions-left">
       <button class="tb-btn tb-run-all" title="Run all cells" on:click|stopPropagation={runAll}>▶▶</button>
       <!-- Layout toggle always visible — input/output side-by-side or stacked -->
       <button
@@ -563,14 +701,37 @@
       >{horizontal ? '↕' : '⇄'}</button>
       {#if !focused}
         <button class="tb-btn" title="Rename" on:click|stopPropagation={startRename}>✎</button>
+      {/if}
+    </div>
+
+    <!-- Right group: window controls (maximize / minimize / close) -->
+    {#if !focused}
+      <div class="titlebar-actions titlebar-actions-right">
         <button class="tb-btn tb-focus" title="Full screen" on:click|stopPropagation={() => setFocused(nb.id)}>⤢</button>
         <button class="tb-btn" title="Collapse / expand" on:click|stopPropagation={onToggleCollapse}>
           {nb.collapsed ? '⊟' : '⊞'}
         </button>
-        <button class="tb-btn tb-close" title="Close" on:click|stopPropagation={() => removeNotebook(nb.id)}>✕</button>
-      {/if}
-    </div>
+        <button class="tb-btn tb-close" title="Close" on:click|stopPropagation={requestClose}>✕</button>
+      </div>
+    {/if}
   </div>
+
+  <!-- Close confirmation — closing removes the notebook from the canvas, which
+       loses its cells if the library hasn't been saved, so confirm first. -->
+  {#if confirmingClose}
+    <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+    <div class="close-confirm-backdrop" use:portal on:click|stopPropagation={cancelClose}>
+      <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+      <div class="close-confirm" on:click|stopPropagation>
+        <div class="cc-title">Close “{nb.title}”?</div>
+        <div class="cc-msg">This removes the notebook and its cells from the canvas. Save the library first if you want to keep it.</div>
+        <div class="cc-actions">
+          <button class="cc-btn cc-cancel" on:click|stopPropagation={cancelClose}>Cancel</button>
+          <button class="cc-btn cc-delete" on:click|stopPropagation={confirmClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  {/if}
 
   <!-- Right-edge resize handle -->
   {#if !focused}
@@ -585,9 +746,15 @@
     <!-- Bottom resize handle -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div class="resize-handle-bottom" on:pointerdown={onBottomResizeDown}></div>
-    <!-- Corner resize handle -->
+    <!-- Four diagonal corner resize handles -->
     <!-- svelte-ignore a11y-no-static-element-interactions -->
-    <div class="resize-handle-corner" on:pointerdown={onCornerResizeDown}></div>
+    <div class="resize-corner rc-nw" on:pointerdown={(e) => onCornerDown(e, 'nw')}></div>
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="resize-corner rc-ne" on:pointerdown={(e) => onCornerDown(e, 'ne')}></div>
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="resize-corner rc-sw" on:pointerdown={(e) => onCornerDown(e, 'sw')}></div>
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
+    <div class="resize-corner rc-se" on:pointerdown={(e) => onCornerDown(e, 'se')}></div>
   {/if}
 
   <!-- Collapse wrapper -->
@@ -605,9 +772,13 @@
       <!-- svelte-ignore a11y-no-static-element-interactions -->
       <div
         class="card-body"
+        use:rubberband={{ requireFocus: true }}
         style={nb.height != null ? `max-height: none; height: ${nb.height - TITLE_BAR_H}px; overflow-y: auto;` : ''}
 
       >
+       <!-- Inner content wrapper: rubberband translates THIS (not .card-body)
+            so the scrollbar stays anchored; also carries the uniform gap. -->
+       <div class="cb-inner">
         <!-- Insertion point before first row -->
         {#if insertionIdx === 0}
           <div class="insertion-cursor active"></div>
@@ -689,6 +860,7 @@
           <button on:click|stopPropagation={() => addRow('text')}>＋ Text</button>
           <button on:click|stopPropagation={() => addRow('section')}>＋ Section</button>
         </div>
+       </div>
       </div>
     {/if}
   </div>
@@ -721,6 +893,15 @@
   .nb-card.mounted {
     opacity: 1;
     transform: scale(1);
+  }
+
+  /* In full-screen focused mode the overlay itself animates the zoom, so the
+   * card must not also run its scale-in mount animation (double-animation looks
+   * janky). Render it settled immediately. */
+  .nb-card.focused-card {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 
   /* Multi-selected via rubber-band */
@@ -829,6 +1010,45 @@
     gap: 4px;
     flex-shrink: 0;
   }
+  /* Left group (run-all, layout, rename) stays at the left; the right group
+   * (full-screen, collapse, close) is pushed to the top-right. Title is
+   * centered independently (absolutely positioned). */
+  .titlebar-actions-right { margin-left: auto; }
+
+  /* ---- Close confirmation dialog ---- */
+  .close-confirm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+  }
+  .close-confirm {
+    width: min(320px, 82%);
+    background: var(--card-bg, #12131f);
+    border: 1px solid var(--border, rgba(255,255,255,0.12));
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    text-align: left;
+  }
+  .cc-title { font-weight: 700; font-size: 0.95rem; color: var(--text, #cdd6f4); margin-bottom: 6px; }
+  .cc-msg   { font-size: 0.82rem; color: var(--text-muted, #9a9ab0); line-height: 1.45; margin-bottom: 14px; }
+  .cc-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .cc-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  .cc-cancel { background: rgba(128,128,128,0.18); color: var(--text, #cdd6f4); }
+  .cc-cancel:hover { background: rgba(128,128,128,0.3); }
+  .cc-delete { background: #e0564f; color: #fff; }
+  .cc-delete:hover { background: #c94640; }
 
   .tb-btn {
     background: none;
@@ -843,12 +1063,17 @@
   }
   .tb-btn:hover { color: var(--text, #cdd6f4); background: rgba(128,128,128,0.12); }
   .tb-run-all {
-    font-size: 0.72rem;
-    padding: 2px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    font-size: 0.66rem;
+    letter-spacing: 1px;      /* even spacing between the two triangles */
+    padding: 0 8px;
     background: rgba(166,227,161,0.12);
     border: 1px solid rgba(166,227,161,0.3);
     color: #a6e3a1;
-    border-radius: 5px;
+    border-radius: 6px;
   }
   .tb-run-all:hover { background: rgba(166,227,161,0.22) !important; }
   .tb-close:hover { color: #f38ba8; }
@@ -899,6 +1124,15 @@
     scrollbar-width: thin;
     scrollbar-color: rgba(137,180,250,0.2) transparent;
   }
+  /* Inner wrapper carries the content; .card-body is just the scroll viewport
+     (rubberband translates .cb-inner so the scrollbar stays anchored). Block
+     layout — not flex — so the insertion cursor renders between rows exactly as
+     it always has. Uniform vertical rhythm comes from a fixed row margin
+     (collapsing block margins keep the gap constant regardless of content). */
+  .cb-inner {
+    padding: 6px 0 10px;
+  }
+  .cb-inner > :first-child { margin-top: 0; }
 
   /* In focused (full-screen) mode, remove max-height — let .focused-view scroll */
   .focused-card .card-body {
@@ -939,22 +1173,25 @@
   }
   .resize-handle-bottom:hover { background: rgba(137,180,250,0.25); border-radius: 4px; }
 
-  /* ---- Corner resize handle ---- */
-  .resize-handle-corner {
+  /* ---- Four diagonal corner resize handles ---- */
+  .resize-corner {
     position: absolute;
-    bottom: -4px;
-    right: -4px;
-    width: 12px;
-    height: 12px;
-    cursor: nwse-resize;
-    z-index: 11;
+    width: 14px;
+    height: 14px;
+    z-index: 12;   /* above the titlebar so top corners resize, not drag */
   }
-  .resize-handle-corner:hover { background: rgba(137,180,250,0.4); border-radius: 2px; }
+  .resize-corner:hover { background: rgba(137,180,250,0.4); border-radius: 3px; }
+  .rc-nw { top: -4px;    left: -4px;  cursor: nwse-resize; }
+  .rc-ne { top: -4px;    right: -4px; cursor: nesw-resize; }
+  .rc-sw { bottom: -4px; left: -4px;  cursor: nesw-resize; }
+  .rc-se { bottom: -4px; right: -4px; cursor: nwse-resize; }
 
   /* ---- Insertion cursor between rows ---- */
   .insertion-cursor {
     height: 3px;
-    margin: 0;
+    /* Sits in the row gap (block layout); margins collapse so it doesn't add
+       space, and it renders normally — no negative-margin occlusion. */
+    margin: 5px 0;
     border-radius: 2px;
     transition: background 0.1s;
     cursor: text;
@@ -969,9 +1206,11 @@
   .section-row {
     display: flex;
     align-items: flex-start;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    margin-top: 18px;   /* a touch more air above a section heading */
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 2px;
   }
-  .section-row.subsection { padding-left: 1rem; }
+  .section-row.subsection { padding-left: 1rem; margin-top: 14px; }
 
   .section-collapse-btn {
     flex-shrink: 0;
@@ -992,7 +1231,11 @@
     display: flex;
     flex-direction: row;
     align-items: stretch;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    /* Uniform inter-cell gap via a fixed top margin (block margins collapse so
+       the spacing stays constant regardless of a cell's content/output). No
+       full-width separator — cells are set apart by this gap plus the left
+       spine on .cell-shell (shown on hover/focus/selection). */
+    margin-top: 14px;
   }
 
   .cell-col { min-width: 0; }

@@ -12,6 +12,9 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import { get } from 'svelte/store';
+  import { scale } from 'svelte/transition';
+  import { cubicOut } from 'svelte/easing';
+  import { rubberband } from './rubberband';
   import NotebookCard from './NotebookCard.svelte';
   import Minimap from './Minimap.svelte';
   import {
@@ -364,6 +367,8 @@
   {#if fnb}
     <div
       class="focused-view"
+      use:rubberband
+      transition:scale={{ duration: 260, start: 0.955, opacity: 0, easing: cubicOut }}
     >
       <div class="focused-view-inner">
         <NotebookCard nb={fnb} currentZoom={1} focused={true} />
@@ -507,9 +512,12 @@
     font-size: 11px;   /* fixed px — immune to root font-size changes */
     color: rgba(255,255,255,0.25);
     pointer-events: none;
+    z-index: 5;
     letter-spacing: 0.02em;
     white-space: nowrap;
   }
+  /* Light mode: white-on-light is invisible, so darken the hint text. */
+  :global(html.light) .canvas-hints { color: rgba(28, 28, 46, 0.55); }
   .hint-new-btn {
     background: rgba(137,180,250,0.15);
     border: 1px solid rgba(137,180,250,0.35);
@@ -536,6 +544,10 @@
     background: var(--card-bg, #050810);
     overflow-y: auto;
     z-index: 50;
+    /* Scale from the center so the enter/leave zoom reads as coming from the
+     * middle of the screen; will-change keeps it on the compositor (smooth). */
+    transform-origin: center center;
+    will-change: transform, opacity;
   }
   .focused-view-inner {
     width: 100%;
