@@ -586,6 +586,12 @@ void graph_init(void) {
         "VertexDelete[g, v] (or VertexDelete[g, {v1, ...}]) removes the given "
         "vertices and all incident edges from g.");
 
+    symtab_add_builtin("EdgeDelete", builtin_edge_delete);
+    symtab_get_def("EdgeDelete")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("EdgeDelete",
+        "EdgeDelete[g, e] (or EdgeDelete[g, {e1, ...}]) removes the given edges "
+        "from g, keeping all vertices.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

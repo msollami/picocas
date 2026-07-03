@@ -1386,6 +1386,23 @@ static void test_vertex_delete(void) {
     assert_eval_eq("Head[VertexDelete[5, 1]]", "VertexDelete", 0);
 }
 
+static void test_edge_delete(void) {
+    /* Delete via <-> sugar; all vertices kept; matching is symmetric. */
+    assert_eval_eq("EdgeCount[EdgeDelete[CycleGraph[4], 1<->2]]", "3", 0);
+    assert_eval_eq("VertexCount[EdgeDelete[CycleGraph[4], 1<->2]]", "4", 0);
+    assert_eval_eq("EdgeCount[EdgeDelete[CycleGraph[4], 2<->1]]", "3", 0);
+    assert_eval_eq("EdgeCount[EdgeDelete[CycleGraph[4], UndirectedEdge[1,2]]]", "3", 0);
+    assert_eval_eq("EdgeList[EdgeDelete[CycleGraph[4], 1<->2]]", "{2 <-> 3, 3 <-> 4, 4 <-> 1}", 0);
+    /* Delete a list of edges; nonexistent edges are ignored. */
+    assert_eval_eq("EdgeCount[EdgeDelete[CompleteGraph[4], {1<->2,3<->4}]]", "4", 0);
+    assert_eval_eq("EdgeCount[EdgeDelete[PathGraph[3], 1<->3]]", "2", 0);
+    /* Directed: delete via ->, not symmetric. */
+    assert_eval_eq("EdgeList[EdgeDelete[Graph[{1,2,3},{1->2,2->3}], 1->2]]", "{2 -> 3}", 0);
+    assert_eval_eq("EdgeCount[EdgeDelete[Graph[{1,2},{1->2}], 2->1]]", "1", 0);
+    assert_eval_eq("GraphQ[EdgeDelete[CompleteGraph[4], 1<->2]]", "True", 0);
+    assert_eval_eq("Head[EdgeDelete[5, 1<->2]]", "EdgeDelete", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1470,6 +1487,7 @@ int main(void) {
     TEST(test_transitive_reduction);
     TEST(test_subgraph);
     TEST(test_vertex_delete);
+    TEST(test_edge_delete);
 
     printf("All graph tests passed!\n");
     return 0;

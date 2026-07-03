@@ -385,6 +385,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   removed along with every incident edge (a `List` names several; any other
   expression is a single vertex). Survivors keep their order and edge kinds.
   `VertexDelete[K₄, 1] = K₃`; deleting a path's middle isolates its ends. `O(V+E)`.
+- `EdgeDelete[g, e]` / `EdgeDelete[g, {e1, …}]` — `g` with the given edges removed,
+  keeping all vertices. An edge spec may be `DirectedEdge`/`UndirectedEdge` or the
+  sugar `a->b` / `a<->b`; matching is edge-kind-aware and symmetric for undirected
+  edges. Nonexistent edges are ignored. `O(E · #specs)`.
 - `GraphUnion[g1, g2]` — the graph whose vertex set is the union of the two
   vertex sets and whose edge set is the union of the two edge sets, matched by
   vertex identity. Vertices from `g1` keep their order, new ones from `g2` are
