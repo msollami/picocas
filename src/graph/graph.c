@@ -169,6 +169,12 @@ void graph_init(void) {
         "VertexConnectivity[g] gives the minimum number of vertices whose "
         "removal disconnects g.");
 
+    symtab_add_builtin("BipartiteGraphQ", builtin_bipartite_graph_q);
+    symtab_get_def("BipartiteGraphQ")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("BipartiteGraphQ",
+        "BipartiteGraphQ[g] gives True if the underlying undirected graph is "
+        "2-colorable (has no odd cycle), and False otherwise.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

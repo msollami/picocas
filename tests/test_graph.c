@@ -338,6 +338,23 @@ static void test_graph3d(void) {
     assert_eval_eq("Head[Graph3D[{1},{1->1}]]", "Graph3D", 0);
 }
 
+static void test_bipartite(void) {
+    /* Even cycles / paths / stars / complete bipartite are 2-colorable. */
+    assert_eval_eq("BipartiteGraphQ[CycleGraph[4]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[PathGraph[5]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[Graph[{0,1,2,3},{0<->1,0<->2,0<->3}]]", "True", 0);
+    /* Odd cycles / triangles are not. */
+    assert_eval_eq("BipartiteGraphQ[CycleGraph[5]]", "False", 0);
+    assert_eval_eq("BipartiteGraphQ[CompleteGraph[3]]", "False", 0);
+    /* Direction is ignored; edgeless is vacuously bipartite. */
+    assert_eval_eq("BipartiteGraphQ[Graph[{1,2,3,4},{1->2,2->3,3->4,4->1}]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[Graph[{1,2,3},{}]]", "True", 0);
+    /* One non-bipartite component makes the whole graph non-bipartite. */
+    assert_eval_eq("BipartiteGraphQ[Graph[{1,2,3,4,5},{1<->2,2<->3,3<->1,4<->5}]]", "False", 0);
+    /* Non-graph argument. */
+    assert_eval_eq("BipartiteGraphQ[5]", "False", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -360,6 +377,7 @@ int main(void) {
     TEST(test_graphplot_options);
     TEST(test_highlight_graph);
     TEST(test_graph3d);
+    TEST(test_bipartite);
 
     printf("All graph tests passed!\n");
     return 0;

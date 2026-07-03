@@ -145,6 +145,9 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `FindSpanningTree[g]` — a spanning tree/forest as a graph (`VertexCount - 1`
   edges when connected); tree edges keep their original direction.
 - `ConnectedGraphQ[g]` — `True` iff `g` is a single connected component.
+- `BipartiteGraphQ[g]` — `True` iff the underlying undirected graph is
+  2-colorable (no odd cycle). Single-BFS 2-coloring, `O(V+E)`; edge direction is
+  ignored and an edgeless graph is vacuously bipartite.
 - `VertexConnectivity[g]` — the minimum number of vertices whose removal
   disconnects `g` (`n-1` for `K_n`, `0` if already disconnected). Exact
   brute-force over vertex subsets, intended for small graphs.

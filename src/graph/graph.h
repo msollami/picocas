@@ -112,6 +112,7 @@ Expr* builtin_strongly_connected_components(Expr* res); /* Strongly...          
 Expr* builtin_find_spanning_tree(Expr* res);            /* FindSpanningTree     */
 Expr* builtin_connected_graph_q(Expr* res);             /* ConnectedGraphQ      */
 Expr* builtin_vertex_connectivity(Expr* res);           /* VertexConnectivity   */
+Expr* builtin_bipartite_graph_q(Expr* res);             /* BipartiteGraphQ      */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
