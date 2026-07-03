@@ -191,3 +191,52 @@ Expr* builtin_wheel_graph(Expr* res) {
     for (long i = 1; i <= rim; i++) edges[k++] = undirected_edge(n, i);
     return make_graph(int_vertices(n), (size_t)n, edges, ne);
 }
+
+/* GridGraph[{d1,d2,...}] - the k-dimensional grid: vertices are the cells of a
+ * d1 x d2 x ... lattice (row-major, 1..prod(di)); two cells are adjacent when
+ * they differ by 1 in exactly one coordinate. GridGraph[{n}] is a path. */
+Expr* builtin_grid_graph(Expr* res) {
+    if (res->data.function.arg_count != 1) return NULL;
+    const Expr* spec = res->data.function.args[0];
+    if (!graph_is_list(spec)) return NULL;
+    size_t k = spec->data.function.arg_count;
+    if (k == 0) return NULL;
+    long* dim = malloc(k * sizeof(long));
+    long* stride = malloc(k * sizeof(long));
+    long total = 1;
+    for (size_t i = 0; i < k; i++) {
+        long d = as_count(spec->data.function.args[i]);
+        if (d < 1 || total > 200000 / (d > 0 ? d : 1)) { free(dim); free(stride); return NULL; }
+        dim[i] = d; total *= d;
+    }
+    stride[k - 1] = 1;
+    for (long i = (long)k - 2; i >= 0; i--) stride[i] = stride[i + 1] * dim[i + 1];
+
+    Expr** edges = (total > 0) ? calloc((size_t)total * k, sizeof(Expr*)) : NULL;
+    size_t m = 0;
+    for (long v = 0; v < total; v++)
+        for (size_t i = 0; i < k; i++) {
+            long coord = (v / stride[i]) % dim[i];
+            if (coord + 1 < dim[i]) edges[m++] = undirected_edge(v + 1, v + stride[i] + 1);
+        }
+    free(dim); free(stride);
+    return make_graph(int_vertices(total), (size_t)total, edges, m);
+}
+
+/* HypercubeGraph[k] - the k-cube Q_k: 2^k vertices (the k-bit strings), adjacent
+ * when they differ in exactly one bit. k-regular, bipartite; Q_2 = C_4. */
+Expr* builtin_hypercube_graph(Expr* res) {
+    if (res->data.function.arg_count != 1) return NULL;
+    long k = as_count(res->data.function.args[0]);
+    if (k < 0 || k > 16) return NULL;              /* guard 2^k blow-up */
+    long total = 1L << k;
+    size_t cap = (size_t)k * (size_t)(total / 2 > 0 ? total / 2 : 0);
+    Expr** edges = (cap > 0) ? calloc(cap, sizeof(Expr*)) : NULL;
+    size_t m = 0;
+    for (long v = 0; v < total; v++)
+        for (long b = 0; b < k; b++) {
+            long nb = v ^ (1L << b);
+            if (v < nb) edges[m++] = undirected_edge(v + 1, nb + 1);
+        }
+    return make_graph(int_vertices(total), (size_t)total, edges, m);
+}

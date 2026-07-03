@@ -135,6 +135,19 @@ void graph_init(void) {
         "WheelGraph[n] gives the wheel on n vertices: a cycle of n-1 rim "
         "vertices plus a hub joined to all of them (n >= 4).");
 
+    symtab_add_builtin("GridGraph", builtin_grid_graph);
+    symtab_get_def("GridGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GridGraph",
+        "GridGraph[{d1,d2,...}] gives the k-dimensional grid graph on a "
+        "d1 x d2 x ... lattice (cells adjacent when they differ by 1 in one "
+        "coordinate).");
+
+    symtab_add_builtin("HypercubeGraph", builtin_hypercube_graph);
+    symtab_get_def("HypercubeGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("HypercubeGraph",
+        "HypercubeGraph[k] gives the k-dimensional hypercube Q_k: 2^k vertices "
+        "adjacent when they differ in one bit (k-regular, bipartite).");
+
     /* ---- Phase 5: search & computation algorithms ------------------------ */
     symtab_add_builtin("FindShortestPath", builtin_find_shortest_path);
     symtab_get_def("FindShortestPath")->attributes |= ATTR_PROTECTED;

@@ -510,6 +510,25 @@ static void test_complete_multipartite(void) {
     assert_eval_eq("EdgeCount[CompleteGraph[5]]", "10", 0);
 }
 
+static void test_grid_hypercube(void) {
+    /* Grid: 2x3 has 7 edges, k-dim works, {n} is a path, and it is bipartite. */
+    assert_eval_eq("VertexCount[GridGraph[{2,3}]]", "6", 0);
+    assert_eval_eq("EdgeCount[GridGraph[{2,3}]]", "7", 0);
+    assert_eval_eq("EdgeCount[GridGraph[{3,3}]]", "12", 0);
+    assert_eval_eq("BipartiteGraphQ[GridGraph[{3,3}]]", "True", 0);
+    assert_eval_eq("EdgeCount[GridGraph[{4}]]", "3", 0);
+    assert_eval_eq("Head[GridGraph[5]]", "GridGraph", 0);
+    /* Hypercube Q_k: 2^k vertices, k*2^(k-1) edges, k-regular, bipartite;
+       Q_2 = C_4; the 2x2x2 grid is Q_3. */
+    assert_eval_eq("VertexCount[HypercubeGraph[3]]", "8", 0);
+    assert_eval_eq("EdgeCount[HypercubeGraph[3]]", "12", 0);
+    assert_eval_eq("BipartiteGraphQ[HypercubeGraph[3]]", "True", 0);
+    assert_eval_eq("VertexDegree[HypercubeGraph[3], 1]", "3", 0);
+    assert_eval_eq("EdgeCount[HypercubeGraph[2]]", "4", 0);
+    assert_eval_eq("VertexCount[HypercubeGraph[0]]", "1", 0);
+    assert_eval_eq("EdgeCount[GridGraph[{2,2,2}]]", "12", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -542,6 +561,7 @@ int main(void) {
     TEST(test_eulerian);
     TEST(test_star_wheel);
     TEST(test_complete_multipartite);
+    TEST(test_grid_hypercube);
 
     printf("All graph tests passed!\n");
     return 0;

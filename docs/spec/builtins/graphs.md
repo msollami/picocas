@@ -139,6 +139,11 @@ constructor path:
   `n-1` leaves `2..n`.
 - `WheelGraph[n]` — a rim cycle on `1..n-1` plus a hub `n` joined to every rim
   vertex (`2(n-1)` edges; `W_4 = K_4`). Requires `n ≥ 4`.
+- `GridGraph[{d1, d2, …}]` — the k-dimensional grid on a `d1 × d2 × …` lattice
+  (cells adjacent when they differ by 1 in one coordinate). `GridGraph[{n}]` is a
+  path; grids are bipartite.
+- `HypercubeGraph[k]` — the k-cube `Q_k`: `2^k` vertices adjacent when they
+  differ in one bit (`k`-regular, bipartite; `Q_2 = C_4`).
 
 ```
 EdgeCount[CompleteGraph[5]]      (* 10                        *)
