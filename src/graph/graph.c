@@ -592,6 +592,12 @@ void graph_init(void) {
         "EdgeDelete[g, e] (or EdgeDelete[g, {e1, ...}]) removes the given edges "
         "from g, keeping all vertices.");
 
+    symtab_add_builtin("EdgeAdd", builtin_edge_add);
+    symtab_get_def("EdgeAdd")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("EdgeAdd",
+        "EdgeAdd[g, e] (or EdgeAdd[g, {e1, ...}]) adds the given edges to g, "
+        "introducing any missing endpoints as new vertices.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

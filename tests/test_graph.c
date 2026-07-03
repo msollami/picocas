@@ -1403,6 +1403,25 @@ static void test_edge_delete(void) {
     assert_eval_eq("Head[EdgeDelete[5, 1<->2]]", "EdgeDelete", 0);
 }
 
+static void test_edge_add(void) {
+    /* Adding a chord closes a path into a triangle. */
+    assert_eval_eq("EdgeCount[EdgeAdd[PathGraph[3], 1<->3]]", "3", 0);
+    assert_eval_eq("CompleteGraphQ[EdgeAdd[PathGraph[3], 1<->3]]", "True", 0);
+    /* Existing / symmetric-existing edges are not duplicated. */
+    assert_eval_eq("EdgeCount[EdgeAdd[CycleGraph[4], 1<->2]]", "4", 0);
+    assert_eval_eq("EdgeCount[EdgeAdd[CycleGraph[4], 2<->1]]", "4", 0);
+    /* Missing endpoints become new vertices. */
+    assert_eval_eq("VertexCount[EdgeAdd[Graph[{1,2},{1<->2}], 2<->3]]", "3", 0);
+    assert_eval_eq("EdgeCount[EdgeAdd[Graph[{1,2},{1<->2}], 2<->3]]", "2", 0);
+    /* Self-loops skipped; list add; directed via ->. */
+    assert_eval_eq("EdgeCount[EdgeAdd[PathGraph[3], 1<->1]]", "2", 0);
+    assert_eval_eq("EdgeCount[EdgeAdd[Graph[{1,2,3,4},{}], {1<->2,3<->4}]]", "2", 0);
+    assert_eval_eq("MemberQ[EdgeList[EdgeAdd[Graph[{1,2},{1->2}], 2->1]], DirectedEdge[2,1]]", "True", 0);
+    assert_eval_eq("EdgeCount[EdgeAdd[Graph[{1,2},{1->2}], 2->1]]", "2", 0);
+    assert_eval_eq("GraphQ[EdgeAdd[PathGraph[3], 1<->3]]", "True", 0);
+    assert_eval_eq("Head[EdgeAdd[5, 1<->2]]", "EdgeAdd", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1488,6 +1507,7 @@ int main(void) {
     TEST(test_subgraph);
     TEST(test_vertex_delete);
     TEST(test_edge_delete);
+    TEST(test_edge_add);
 
     printf("All graph tests passed!\n");
     return 0;

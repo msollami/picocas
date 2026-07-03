@@ -389,6 +389,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   keeping all vertices. An edge spec may be `DirectedEdge`/`UndirectedEdge` or the
   sugar `a->b` / `a<->b`; matching is edge-kind-aware and symmetric for undirected
   edges. Nonexistent edges are ignored. `O(E · #specs)`.
+- `EdgeAdd[g, e]` / `EdgeAdd[g, {e1, …}]` — `g` with the given edges added, any
+  missing endpoint introduced as a new vertex. Same edge-spec forms as
+  `EdgeDelete`; self-loops and duplicate (symmetric) edges are skipped to keep the
+  simple-graph invariant. Adding a chord `1<->3` closes `PathGraph[3]` into a
+  triangle. `O((V+E)·#specs)`.
 - `GraphUnion[g1, g2]` — the graph whose vertex set is the union of the two
   vertex sets and whose edge set is the union of the two edge sets, matched by
   vertex identity. Vertices from `g1` keep their order, new ones from `g2` are
