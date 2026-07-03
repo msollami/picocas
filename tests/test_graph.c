@@ -543,6 +543,20 @@ static void test_closeness(void) {
     assert_eval_eq("Head[ClosenessCentrality[5]]", "ClosenessCentrality", 0);
 }
 
+static void test_transitive_closure(void) {
+    /* Directed chain: closure adds the reachable 1->3; stays directed. */
+    assert_eval_eq("EdgeList[TransitiveClosure[Graph[{1,2,3},{1->2,2->3}]]]", "{1 -> 2, 1 -> 3, 2 -> 3}", 0);
+    assert_eval_eq("DirectedGraphQ[TransitiveClosure[Graph[{1,2,3},{1->2,2->3}]]]", "True", 0);
+    /* Directed cycle: everyone reaches everyone → complete digraph (6 arcs). */
+    assert_eval_eq("EdgeCount[TransitiveClosure[Graph[{1,2,3},{1->2,2->3,3->1}]]]", "6", 0);
+    /* Undirected: each component becomes a clique. */
+    assert_eval_eq("EdgeList[TransitiveClosure[PathGraph[3]]]", "{1 <-> 2, 1 <-> 3, 2 <-> 3}", 0);
+    assert_eval_eq("EdgeCount[TransitiveClosure[CycleGraph[4]]]", "6", 0);
+    assert_eval_eq("EdgeCount[TransitiveClosure[Graph[{1,2,3,4,5},{1<->2,3<->4,4<->5}]]]", "4", 0);
+    assert_eval_eq("EdgeCount[TransitiveClosure[CompleteGraph[4]]]", "6", 0);
+    assert_eval_eq("Head[TransitiveClosure[5]]", "TransitiveClosure", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -577,6 +591,7 @@ int main(void) {
     TEST(test_complete_multipartite);
     TEST(test_grid_hypercube);
     TEST(test_closeness);
+    TEST(test_transitive_closure);
 
     printf("All graph tests passed!\n");
     return 0;

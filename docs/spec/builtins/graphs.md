@@ -165,6 +165,9 @@ All are unweighted and build an integer-indexed adjacency on demand.
   (Tarjan). For undirected graphs this coincides with the weak components.
 - `FindSpanningTree[g]` — a spanning tree/forest as a graph (`VertexCount - 1`
   edges when connected); tree edges keep their original direction.
+- `TransitiveClosure[g]` — adds an edge `u→v` whenever `v` is reachable from `u`
+  (directed, `O(V·(V+E))`); for an undirected graph each connected component
+  becomes a complete graph.
 - `ConnectedGraphQ[g]` — `True` iff `g` is a single connected component.
 - `BipartiteGraphQ[g]` — `True` iff the underlying undirected graph is
   2-colorable (no odd cycle). Single-BFS 2-coloring, `O(V+E)`; edge direction is

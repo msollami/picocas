@@ -275,6 +275,13 @@ void graph_init(void) {
         "c_i = (r_i-1)^2/((n-1) S_i), where r_i vertices are reachable from i at "
         "total distance S_i; larger means more central.");
 
+    symtab_add_builtin("TransitiveClosure", builtin_transitive_closure);
+    symtab_get_def("TransitiveClosure")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("TransitiveClosure",
+        "TransitiveClosure[g] adds an edge u->v whenever v is reachable from u "
+        "(directed); for an undirected graph each connected component becomes a "
+        "complete graph.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
