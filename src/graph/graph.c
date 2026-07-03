@@ -628,6 +628,12 @@ void graph_init(void) {
         "FindIndependentEdgeSet[g] gives a maximum matching of g: a largest set "
         "of edges no two of which share a vertex.");
 
+    symtab_add_builtin("FindDominatingSet", builtin_find_dominating_set);
+    symtab_get_def("FindDominatingSet")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FindDominatingSet",
+        "FindDominatingSet[g] gives a minimum dominating set: a smallest set of "
+        "vertices such that every vertex is in it or adjacent to it.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

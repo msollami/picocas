@@ -486,6 +486,7 @@ set(COMMON_SRC
     ../src/graph/graphdisjointunion.c
     ../src/graph/edgecontract.c
     ../src/graph/findmatching.c
+    ../src/graph/finddominatingset.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

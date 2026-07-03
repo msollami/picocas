@@ -1497,6 +1497,19 @@ static void test_find_matching(void) {
     assert_eval_eq("Head[FindIndependentEdgeSet[5]]", "FindIndependentEdgeSet", 0);
 }
 
+static void test_find_dominating_set(void) {
+    assert_eval_eq("FindDominatingSet[StarGraph[5]]", "{1}", 0);
+    assert_eval_eq("Length[FindDominatingSet[CompleteGraph[5]]]", "1", 0);
+    assert_eval_eq("Length[FindDominatingSet[PathGraph[4]]]", "2", 0);
+    assert_eval_eq("Length[FindDominatingSet[CycleGraph[4]]]", "2", 0);
+    assert_eval_eq("Length[FindDominatingSet[CycleGraph[6]]]", "2", 0);
+    assert_eval_eq("Length[FindDominatingSet[CycleGraph[7]]]", "3", 0);
+    assert_eval_eq("Length[FindDominatingSet[Graph[{1,2,3},{}]]]", "3", 0);   /* edgeless */
+    assert_eval_eq("FindDominatingSet[Graph[{1},{}]]", "{1}", 0);
+    assert_eval_eq("Length[FindDominatingSet[Graph[{1,2,3},{1->2,2->3,3->1}]]]", "1", 0);
+    assert_eval_eq("Head[FindDominatingSet[5]]", "FindDominatingSet", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1588,6 +1601,7 @@ int main(void) {
     TEST(test_graph_disjoint_union);
     TEST(test_edge_contract);
     TEST(test_find_matching);
+    TEST(test_find_dominating_set);
 
     printf("All graph tests passed!\n");
     return 0;
