@@ -486,6 +486,12 @@ void graph_init(void) {
         "KatzCentrality[g, alpha] gives the Katz centrality of each vertex with "
         "attenuation alpha (base weight 1), solving (I - alpha A^T) x = 1 exactly.");
 
+    symtab_add_builtin("GraphJoin", builtin_graph_join);
+    symtab_get_def("GraphJoin")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphJoin",
+        "GraphJoin[g1, g2] gives the join of g1 and g2: their disjoint union "
+        "(vertices relabeled 1..n1+n2) plus every edge between the two blocks.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

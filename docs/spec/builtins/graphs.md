@@ -333,6 +333,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   vertex identity. Vertices from `g1` keep their order, new ones from `g2` are
   appended; duplicate and (for undirected) symmetric edges are collapsed, while
   directed edges stay distinct from their reverse. Returns a canonical `Graph`.
+- `GraphJoin[g1, g2]` — the graph join: the disjoint union of `g1` and `g2`
+  (vertices relabelled `1..n1+n2`, `g1`'s block first) plus an undirected edge
+  from every `g1` vertex to every `g2` vertex. `m1 + m2 + n1·n2` edges; `K₁ ⋈ K₁`
+  is an edge, `P₂ ⋈ K₁` a triangle, `Kₘ ⋈ Kₙ = K₍ₘ₊ₙ₎`. Returns a canonical
+  `Graph`.
 - `GraphIntersection[g1, g2]` — the graph with the vertices common to both and
   the edges present in both (same edge-equality rules as `GraphUnion`). Identical
   graphs intersect to themselves, disjoint graphs to the empty graph; returns a

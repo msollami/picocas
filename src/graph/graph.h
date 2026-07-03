@@ -163,6 +163,7 @@ Expr* builtin_path_graph_q(Expr* res);                  /* PathGraphQ[g]        
 Expr* builtin_vertex_contract(Expr* res);               /* VertexContract[g,vs] */
 Expr* builtin_pagerank_centrality(Expr* res);           /* PageRankCentrality   */
 Expr* builtin_katz_centrality(Expr* res);               /* KatzCentrality[g,a]  */
+Expr* builtin_graph_join(Expr* res);                    /* GraphJoin[g1, g2]    */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

@@ -1120,6 +1120,22 @@ static void test_katz_centrality(void) {
     assert_eval_eq("Head[KatzCentrality[CycleGraph[3]]]", "KatzCentrality", 0);
 }
 
+static void test_graph_join(void) {
+    /* K1 join K1 = a single edge. */
+    assert_eval_eq("EdgeCount[GraphJoin[Graph[{1},{}], Graph[{1},{}]]]", "1", 0);
+    assert_eval_eq("VertexCount[GraphJoin[Graph[{1},{}], Graph[{1},{}]]]", "2", 0);
+    /* Edge count = m1 + m2 + n1*n2; vertices relabelled 1..n1+n2. */
+    assert_eval_eq("EdgeCount[GraphJoin[PathGraph[3], PathGraph[2]]]", "9", 0);
+    assert_eval_eq("VertexCount[GraphJoin[PathGraph[3], PathGraph[2]]]", "5", 0);
+    assert_eval_eq("VertexList[GraphJoin[Graph[{a,b},{a<->b}], Graph[{x},{}]]]", "{1, 2, 3}", 0);
+    /* P2 join K1 is a triangle; Km join Kn is K(m+n). */
+    assert_eval_eq("CompleteGraphQ[GraphJoin[PathGraph[2], Graph[{1},{}]]]", "True", 0);
+    assert_eval_eq("CompleteGraphQ[GraphJoin[CompleteGraph[2], CompleteGraph[2]]]", "True", 0);
+    assert_eval_eq("CompleteGraphQ[GraphJoin[CompleteGraph[2], CompleteGraph[3]]]", "True", 0);
+    assert_eval_eq("GraphQ[GraphJoin[CycleGraph[3], CycleGraph[3]]]", "True", 0);
+    assert_eval_eq("Head[GraphJoin[5, CycleGraph[3]]]", "GraphJoin", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1188,6 +1204,7 @@ int main(void) {
     TEST(test_vertex_contract);
     TEST(test_pagerank_centrality);
     TEST(test_katz_centrality);
+    TEST(test_graph_join);
 
     printf("All graph tests passed!\n");
     return 0;
