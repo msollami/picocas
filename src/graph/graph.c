@@ -333,6 +333,12 @@ void graph_init(void) {
         "DegreeCentrality[g] gives, for each vertex, the number of incident "
         "edges (degree; in-degree + out-degree for a directed graph).");
 
+    symtab_add_builtin("FindHamiltonianPath", builtin_find_hamiltonian_path);
+    symtab_get_def("FindHamiltonianPath")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FindHamiltonianPath",
+        "FindHamiltonianPath[g] gives a Hamiltonian path (a walk visiting every "
+        "vertex once) as a vertex list, or {} if g has none.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

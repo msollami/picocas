@@ -691,6 +691,24 @@ static void test_degree_centrality(void) {
     assert_eval_eq("Head[DegreeCentrality[5]]", "DegreeCentrality", 0);
 }
 
+static void test_find_hamiltonian_path(void) {
+    assert_eval_eq("FindHamiltonianPath[PathGraph[4]]", "{1, 2, 3, 4}", 0);
+    assert_eval_eq("Length[FindHamiltonianPath[CycleGraph[4]]]", "4", 0);
+    assert_eval_eq("Sort[FindHamiltonianPath[CompleteGraph[4]]]", "{1, 2, 3, 4}", 0);
+    assert_eval_eq("With[{p=FindHamiltonianPath[CompleteGraph[5]]}, Length[Union[p]] == 5]", "True", 0);
+    assert_eval_eq("FindHamiltonianPath[Graph[{1},{}]]", "{1}", 0);
+    /* No Hamiltonian path: big star, edgeless, disconnected → {}. */
+    assert_eval_eq("FindHamiltonianPath[StarGraph[5]]", "{}", 0);
+    assert_eval_eq("FindHamiltonianPath[Graph[{1,2,3},{}]]", "{}", 0);
+    assert_eval_eq("FindHamiltonianPath[Graph[{1,2,3,4},{1<->2,3<->4}]]", "{}", 0);
+    /* Directed follows arcs. */
+    assert_eval_eq("FindHamiltonianPath[Graph[{1,2,3},{1->2,2->3}]]", "{1, 2, 3}", 0);
+    assert_eval_eq("FindHamiltonianPath[Graph[{1,2,3},{1->2,3->2}]]", "{}", 0);
+    /* A path graph has a Hamiltonian path but no Hamiltonian cycle. */
+    assert_eval_eq("FindHamiltonianPath[PathGraph[4]] =!= {} && FindHamiltonianCycle[PathGraph[4]] === {}", "True", 0);
+    assert_eval_eq("Head[FindHamiltonianPath[5]]", "FindHamiltonianPath", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -734,6 +752,7 @@ int main(void) {
     TEST(test_graph_distance_matrix);
     TEST(test_graph_density);
     TEST(test_degree_centrality);
+    TEST(test_find_hamiltonian_path);
 
     printf("All graph tests passed!\n");
     return 0;

@@ -192,6 +192,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
   every vertex — so the result is deterministic. Follows arc direction on
   directed graphs; exponential in the worst case, but instant on the small
   graphs typical of a gallery.
+- `FindHamiltonianPath[g]` — a Hamiltonian path as a vertex list
+  `{v0, …, v_{n-1}}` (a walk visiting every vertex exactly once, not required to
+  close), or `{}` when none exists. Depth-first backtracking; unlike a
+  Hamiltonian *cycle*, a path's endpoints are free, so the search is retried from
+  each start vertex. Follows arc direction on directed graphs; a `PathGraph` has a
+  Hamiltonian path but no Hamiltonian cycle.
 - `ClosenessCentrality[g]` — the list of closeness centralities
   `c_i = (r_i−1)² / ((n−1)·S_i)`, where `r_i` vertices are reachable from `i` at
   total distance `S_i` (`(n−1)/S_i` when connected, `0` when isolated). Exact

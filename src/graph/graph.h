@@ -138,6 +138,7 @@ Expr* builtin_find_cycle(Expr* res);                    /* FindCycle[g]         
 Expr* builtin_graph_distance_matrix(Expr* res);         /* GraphDistanceMatrix  */
 Expr* builtin_graph_density(Expr* res);                 /* GraphDensity[g]      */
 Expr* builtin_degree_centrality(Expr* res);             /* DegreeCentrality[g]  */
+Expr* builtin_find_hamiltonian_path(Expr* res);         /* FindHamiltonianPath  */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
