@@ -157,6 +157,7 @@ Expr* builtin_regular_graph_q(Expr* res);               /* RegularGraphQ[g]     
 Expr* builtin_complete_graph_q(Expr* res);              /* CompleteGraphQ[g]    */
 Expr* builtin_graph_union(Expr* res);                   /* GraphUnion[g1, g2]   */
 Expr* builtin_graph_intersection(Expr* res);            /* GraphIntersection    */
+Expr* builtin_graph_difference(Expr* res);              /* GraphDifference      */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

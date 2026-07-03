@@ -320,6 +320,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   the edges present in both (same edge-equality rules as `GraphUnion`). Identical
   graphs intersect to themselves, disjoint graphs to the empty graph; returns a
   canonical `Graph`.
+- `GraphDifference[g1, g2]` — the graph on `g1`'s vertices with the edges of `g1`
+  that are not in `g2` (same edge-equality rules). `K₄ − C₄` leaves the two
+  diagonals; `g − g` is edgeless on `g`'s vertices; `g` minus a disjoint graph is
+  `g`. Returns a canonical `Graph`.
 - `GraphComplement[g]` — the graph on the same vertices whose edges are exactly
   the non-edges of `g`; edgeless → complete graph, complete → edgeless, and
   applying it twice restores `g`. Directed graphs stay directed (`O(V²)`).

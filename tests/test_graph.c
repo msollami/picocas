@@ -1014,6 +1014,23 @@ static void test_graph_intersection(void) {
     assert_eval_eq("Head[GraphIntersection[5, CycleGraph[3]]]", "GraphIntersection", 0);
 }
 
+static void test_graph_difference(void) {
+    /* K4 minus C4 leaves the two diagonals, keeps all vertices. */
+    assert_eval_eq("EdgeCount[GraphDifference[CompleteGraph[4], CycleGraph[4]]]", "2", 0);
+    assert_eval_eq("VertexCount[GraphDifference[CompleteGraph[4], CycleGraph[4]]]", "4", 0);
+    /* Self-difference: edgeless on the same vertices. */
+    assert_eval_eq("EdgeCount[GraphDifference[CycleGraph[5], CycleGraph[5]]]", "0", 0);
+    assert_eval_eq("VertexCount[GraphDifference[CycleGraph[5], CycleGraph[5]]]", "5", 0);
+    /* Disjoint g2 removes nothing; a shared edge is removed. */
+    assert_eval_eq("EdgeCount[GraphDifference[Graph[{1,2,3},{1<->2,2<->3}], Graph[{4,5},{4<->5}]]]", "2", 0);
+    assert_eval_eq("EdgeList[GraphDifference[Graph[{1,2,3},{1<->2,2<->3}], Graph[{2,3},{2<->3}]]]", "{1 <-> 2}", 0);
+    /* Symmetric undirected removal; directed not symmetric. */
+    assert_eval_eq("EdgeCount[GraphDifference[Graph[{1,2},{1<->2}], Graph[{1,2},{2<->1}]]]", "0", 0);
+    assert_eval_eq("EdgeCount[GraphDifference[Graph[{1,2},{1->2}], Graph[{1,2},{2->1}]]]", "1", 0);
+    assert_eval_eq("GraphQ[GraphDifference[CompleteGraph[5], CycleGraph[5]]]", "True", 0);
+    assert_eval_eq("Head[GraphDifference[5, CycleGraph[3]]]", "GraphDifference", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1076,6 +1093,7 @@ int main(void) {
     TEST(test_complete_graph_q);
     TEST(test_graph_union);
     TEST(test_graph_intersection);
+    TEST(test_graph_difference);
 
     printf("All graph tests passed!\n");
     return 0;

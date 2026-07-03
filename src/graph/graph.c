@@ -450,6 +450,12 @@ void graph_init(void) {
         "GraphIntersection[g1, g2] gives the graph with the vertices common to "
         "g1 and g2 and the edges present in both.");
 
+    symtab_add_builtin("GraphDifference", builtin_graph_difference);
+    symtab_get_def("GraphDifference")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphDifference",
+        "GraphDifference[g1, g2] gives the graph on g1's vertices with the edges "
+        "of g1 that are not in g2.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
