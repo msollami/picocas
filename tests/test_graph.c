@@ -1587,6 +1587,22 @@ static void test_vertex_components(void) {
     assert_eval_eq("Head[VertexInComponent[5, 1]]", "VertexInComponent", 0);
 }
 
+static void test_graph_periphery(void) {
+    /* Periphery = eccentricity-maximizing vertices (dual of GraphCenter). */
+    assert_eval_eq("GraphPeriphery[PathGraph[5]]", "{1, 5}", 0);
+    assert_eval_eq("GraphCenter[PathGraph[5]]", "{3}", 0);
+    assert_eval_eq("GraphPeriphery[PathGraph[6]]", "{1, 6}", 0);
+    assert_eval_eq("Length[GraphPeriphery[PathGraph[4]]]", "2", 0);
+    assert_eval_eq("GraphPeriphery[StarGraph[5]]", "{2, 3, 4, 5}", 0);
+    /* Vertex-transitive graphs: every vertex is peripheral. */
+    assert_eval_eq("GraphPeriphery[CycleGraph[5]]", "{1, 2, 3, 4, 5}", 0);
+    assert_eval_eq("GraphPeriphery[CompleteGraph[4]]", "{1, 2, 3, 4}", 0);
+    assert_eval_eq("GraphPeriphery[Graph[{1},{}]]", "{1}", 0);
+    /* Disconnected: all vertices have infinite eccentricity. */
+    assert_eval_eq("GraphPeriphery[Graph[{1,2,3},{1<->2}]]", "{1, 2, 3}", 0);
+    assert_eval_eq("Head[GraphPeriphery[5]]", "GraphPeriphery", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1684,6 +1700,7 @@ int main(void) {
     TEST(test_graph_assortativity);
     TEST(test_incidence_list);
     TEST(test_vertex_components);
+    TEST(test_graph_periphery);
 
     printf("All graph tests passed!\n");
     return 0;

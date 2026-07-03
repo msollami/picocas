@@ -225,6 +225,12 @@ void graph_init(void) {
         "GraphCenter[g] gives the vertices whose eccentricity equals the graph "
         "radius.");
 
+    symtab_add_builtin("GraphPeriphery", builtin_graph_periphery);
+    symtab_get_def("GraphPeriphery")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphPeriphery",
+        "GraphPeriphery[g] gives the vertices whose eccentricity equals the graph "
+        "diameter.");
+
     symtab_add_builtin("AcyclicGraphQ", builtin_acyclic_graph_q);
     symtab_get_def("AcyclicGraphQ")->attributes |= ATTR_PROTECTED;
     symtab_set_docstring("AcyclicGraphQ",

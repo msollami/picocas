@@ -128,3 +128,28 @@ Expr* builtin_graph_center(Expr* res) {
     free(items); free(ecc); graph_adj_free(a);
     return out;
 }
+
+/* GraphPeriphery[g]: the vertices whose eccentricity equals the graph diameter.
+ * When some vertex has infinite eccentricity (the graph is not strongly
+ * connected), the diameter is Infinity and the periphery is exactly those
+ * infinite-eccentricity vertices. The dual of GraphCenter. */
+Expr* builtin_graph_periphery(Expr* res) {
+    if (res->data.function.arg_count != 1) return NULL;
+    int* ecc = NULL;
+    GraphAdj* a = all_eccentricities(res->data.function.args[0], &ecc);
+    if (!a) return NULL;
+    int n = a->n, infinite = 0, diam = -1;
+    for (int i = 0; i < n; i++) {
+        if (ecc[i] < 0) infinite = 1;
+        else if (ecc[i] > diam) diam = ecc[i];
+    }
+    Expr** items = (n > 0) ? calloc((size_t)n, sizeof(Expr*)) : NULL;
+    size_t k = 0;
+    for (int i = 0; i < n; i++) {
+        int on_periphery = infinite ? (ecc[i] < 0) : (ecc[i] == diam && diam >= 0);
+        if (on_periphery) items[k++] = expr_copy(a->verts->data.function.args[i]);
+    }
+    Expr* out = expr_new_function(expr_new_symbol(SYM_List), items, k);
+    free(items); free(ecc); graph_adj_free(a);
+    return out;
+}

@@ -357,6 +357,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `GraphDiameter[g]` / `GraphRadius[g]` — the max / min vertex eccentricity
   (`Infinity` when not strongly connected / when no vertex reaches all others).
 - `GraphCenter[g]` — the vertices whose eccentricity equals the graph radius.
+- `GraphPeriphery[g]` — the vertices whose eccentricity equals the graph diameter
+  (the dual of `GraphCenter`); when some vertex has infinite eccentricity, the
+  periphery is exactly those vertices. `P₅` → `{1, 5}`, a star → its leaves,
+  vertex-transitive graphs → all vertices.
   These derive from a BFS per vertex (`O(V·(V+E))`) and follow edge direction on
   directed graphs.
 - `CompleteGraphQ[g]` — `True` iff every pair of distinct vertices is adjacent

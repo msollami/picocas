@@ -121,6 +121,7 @@ Expr* builtin_vertex_eccentricity(Expr* res);           /* VertexEccentricity   
 Expr* builtin_graph_diameter(Expr* res);                /* GraphDiameter        */
 Expr* builtin_graph_radius(Expr* res);                  /* GraphRadius          */
 Expr* builtin_graph_center(Expr* res);                  /* GraphCenter          */
+Expr* builtin_graph_periphery(Expr* res);               /* GraphPeriphery       */
 Expr* builtin_acyclic_graph_q(Expr* res);               /* AcyclicGraphQ        */
 Expr* builtin_topological_sort(Expr* res);              /* TopologicalSort      */
 Expr* builtin_graph_complement(Expr* res);              /* GraphComplement      */
