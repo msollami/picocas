@@ -214,6 +214,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `TopologicalSort[g]` — a vertex ordering in which every edge points forward
   (Kahn's algorithm), or `$Failed` if `g` is not a directed acyclic graph
   (undirected edges act as 2-cycles, so they give `$Failed`).
+- `FindCycle[g]` — a cycle in `g` as a list containing one cycle, that cycle
+  being a list of its edges (`{{1<->2, 2<->3, 3<->1}}`), or `{}` if `g` is
+  acyclic. DFS back-edge detection, `O(V+E)`: a directed cycle needs an on-stack
+  target, an undirected one a visited non-parent neighbour. Returns the first
+  cycle found (deterministic, not necessarily shortest); edges follow arc
+  direction and mirror the graph's edge kind.
 - `GraphComplement[g]` — the graph on the same vertices whose edges are exactly
   the non-edges of `g`; edgeless → complete graph, complete → edgeless, and
   applying it twice restores `g`. Directed graphs stay directed (`O(V²)`).

@@ -308,6 +308,12 @@ void graph_init(void) {
         "vertices joining two vertices whenever g has a path of length at most k "
         "between them.");
 
+    symtab_add_builtin("FindCycle", builtin_find_cycle);
+    symtab_get_def("FindCycle")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FindCycle",
+        "FindCycle[g] gives a cycle in g as a list containing one list of its "
+        "edges, or {} if g is acyclic.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

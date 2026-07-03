@@ -433,6 +433,7 @@ set(COMMON_SRC
     ../src/graph/findeuler.c
     ../src/graph/findhamilton.c
     ../src/graph/graphpower.c
+    ../src/graph/findcycle.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

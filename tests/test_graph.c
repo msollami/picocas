@@ -626,6 +626,24 @@ static void test_graph_power(void) {
     assert_eval_eq("Head[GraphPower[CycleGraph[3], k]]", "GraphPower", 0);
 }
 
+static void test_find_cycle(void) {
+    /* Undirected: a cycle as {{edges...}}, or {} when acyclic. */
+    assert_eval_eq("FindCycle[CycleGraph[3]]", "{{1 <-> 2, 2 <-> 3, 3 <-> 1}}", 0);
+    assert_eval_eq("Length[First[FindCycle[CycleGraph[4]]]]", "4", 0);
+    assert_eval_eq("MatchQ[First[FindCycle[CycleGraph[4]]], {UndirectedEdge[_,_]..}]", "True", 0);
+    assert_eval_eq("FindCycle[CompleteGraph[5]] =!= {}", "True", 0);
+    assert_eval_eq("FindCycle[PathGraph[5]]", "{}", 0);
+    assert_eval_eq("FindCycle[Graph[{1,2,3,4},{1<->2,2<->3,3<->4}]]", "{}", 0);
+    assert_eval_eq("FindCycle[Graph[{1,2,3},{}]]", "{}", 0);
+    /* The returned edges close up into a cycle. */
+    assert_eval_eq("With[{c=First[FindCycle[CompleteGraph[5]]]}, First[First[c]] === Last[Last[c]]]", "True", 0);
+    /* Directed: cycles follow arcs; DAGs give {}. */
+    assert_eval_eq("FindCycle[Graph[{1,2,3},{1->2,2->3,3->1}]]", "{{1 -> 2, 2 -> 3, 3 -> 1}}", 0);
+    assert_eval_eq("FindCycle[Graph[{1,2},{1->2,2->1}]]", "{{1 -> 2, 2 -> 1}}", 0);
+    assert_eval_eq("FindCycle[Graph[{1,2,3},{1->2,2->3,1->3}]]", "{}", 0);
+    assert_eval_eq("Head[FindCycle[9]]", "FindCycle", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -665,6 +683,7 @@ int main(void) {
     TEST(test_find_eulerian);
     TEST(test_find_hamiltonian);
     TEST(test_graph_power);
+    TEST(test_find_cycle);
 
     printf("All graph tests passed!\n");
     return 0;
