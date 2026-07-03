@@ -350,6 +350,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   and undirected edges unchanged; the transpose graph. Swaps in- and out-degree,
   is an involution (`ReverseGraph[ReverseGraph[g]] === g`), and is the identity on
   undirected graphs. `O(V+E)`, returns a canonical `Graph`.
+- `IndexGraph[g]` / `IndexGraph[g, k]` — `g` with its vertices renamed to
+  consecutive integers from `1` (or from `k`), in current order, edges remapped
+  and kinds preserved. Normalises arbitrary labels (symbols, strings, expressions)
+  to canonical integer indexing; `O(V+E)`, returns a canonical `Graph`.
 - `GraphComplement[g]` — the graph on the same vertices whose edges are exactly
   the non-edges of `g`; edgeless → complete graph, complete → edgeless, and
   applying it twice restores `g`. Directed graphs stay directed (`O(V²)`).

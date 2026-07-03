@@ -1136,6 +1136,22 @@ static void test_graph_join(void) {
     assert_eval_eq("Head[GraphJoin[5, CycleGraph[3]]]", "GraphJoin", 0);
 }
 
+static void test_index_graph(void) {
+    /* Symbolic labels → 1..n, edges remapped, kinds preserved. */
+    assert_eval_eq("VertexList[IndexGraph[Graph[{x,y,z},{x<->z}]]]", "{1, 2, 3}", 0);
+    assert_eval_eq("EdgeList[IndexGraph[Graph[{a,b,c},{a<->b,b<->c}]]]", "{1 <-> 2, 2 <-> 3}", 0);
+    assert_eval_eq("EdgeList[IndexGraph[Graph[{a,b,c},{a->b,b->c}]]]", "{1 -> 2, 2 -> 3}", 0);
+    assert_eval_eq("VertexList[IndexGraph[Graph[{a,b},{a<->b}], 0]]", "{0, 1}", 0);
+    assert_eval_eq("EdgeCount[IndexGraph[CompleteGraph[4]]]", "6", 0);
+    /* Already 1..n is unchanged; structure (edge count) is preserved. */
+    assert_eval_eq("IndexGraph[PathGraph[3]] === PathGraph[3]", "True", 0);
+    assert_eval_eq("EdgeCount[IndexGraph[Graph[{p,q,r},{p<->q,q<->r,r<->p}]]]", "3", 0);
+    assert_eval_eq("GraphQ[IndexGraph[Graph[{a,b,c},{a<->b}]]]", "True", 0);
+    /* Non-integer start / non-graph stay unevaluated. */
+    assert_eval_eq("Head[IndexGraph[CycleGraph[3], x]]", "IndexGraph", 0);
+    assert_eval_eq("Head[IndexGraph[5]]", "IndexGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1205,6 +1221,7 @@ int main(void) {
     TEST(test_pagerank_centrality);
     TEST(test_katz_centrality);
     TEST(test_graph_join);
+    TEST(test_index_graph);
 
     printf("All graph tests passed!\n");
     return 0;

@@ -492,6 +492,12 @@ void graph_init(void) {
         "GraphJoin[g1, g2] gives the join of g1 and g2: their disjoint union "
         "(vertices relabeled 1..n1+n2) plus every edge between the two blocks.");
 
+    symtab_add_builtin("IndexGraph", builtin_index_graph);
+    symtab_get_def("IndexGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("IndexGraph",
+        "IndexGraph[g] renames the vertices of g to consecutive integers from 1 "
+        "(IndexGraph[g, k] from k), remapping edges.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

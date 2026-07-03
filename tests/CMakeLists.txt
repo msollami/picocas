@@ -463,6 +463,7 @@ set(COMMON_SRC
     ../src/graph/pagerank.c
     ../src/graph/katzcentrality.c
     ../src/graph/graphjoin.c
+    ../src/graph/indexgraph.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled
