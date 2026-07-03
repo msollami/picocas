@@ -435,6 +435,7 @@ set(COMMON_SRC
     ../src/graph/graphpower.c
     ../src/graph/findcycle.c
     ../src/graph/distmatrix.c
+    ../src/graph/density.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

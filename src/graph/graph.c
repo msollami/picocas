@@ -321,6 +321,12 @@ void graph_init(void) {
         "shortest-path distance from vertex i to vertex j (Infinity if "
         "unreachable).");
 
+    symtab_add_builtin("GraphDensity", builtin_graph_density);
+    symtab_get_def("GraphDensity")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphDensity",
+        "GraphDensity[g] gives the fraction of possible edges present in g, an "
+        "exact rational in [0, 1] (1 for a complete graph, 0 for an empty one).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

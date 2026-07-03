@@ -205,6 +205,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   unreachable). One BFS per source over the direction-aware adjacency,
   `O(V·(V+E))`; symmetric for undirected graphs, generally asymmetric for
   directed ones. Row/column `i, j` agrees with `GraphDistance[g, i, j]`.
+- `GraphDensity[g]` — the fraction of possible edges present, an exact rational
+  in `[0, 1]`: `2m/(n(n−1))` for an undirected graph, `m/(n(n−1))` for a directed
+  one (`1` for a complete graph, `0` for an empty one or fewer than two
+  vertices). Reduced by the evaluator, so it prints as a clean integer/`Rational`.
 - `VertexEccentricity[g, v]` — the greatest shortest-path distance from `v` to
   any vertex (`Infinity` if some vertex is unreachable); `VertexEccentricity[g]`
   gives the list for all vertices.

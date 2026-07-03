@@ -662,6 +662,21 @@ static void test_graph_distance_matrix(void) {
     assert_eval_eq("Head[GraphDistanceMatrix[5]]", "GraphDistanceMatrix", 0);
 }
 
+static void test_graph_density(void) {
+    /* Undirected: 2m / (n(n-1)), reduced exact rational. */
+    assert_eval_eq("GraphDensity[CompleteGraph[5]]", "1", 0);
+    assert_eval_eq("GraphDensity[Graph[{1,2,3,4},{}]]", "0", 0);
+    assert_eval_eq("GraphDensity[CycleGraph[4]]", "2/3", 0);
+    assert_eval_eq("GraphDensity[PathGraph[4]]", "1/2", 0);
+    assert_eval_eq("GraphDensity[StarGraph[5]]", "2/5", 0);
+    assert_eval_eq("GraphDensity[Graph[{1,2},{1<->2}]]", "1", 0);
+    assert_eval_eq("GraphDensity[Graph[{1},{}]]", "0", 0);
+    /* Directed: m / (n(n-1)); a complete digraph is 1. */
+    assert_eval_eq("GraphDensity[Graph[{1,2,3},{1->2,2->3}]]", "1/3", 0);
+    assert_eval_eq("GraphDensity[Graph[{1,2,3},{1->2,2->1,1->3,3->1,2->3,3->2}]]", "1", 0);
+    assert_eval_eq("Head[GraphDensity[7]]", "GraphDensity", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -703,6 +718,7 @@ int main(void) {
     TEST(test_graph_power);
     TEST(test_find_cycle);
     TEST(test_graph_distance_matrix);
+    TEST(test_graph_density);
 
     printf("All graph tests passed!\n");
     return 0;
