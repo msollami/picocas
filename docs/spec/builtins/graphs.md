@@ -269,6 +269,15 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `TopologicalSort[g]` — a vertex ordering in which every edge points forward
   (Kahn's algorithm), or `$Failed` if `g` is not a directed acyclic graph
   (undirected edges act as 2-cycles, so they give `$Failed`).
+- `ChromaticPolynomial[g, k]` — the chromatic polynomial: the number of proper
+  `k`-colourings of `g`. A symbolic `k` gives the polynomial (`k(k−1)(k−2)` for a
+  triangle), a numeric `k` the colouring count. Computed from the Whitney
+  subgraph expansion `Σ_{S⊆E}(−1)^{|S|} k^{c(S)}` (integer coefficients by
+  component count), assembled and reduced through the evaluator so both forms
+  share one path. Exponential in the edge count (2^{|E|}), so it is left
+  unevaluated beyond a modest edge bound; direction ignored. Useful for the
+  chromatic number: the least `k` with `ChromaticPolynomial[g, k] > 0` (an odd
+  cycle gives `0` at `k = 2`, a bipartite graph a positive value).
 - `FindCycle[g]` — a cycle in `g` as a list containing one cycle, that cycle
   being a list of its edges (`{{1<->2, 2<->3, 3<->1}}`), or `{}` if `g` is
   acyclic. DFS back-edge detection, `O(V+E)`: a directed cycle needs an on-stack

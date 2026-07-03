@@ -390,6 +390,12 @@ void graph_init(void) {
         "GraphReciprocity[g] gives the fraction of arcs whose reverse is also "
         "present (1 for an undirected graph), as an exact rational.");
 
+    symtab_add_builtin("ChromaticPolynomial", builtin_chromatic_polynomial);
+    symtab_get_def("ChromaticPolynomial")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("ChromaticPolynomial",
+        "ChromaticPolynomial[g, k] gives the chromatic polynomial of g in k: the "
+        "number of proper k-colorings (a polynomial for symbolic k).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

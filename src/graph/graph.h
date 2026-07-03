@@ -147,6 +147,7 @@ Expr* builtin_find_clique(Expr* res);                   /* FindClique[g]        
 Expr* builtin_find_independent_vertex_set(Expr* res);   /* FindIndependentVertexSet */
 Expr* builtin_find_vertex_cover(Expr* res);             /* FindVertexCover[g]   */
 Expr* builtin_graph_reciprocity(Expr* res);             /* GraphReciprocity[g]  */
+Expr* builtin_chromatic_polynomial(Expr* res);          /* ChromaticPolynomial  */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

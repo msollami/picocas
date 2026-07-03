@@ -844,6 +844,27 @@ static void test_graph_reciprocity(void) {
     assert_eval_eq("Head[GraphReciprocity[5]]", "GraphReciprocity", 0);
 }
 
+static void test_chromatic_polynomial(void) {
+    /* Numeric k gives the proper-colouring count. */
+    assert_eval_eq("ChromaticPolynomial[Graph[{1,2,3},{}], 2]", "8", 0);   /* k^3 */
+    assert_eval_eq("ChromaticPolynomial[CompleteGraph[3], 3]", "6", 0);    /* 3! */
+    assert_eval_eq("ChromaticPolynomial[CompleteGraph[3], 2]", "0", 0);    /* not 2-colorable */
+    assert_eval_eq("ChromaticPolynomial[CompleteGraph[4], 4]", "24", 0);
+    assert_eval_eq("ChromaticPolynomial[PathGraph[3], 2]", "2", 0);
+    assert_eval_eq("ChromaticPolynomial[CycleGraph[4], 3]", "18", 0);
+    assert_eval_eq("ChromaticPolynomial[CycleGraph[5], 3]", "30", 0);
+    assert_eval_eq("ChromaticPolynomial[Graph[{1},{}], 7]", "7", 0);
+    /* Bipartite → 2-colorable; odd cycle → not. */
+    assert_eval_eq("ChromaticPolynomial[CycleGraph[4], 2]", "2", 0);
+    assert_eval_eq("ChromaticPolynomial[CycleGraph[5], 2]", "0", 0);
+    /* Symbolic k yields a polynomial; substitute to check. */
+    assert_eval_eq("ChromaticPolynomial[Graph[{1,2},{1<->2}], k] /. k->5", "20", 0);
+    assert_eval_eq("ChromaticPolynomial[CompleteGraph[3], k] /. k->4", "24", 0);
+    /* Oversized / non-graph stays unevaluated. */
+    assert_eval_eq("Head[ChromaticPolynomial[CompleteGraph[9], k]]", "ChromaticPolynomial", 0);
+    assert_eval_eq("Head[ChromaticPolynomial[5, k]]", "ChromaticPolynomial", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -896,6 +917,7 @@ int main(void) {
     TEST(test_find_independent);
     TEST(test_find_vertex_cover);
     TEST(test_graph_reciprocity);
+    TEST(test_chromatic_polynomial);
 
     printf("All graph tests passed!\n");
     return 0;
