@@ -407,6 +407,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   vertex identity. Vertices from `g1` keep their order, new ones from `g2` are
   appended; duplicate and (for undirected) symmetric edges are collapsed, while
   directed edges stay distinct from their reverse. Returns a canonical `Graph`.
+- `GraphDisjointUnion[g1, g2]` — the disjoint union: vertices relabelled
+  `1..n1+n2` (g1's block first), the edges of both graphs (relabelled, kinds
+  preserved), and **no** edges between the blocks — so `g1` and `g2` are its two
+  components. `n1+n2` vertices, `m1+m2` edges; `GraphJoin` without the cross edges.
 - `GraphJoin[g1, g2]` — the graph join: the disjoint union of `g1` and `g2`
   (vertices relabelled `1..n1+n2`, `g1`'s block first) plus an undirected edge
   from every `g1` vertex to every `g2` vertex. `m1 + m2 + n1·n2` edges; `K₁ ⋈ K₁`

@@ -610,6 +610,12 @@ void graph_init(void) {
         "NeighborhoodGraph[g, v] (or [g, v, k]) gives the subgraph induced by v "
         "and all vertices within distance k (k=1 by default).");
 
+    symtab_add_builtin("GraphDisjointUnion", builtin_graph_disjoint_union);
+    symtab_get_def("GraphDisjointUnion")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphDisjointUnion",
+        "GraphDisjointUnion[g1, g2] gives the disjoint union of g1 and g2 "
+        "(vertices relabeled 1..n1+n2, no edges between the two blocks).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

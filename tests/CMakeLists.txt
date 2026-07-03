@@ -483,6 +483,7 @@ set(COMMON_SRC
     ../src/graph/edgeadd.c
     ../src/graph/vertexadd.c
     ../src/graph/neighborhoodgraph.c
+    ../src/graph/graphdisjointunion.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

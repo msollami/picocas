@@ -1451,6 +1451,21 @@ static void test_neighborhood_graph(void) {
     assert_eval_eq("Head[NeighborhoodGraph[5, 1]]", "NeighborhoodGraph", 0);
 }
 
+static void test_graph_disjoint_union(void) {
+    assert_eval_eq("VertexCount[GraphDisjointUnion[CompleteGraph[3], CompleteGraph[3]]]", "6", 0);
+    assert_eval_eq("EdgeCount[GraphDisjointUnion[CompleteGraph[3], CompleteGraph[3]]]", "6", 0);
+    assert_eval_eq("Length[ConnectedComponents[GraphDisjointUnion[CompleteGraph[3], CompleteGraph[3]]]]", "2", 0);
+    assert_eval_eq("VertexCount[GraphDisjointUnion[PathGraph[2], PathGraph[2]]]", "4", 0);
+    assert_eval_eq("EdgeCount[GraphDisjointUnion[PathGraph[2], PathGraph[2]]]", "2", 0);
+    assert_eval_eq("VertexList[GraphDisjointUnion[Graph[{a,b},{a<->b}], Graph[{x},{}]]]", "{1, 2, 3}", 0);
+    assert_eval_eq("ConnectedGraphQ[GraphDisjointUnion[CompleteGraph[3], CompleteGraph[3]]]", "False", 0);
+    assert_eval_eq("EdgeCount[GraphDisjointUnion[CycleGraph[4], PathGraph[3]]] == 4+2", "True", 0);
+    /* No cross edges (unlike GraphJoin); directed edges preserved. */
+    assert_eval_eq("EdgeCount[GraphDisjointUnion[CompleteGraph[2], CompleteGraph[2]]] < EdgeCount[GraphJoin[CompleteGraph[2], CompleteGraph[2]]]", "True", 0);
+    assert_eval_eq("DirectedGraphQ[GraphDisjointUnion[Graph[{1,2},{1->2}], Graph[{1,2},{1->2}]]]", "True", 0);
+    assert_eval_eq("Head[GraphDisjointUnion[5, CycleGraph[3]]]", "GraphDisjointUnion", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1539,6 +1554,7 @@ int main(void) {
     TEST(test_edge_add);
     TEST(test_vertex_add);
     TEST(test_neighborhood_graph);
+    TEST(test_graph_disjoint_union);
 
     printf("All graph tests passed!\n");
     return 0;
