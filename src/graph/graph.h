@@ -162,6 +162,7 @@ Expr* builtin_graph_reverse(Expr* res);                 /* ReverseGraph[g]      
 Expr* builtin_path_graph_q(Expr* res);                  /* PathGraphQ[g]        */
 Expr* builtin_vertex_contract(Expr* res);               /* VertexContract[g,vs] */
 Expr* builtin_pagerank_centrality(Expr* res);           /* PageRankCentrality   */
+Expr* builtin_katz_centrality(Expr* res);               /* KatzCentrality[g,a]  */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

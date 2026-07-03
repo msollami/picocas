@@ -236,6 +236,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
   dangling vertices teleporting uniformly) through the exact `LinearSolve`.
   Follows edge direction; regular and all-dangling graphs give the uniform `1/n`,
   a star's centre outranks its leaves. `O(V³)`.
+- `KatzCentrality[g, α]` — the Katz centrality of each vertex with attenuation
+  `α` (base weight `1`): a vertex is central if pointed to by central vertices,
+  with a length-`k` walk discounted by `αᵏ`. Solves `(I − αAᵀ)x = 1` exactly via
+  `LinearSolve`, so a rational `α` gives an exact rational vector. Uses in-edges
+  (`Aᵀ`), so directed scores reflect who points at a vertex; `α = 0` gives all
+  `1`. Left unevaluated for non-numeric `α` or a singular system. `O(V³)`.
 - `BetweennessCentrality[g]` — for each vertex, the number of shortest paths
   through it, `Σ σ_sv·σ_vt/σ_st` (fractional when paths tie — every C₄ vertex is
   `1/2`). Undirected pairs are counted once; directed keeps the ordered sum.

@@ -1103,6 +1103,23 @@ static void test_pagerank_centrality(void) {
     assert_eval_eq("Head[PageRankCentrality[5]]", "PageRankCentrality", 0);
 }
 
+static void test_katz_centrality(void) {
+    /* alpha = 0 → base weights only. */
+    assert_eval_eq("KatzCentrality[CycleGraph[4], 0]", "{1, 1, 1, 1}", 0);
+    assert_eval_eq("KatzCentrality[Graph[{1,2,3},{}], 1/5]", "{1, 1, 1}", 0);
+    assert_eval_eq("KatzCentrality[Graph[{1},{}], 1/2]", "{1}", 0);
+    /* Exact rationals; regular graph is uniform, path centre outranks ends. */
+    assert_eval_eq("KatzCentrality[Graph[{1,2},{1<->2}], 1/10]", "{10/9, 10/9}", 0);
+    assert_eval_eq("KatzCentrality[CycleGraph[4], 1/10]", "{5/4, 5/4, 5/4, 5/4}", 0);
+    assert_eval_eq("KatzCentrality[PathGraph[3], 1/10]", "{55/49, 60/49, 55/49}", 0);
+    /* Directed: score comes from in-edges (who points at you). */
+    assert_eval_eq("KatzCentrality[Graph[{1,2,3},{1->2,1->3}], 1/10][[2]] > KatzCentrality[Graph[{1,2,3},{1->2,1->3}], 1/10][[1]]", "True", 0);
+    /* Non-numeric alpha / non-graph / arity stay unevaluated. */
+    assert_eval_eq("Head[KatzCentrality[CycleGraph[3], a]]", "KatzCentrality", 0);
+    assert_eval_eq("Head[KatzCentrality[5, 1/10]]", "KatzCentrality", 0);
+    assert_eval_eq("Head[KatzCentrality[CycleGraph[3]]]", "KatzCentrality", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1170,6 +1187,7 @@ int main(void) {
     TEST(test_path_graph_q);
     TEST(test_vertex_contract);
     TEST(test_pagerank_centrality);
+    TEST(test_katz_centrality);
 
     printf("All graph tests passed!\n");
     return 0;

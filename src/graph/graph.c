@@ -480,6 +480,12 @@ void graph_init(void) {
         "PageRankCentrality[g] gives the PageRank of each vertex (damping 17/20) "
         "as an exact rational probability vector summing to 1.");
 
+    symtab_add_builtin("KatzCentrality", builtin_katz_centrality);
+    symtab_get_def("KatzCentrality")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("KatzCentrality",
+        "KatzCentrality[g, alpha] gives the Katz centrality of each vertex with "
+        "attenuation alpha (base weight 1), solving (I - alpha A^T) x = 1 exactly.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

@@ -461,6 +461,7 @@ set(COMMON_SRC
     ../src/graph/pathgraphq.c
     ../src/graph/vertexcontract.c
     ../src/graph/pagerank.c
+    ../src/graph/katzcentrality.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled
