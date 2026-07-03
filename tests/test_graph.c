@@ -1603,6 +1603,21 @@ static void test_graph_periphery(void) {
     assert_eval_eq("Head[GraphPeriphery[5]]", "GraphPeriphery", 0);
 }
 
+static void test_antiprism_graph(void) {
+    /* A3 is the octahedron: 6 vertices, 12 edges, 4-regular. */
+    assert_eval_eq("VertexCount[AntiprismGraph[3]]", "6", 0);
+    assert_eval_eq("EdgeCount[AntiprismGraph[3]]", "12", 0);
+    assert_eval_eq("RegularGraphQ[AntiprismGraph[3]]", "True", 0);
+    assert_eval_eq("EdgeCount[AntiprismGraph[3]] == EdgeCount[TuranGraph[6,3]]", "True", 0);
+    assert_eval_eq("VertexCount[AntiprismGraph[4]]", "8", 0);
+    assert_eval_eq("EdgeCount[AntiprismGraph[4]]", "16", 0);
+    assert_eval_eq("EdgeCount[AntiprismGraph[5]] == 4*5", "True", 0);
+    assert_eval_eq("RegularGraphQ[AntiprismGraph[5]]", "True", 0);
+    assert_eval_eq("First[DegreeCentrality[AntiprismGraph[4]]]", "4", 0);
+    assert_eval_eq("ConnectedGraphQ[AntiprismGraph[4]]", "True", 0);
+    assert_eval_eq("Head[AntiprismGraph[2]]", "AntiprismGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1701,6 +1716,7 @@ int main(void) {
     TEST(test_incidence_list);
     TEST(test_vertex_components);
     TEST(test_graph_periphery);
+    TEST(test_antiprism_graph);
 
     printf("All graph tests passed!\n");
     return 0;

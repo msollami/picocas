@@ -492,6 +492,7 @@ set(COMMON_SRC
     ../src/graph/graphassortativity.c
     ../src/graph/incidencelist.c
     ../src/graph/vertexcomponents.c
+    ../src/graph/antiprismgraph.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

@@ -166,6 +166,9 @@ constructor path:
   vertices `1..n` joining `i` to `i ± jₖ (mod n)` for each jump. Vertex-transitive
   and regular; `C_n({1})` is the cycle, `C_n({1,…,⌊n/2⌋})` is `Kₙ`, and a jump of
   exactly `n/2` adds one matching edge per vertex. `O(n·#jumps + n²)`.
+- `AntiprismGraph[n]` — the n-antiprism: two offset `n`-cycles (outer `1..n`,
+  inner `n+1..2n`) with cross edges `o_i ~ c_i` and `o_i ~ c_{i+1}`. 4-regular,
+  `4n` edges; `AntiprismGraph[3]` is the octahedron. `O(n²)`, needs `n ≥ 3`.
 - `LadderGraph[n]` — the ladder `Lₙ`: two `n`-vertex path rails joined by `n`
   rungs (`= Pₙ □ P₂`); `2n` vertices, `3n−2` edges, bipartite. `L₁` is an edge,
   `L₂ = C₄`. `O(n)`.

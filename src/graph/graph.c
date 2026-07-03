@@ -675,6 +675,12 @@ void graph_init(void) {
         "VertexInComponent[g, v] gives the vertices from which v is reachable "
         "(including v).");
 
+    symtab_add_builtin("AntiprismGraph", builtin_antiprism_graph);
+    symtab_get_def("AntiprismGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("AntiprismGraph",
+        "AntiprismGraph[n] gives the n-antiprism: two offset n-cycles with cross "
+        "edges (4-regular, 4n edges; n=3 is the octahedron).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
