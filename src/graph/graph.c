@@ -414,6 +414,12 @@ void graph_init(void) {
         "TreeGraphQ[g] gives True iff g is a tree: connected with no cycles "
         "(n-1 edges on n>=1 vertices).");
 
+    symtab_add_builtin("StronglyConnectedGraphQ", builtin_strongly_connected_graph_q);
+    symtab_get_def("StronglyConnectedGraphQ")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("StronglyConnectedGraphQ",
+        "StronglyConnectedGraphQ[g] gives True iff every vertex is reachable "
+        "from every other following edge directions.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

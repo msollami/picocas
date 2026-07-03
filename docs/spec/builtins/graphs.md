@@ -314,6 +314,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   Edge direction is ignored (the k-core is defined on the underlying undirected
   graph); components are ordered by least vertex index. `k` must be a
   non-negative integer, else the call is left unevaluated.
+- `StronglyConnectedGraphQ[g]` — `True` iff every vertex is reachable from every
+  other following edge directions. Two BFS from vertex 0 — one over out-edges,
+  one over in-edges — each reaching all `n` vertices, `O(V+E)`. For an undirected
+  graph this coincides with `ConnectedGraphQ`; a single vertex is strongly
+  connected, the empty graph is not.
 - `VertexConnectivity[g]` — the minimum number of vertices whose removal
   disconnects `g` (`n-1` for `K_n`, `0` if already disconnected). Exact
   brute-force over vertex subsets, intended for small graphs.

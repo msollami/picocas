@@ -915,6 +915,23 @@ static void test_tree_graph_q(void) {
     assert_eval_eq("Head[TreeGraphQ[5]]", "TreeGraphQ", 0);
 }
 
+static void test_strongly_connected_q(void) {
+    /* Directed: needs cycles reaching both ways. */
+    assert_eval_eq("StronglyConnectedGraphQ[Graph[{1,2,3},{1->2,2->3,3->1}]]", "True", 0);
+    assert_eval_eq("StronglyConnectedGraphQ[Graph[{1,2,3},{1->2,2->3}]]", "False", 0);
+    assert_eval_eq("StronglyConnectedGraphQ[Graph[{1,2},{1->2,2->1}]]", "True", 0);
+    assert_eval_eq("StronglyConnectedGraphQ[Graph[{1,2,3},{1->2,2->1,2->3}]]", "False", 0);
+    /* Undirected: coincides with connectivity. */
+    assert_eval_eq("StronglyConnectedGraphQ[CycleGraph[4]]", "True", 0);
+    assert_eval_eq("StronglyConnectedGraphQ[PathGraph[4]]", "True", 0);
+    assert_eval_eq("StronglyConnectedGraphQ[Graph[{1,2,3},{1<->2}]]", "False", 0);
+    assert_eval_eq("StronglyConnectedGraphQ[Graph[{1},{}]]", "True", 0);
+    assert_eval_eq("StronglyConnectedGraphQ[Graph[{1,2},{}]]", "False", 0);
+    /* Consistent with a single all-covering strongly connected component. */
+    assert_eval_eq("StronglyConnectedGraphQ[Graph[{1,2,3},{1->2,2->3,3->1}]] == (Length[StronglyConnectedComponents[Graph[{1,2,3},{1->2,2->3,3->1}]]] == 1)", "True", 0);
+    assert_eval_eq("Head[StronglyConnectedGraphQ[5]]", "StronglyConnectedGraphQ", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -971,6 +988,7 @@ int main(void) {
     TEST(test_chromatic_number);
     TEST(test_degree_sequence);
     TEST(test_tree_graph_q);
+    TEST(test_strongly_connected_q);
 
     printf("All graph tests passed!\n");
     return 0;
