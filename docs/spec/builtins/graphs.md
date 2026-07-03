@@ -412,6 +412,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   adjacency, `O(V·(V+E))`; directed graphs stay directed. `k` must be a positive
   integer, else the call is left unevaluated. `PathGraph[4]³` and `CycleGraph[5]²`
   are complete; `k = 1` returns `g` unchanged.
+- `VertexCoreness[g]` — for each vertex, its coreness (core number): the largest
+  `k` such that it lies in the k-core. Batagelj–Zaversnik peeling (remove a
+  minimum-degree vertex, track the running max), `O(V²)`, exact integers in vertex
+  order; direction ignored. A vertex has coreness `≥ k` iff it appears in
+  `KCoreComponents[g, k]`; the maximum coreness is the graph's degeneracy.
 - `KCoreComponents[g, k]` — the connected components of the k-core of `g` (the
   maximal subgraph in which every vertex has degree `≥ k`), as a list of vertex
   lists. Found by repeatedly peeling any vertex whose degree drops below `k`

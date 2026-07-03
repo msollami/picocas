@@ -1323,6 +1323,22 @@ static void test_friendship_graph(void) {
     assert_eval_eq("Head[FriendshipGraph[0]]", "FriendshipGraph", 0);
 }
 
+static void test_vertex_coreness(void) {
+    assert_eval_eq("VertexCoreness[CompleteGraph[4]]", "{3, 3, 3, 3}", 0);
+    assert_eval_eq("VertexCoreness[CycleGraph[4]]", "{2, 2, 2, 2}", 0);
+    assert_eval_eq("VertexCoreness[PathGraph[4]]", "{1, 1, 1, 1}", 0);
+    assert_eval_eq("VertexCoreness[StarGraph[5]]", "{1, 1, 1, 1, 1}", 0);
+    assert_eval_eq("VertexCoreness[Graph[{1,2,3},{}]]", "{0, 0, 0}", 0);
+    /* Triangle with a pendant: the triangle is 2-core, the pendant 1-core. */
+    assert_eval_eq("VertexCoreness[Graph[{1,2,3,4},{1<->2,2<->3,3<->1,3<->4}]]", "{2, 2, 2, 1}", 0);
+    /* Direction ignored; max coreness is the degeneracy. */
+    assert_eval_eq("VertexCoreness[Graph[{1,2,3},{1->2,2->3,3->1}]]", "{2, 2, 2}", 0);
+    assert_eval_eq("Max[VertexCoreness[CompleteGraph[4]]]", "3", 0);
+    /* Coreness ≥ k agrees with membership in KCoreComponents[g, k]. */
+    assert_eval_eq("Count[VertexCoreness[Graph[{1,2,3,4},{1<->2,2<->3,3<->1,3<->4}]], _?(#>=2&)]", "3", 0);
+    assert_eval_eq("Head[VertexCoreness[5]]", "VertexCoreness", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1403,6 +1419,7 @@ int main(void) {
     TEST(test_kneser_graph);
     TEST(test_generalized_petersen_graph);
     TEST(test_friendship_graph);
+    TEST(test_vertex_coreness);
 
     printf("All graph tests passed!\n");
     return 0;

@@ -562,6 +562,12 @@ void graph_init(void) {
         "FriendshipGraph[n] gives the windmill graph of n triangles sharing one "
         "central vertex (F_1 is a triangle, F_2 the bowtie).");
 
+    symtab_add_builtin("VertexCoreness", builtin_vertex_coreness);
+    symtab_get_def("VertexCoreness")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("VertexCoreness",
+        "VertexCoreness[g] gives, for each vertex, its coreness: the largest k "
+        "such that it lies in the k-core of g.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
