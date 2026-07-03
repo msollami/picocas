@@ -699,6 +699,12 @@ void graph_init(void) {
         "HelmGraph[n] gives the helm graph: a wheel on an n-cycle rim with a "
         "pendant vertex attached to each rim vertex (2n+1 vertices, 3n edges).");
 
+    symtab_add_builtin("GearGraph", builtin_gear_graph);
+    symtab_get_def("GearGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GearGraph",
+        "GearGraph[n] gives the gear graph: a hub joined to alternate vertices of "
+        "a 2n-cycle (2n+1 vertices, 3n edges; bipartite).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

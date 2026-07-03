@@ -199,6 +199,7 @@ Expr* builtin_antiprism_graph(Expr* res);               /* AntiprismGraph[n]    
 Expr* builtin_prism_graph(Expr* res);                   /* PrismGraph[n]        */
 Expr* builtin_sunlet_graph(Expr* res);                  /* SunletGraph[n]       */
 Expr* builtin_helm_graph(Expr* res);                    /* HelmGraph[n]         */
+Expr* builtin_gear_graph(Expr* res);                    /* GearGraph[n]         */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

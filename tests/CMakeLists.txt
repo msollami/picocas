@@ -496,6 +496,7 @@ set(COMMON_SRC
     ../src/graph/prismgraph.c
     ../src/graph/sunletgraph.c
     ../src/graph/helmgraph.c
+    ../src/graph/geargraph.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

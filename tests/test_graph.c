@@ -1660,6 +1660,21 @@ static void test_helm_graph(void) {
     assert_eval_eq("Head[HelmGraph[2]]", "HelmGraph", 0);
 }
 
+static void test_gear_graph(void) {
+    assert_eval_eq("VertexCount[GearGraph[3]]", "7", 0);
+    assert_eval_eq("EdgeCount[GearGraph[3]]", "9", 0);
+    assert_eval_eq("VertexCount[GearGraph[5]]", "11", 0);
+    assert_eval_eq("EdgeCount[GearGraph[5]] == 3*5", "True", 0);
+    /* Gear graphs are bipartite (χ = 2). */
+    assert_eval_eq("BipartiteGraphQ[GearGraph[4]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[GearGraph[3]]", "True", 0);
+    assert_eval_eq("ChromaticNumber[GearGraph[4]]", "2", 0);
+    assert_eval_eq("First[DegreeCentrality[GearGraph[4]]]", "4", 0);   /* hub degree n */
+    assert_eval_eq("ConnectedGraphQ[GearGraph[5]]", "True", 0);
+    assert_eval_eq("RegularGraphQ[GearGraph[4]]", "False", 0);
+    assert_eval_eq("Head[GearGraph[2]]", "GearGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1762,6 +1777,7 @@ int main(void) {
     TEST(test_prism_graph);
     TEST(test_sunlet_graph);
     TEST(test_helm_graph);
+    TEST(test_gear_graph);
 
     printf("All graph tests passed!\n");
     return 0;

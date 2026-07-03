@@ -188,6 +188,9 @@ constructor path:
   vertices, 3-regular. `GP(n,1)` is the `n`-prism (`GP(4,1)` the cube), `GP(5,2)`
   the Petersen graph, `GP(8,3)` the Möbius–Kantor, `GP(10,3)` the Desargues.
   `O(n²)`; needs `n ≥ 3`, `1 ≤ k < n`.
+- `GearGraph[n]` — the gear (cogwheel): a hub joined to alternate vertices of a
+  `2n`-cycle rim (a wheel with a vertex inserted between each adjacent rim pair).
+  `2n+1` vertices, `3n` edges, bipartite (`χ = 2`). `O(n)`.
 - `HelmGraph[n]` — the helm: a wheel (hub joined to an `n`-cycle rim) with a
   pendant vertex attached to each rim vertex. `2n+1` vertices, `3n` edges; the hub
   has degree `n`, each rim vertex degree 4, each pendant degree 1. `O(n)`.
