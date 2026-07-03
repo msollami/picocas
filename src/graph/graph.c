@@ -314,6 +314,13 @@ void graph_init(void) {
         "FindCycle[g] gives a cycle in g as a list containing one list of its "
         "edges, or {} if g is acyclic.");
 
+    symtab_add_builtin("GraphDistanceMatrix", builtin_graph_distance_matrix);
+    symtab_get_def("GraphDistanceMatrix")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphDistanceMatrix",
+        "GraphDistanceMatrix[g] gives the matrix whose (i,j) entry is the "
+        "shortest-path distance from vertex i to vertex j (Infinity if "
+        "unreachable).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

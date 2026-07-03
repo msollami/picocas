@@ -644,6 +644,24 @@ static void test_find_cycle(void) {
     assert_eval_eq("Head[FindCycle[9]]", "FindCycle", 0);
 }
 
+static void test_graph_distance_matrix(void) {
+    /* Undirected: symmetric, zero diagonal, BFS distances. */
+    assert_eval_eq("GraphDistanceMatrix[PathGraph[3]]", "{{0, 1, 2}, {1, 0, 1}, {2, 1, 0}}", 0);
+    assert_eval_eq("GraphDistanceMatrix[CompleteGraph[3]]", "{{0, 1, 1}, {1, 0, 1}, {1, 1, 0}}", 0);
+    assert_eval_eq("Tr[GraphDistanceMatrix[CompleteGraph[5]]]", "0", 0);
+    assert_eval_eq("With[{m=GraphDistanceMatrix[CycleGraph[5]]}, m === Transpose[m]]", "True", 0);
+    assert_eval_eq("GraphDistanceMatrix[CycleGraph[6]][[1,4]]", "3", 0);
+    /* Unreachable pairs are Infinity. */
+    assert_eval_eq("GraphDistanceMatrix[Graph[{1,2,3},{1<->2}]]", "{{0, 1, Infinity}, {1, 0, Infinity}, {Infinity, Infinity, 0}}", 0);
+    assert_eval_eq("GraphDistanceMatrix[Graph[{1,2},{}]]", "{{0, Infinity}, {Infinity, 0}}", 0);
+    assert_eval_eq("GraphDistanceMatrix[Graph[{1},{}]]", "{{0}}", 0);
+    /* Directed: follows arc direction (asymmetric). */
+    assert_eval_eq("GraphDistanceMatrix[Graph[{1,2,3},{1->2,2->3}]]", "{{0, 1, 2}, {Infinity, 0, 1}, {Infinity, Infinity, 0}}", 0);
+    /* Agrees with the pairwise GraphDistance builtin. */
+    assert_eval_eq("GraphDistanceMatrix[PathGraph[4]][[1,4]] == GraphDistance[PathGraph[4],1,4]", "True", 0);
+    assert_eval_eq("Head[GraphDistanceMatrix[5]]", "GraphDistanceMatrix", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -684,6 +702,7 @@ int main(void) {
     TEST(test_find_hamiltonian);
     TEST(test_graph_power);
     TEST(test_find_cycle);
+    TEST(test_graph_distance_matrix);
 
     printf("All graph tests passed!\n");
     return 0;

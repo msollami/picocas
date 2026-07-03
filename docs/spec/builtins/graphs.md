@@ -200,6 +200,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   through it, `Σ σ_sv·σ_vt/σ_st` (fractional when paths tie — every C₄ vertex is
   `1/2`). Undirected pairs are counted once; directed keeps the ordered sum.
   Exact rationals from all-pairs BFS path counts.
+- `GraphDistanceMatrix[g]` — the matrix whose `(i, j)` entry is the shortest-path
+  distance from vertex `i` to vertex `j` (`0` on the diagonal, `Infinity` when
+  unreachable). One BFS per source over the direction-aware adjacency,
+  `O(V·(V+E))`; symmetric for undirected graphs, generally asymmetric for
+  directed ones. Row/column `i, j` agrees with `GraphDistance[g, i, j]`.
 - `VertexEccentricity[g, v]` — the greatest shortest-path distance from `v` to
   any vertex (`Infinity` if some vertex is unreachable); `VertexEccentricity[g]`
   gives the list for all vertices.
