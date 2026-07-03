@@ -677,6 +677,20 @@ static void test_graph_density(void) {
     assert_eval_eq("Head[GraphDensity[7]]", "GraphDensity", 0);
 }
 
+static void test_degree_centrality(void) {
+    assert_eval_eq("DegreeCentrality[CycleGraph[4]]", "{2, 2, 2, 2}", 0);
+    assert_eval_eq("DegreeCentrality[CompleteGraph[4]]", "{3, 3, 3, 3}", 0);
+    assert_eval_eq("DegreeCentrality[StarGraph[5]]", "{4, 1, 1, 1, 1}", 0);
+    assert_eval_eq("DegreeCentrality[PathGraph[4]]", "{1, 2, 2, 1}", 0);
+    assert_eval_eq("DegreeCentrality[Graph[{1,2,3},{}]]", "{0, 0, 0}", 0);
+    /* Directed: in-degree + out-degree. */
+    assert_eval_eq("DegreeCentrality[Graph[{1,2,3},{1->2,2->3}]]", "{1, 2, 1}", 0);
+    /* Consistency: matches VertexDegree (undirected) and obeys the handshake lemma. */
+    assert_eval_eq("DegreeCentrality[CycleGraph[5]] == VertexDegree[CycleGraph[5]]", "True", 0);
+    assert_eval_eq("Total[DegreeCentrality[CompleteGraph[6]]] == 2*EdgeCount[CompleteGraph[6]]", "True", 0);
+    assert_eval_eq("Head[DegreeCentrality[5]]", "DegreeCentrality", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -719,6 +733,7 @@ int main(void) {
     TEST(test_find_cycle);
     TEST(test_graph_distance_matrix);
     TEST(test_graph_density);
+    TEST(test_degree_centrality);
 
     printf("All graph tests passed!\n");
     return 0;

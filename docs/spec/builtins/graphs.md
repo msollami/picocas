@@ -196,6 +196,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   `c_i = (r_i−1)² / ((n−1)·S_i)`, where `r_i` vertices are reachable from `i` at
   total distance `S_i` (`(n−1)/S_i` when connected, `0` when isolated). Exact
   rationals; `O(V·(V+E))` via a BFS per vertex; follows edge direction.
+- `DegreeCentrality[g]` — for each vertex, the number of incident edges: the
+  ordinary degree for an undirected graph, in-degree + out-degree for a directed
+  one. The simplest centrality; one pass over the edges (`O(V+E)`), exact
+  integers in vertex order (agrees with `VertexDegree` on undirected graphs).
 - `BetweennessCentrality[g]` — for each vertex, the number of shortest paths
   through it, `Σ σ_sv·σ_vt/σ_st` (fractional when paths tie — every C₄ vertex is
   `1/2`). Undirected pairs are counted once; directed keeps the ordered sum.

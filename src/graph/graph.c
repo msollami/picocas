@@ -327,6 +327,12 @@ void graph_init(void) {
         "GraphDensity[g] gives the fraction of possible edges present in g, an "
         "exact rational in [0, 1] (1 for a complete graph, 0 for an empty one).");
 
+    symtab_add_builtin("DegreeCentrality", builtin_degree_centrality);
+    symtab_get_def("DegreeCentrality")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("DegreeCentrality",
+        "DegreeCentrality[g] gives, for each vertex, the number of incident "
+        "edges (degree; in-degree + out-degree for a directed graph).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
