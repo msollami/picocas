@@ -473,6 +473,7 @@ set(COMMON_SRC
     ../src/graph/laddergraph.c
     ../src/graph/cocktailparty.c
     ../src/graph/kneser.c
+    ../src/graph/generalizedpetersen.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

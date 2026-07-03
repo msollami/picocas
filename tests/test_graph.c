@@ -1289,6 +1289,25 @@ static void test_kneser_graph(void) {
     assert_eval_eq("Head[KneserGraph[5,x]]", "KneserGraph", 0);
 }
 
+static void test_generalized_petersen_graph(void) {
+    /* GP(5,2) is the Petersen graph. */
+    assert_eval_eq("VertexCount[GeneralizedPetersenGraph[5,2]]", "10", 0);
+    assert_eval_eq("EdgeCount[GeneralizedPetersenGraph[5,2]]", "15", 0);
+    assert_eval_eq("RegularGraphQ[GeneralizedPetersenGraph[5,2]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[GeneralizedPetersenGraph[5,2]]", "False", 0);
+    assert_eval_eq("EdgeCount[GeneralizedPetersenGraph[5,2]] == EdgeCount[KneserGraph[5,2]]", "True", 0);
+    /* GP(4,1) is the cube; GP(n,1) is the n-prism (3n edges). */
+    assert_eval_eq("VertexCount[GeneralizedPetersenGraph[4,1]]", "8", 0);
+    assert_eval_eq("EdgeCount[GeneralizedPetersenGraph[4,1]]", "12", 0);
+    assert_eval_eq("BipartiteGraphQ[GeneralizedPetersenGraph[4,1]]", "True", 0);
+    assert_eval_eq("EdgeCount[GeneralizedPetersenGraph[6,1]]", "18", 0);
+    assert_eval_eq("RegularGraphQ[GeneralizedPetersenGraph[3,1]]", "True", 0);
+    assert_eval_eq("ConnectedGraphQ[GeneralizedPetersenGraph[8,3]]", "True", 0);
+    /* Bad arguments stay unevaluated. */
+    assert_eval_eq("Head[GeneralizedPetersenGraph[2,1]]", "GeneralizedPetersenGraph", 0);
+    assert_eval_eq("Head[GeneralizedPetersenGraph[5,5]]", "GeneralizedPetersenGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1367,6 +1386,7 @@ int main(void) {
     TEST(test_ladder_graph);
     TEST(test_cocktail_party_graph);
     TEST(test_kneser_graph);
+    TEST(test_generalized_petersen_graph);
 
     printf("All graph tests passed!\n");
     return 0;

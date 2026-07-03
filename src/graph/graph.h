@@ -174,6 +174,7 @@ Expr* builtin_circulant_graph(Expr* res);               /* CirculantGraph[n,js] 
 Expr* builtin_ladder_graph(Expr* res);                  /* LadderGraph[n]       */
 Expr* builtin_cocktail_party_graph(Expr* res);          /* CocktailPartyGraph[n] */
 Expr* builtin_kneser_graph(Expr* res);                  /* KneserGraph[n, k]    */
+Expr* builtin_generalized_petersen_graph(Expr* res);    /* GeneralizedPetersenGraph */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
