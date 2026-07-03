@@ -1167,6 +1167,25 @@ static void test_empty_and_mixed_q(void) {
     assert_eval_eq("Head[MixedGraphQ[5]]", "MixedGraphQ", 0);
 }
 
+static void test_graph_product(void) {
+    /* P2 [] P2 = C4. */
+    assert_eval_eq("VertexCount[GraphProduct[Graph[{1,2},{1<->2}], Graph[{1,2},{1<->2}], \"Cartesian\"]]", "4", 0);
+    assert_eval_eq("EdgeCount[GraphProduct[Graph[{1,2},{1<->2}], Graph[{1,2},{1<->2}], \"Cartesian\"]]", "4", 0);
+    /* Tensor / Strong / Lexicographic of K2 with K2. */
+    assert_eval_eq("EdgeCount[GraphProduct[Graph[{1,2},{1<->2}], Graph[{1,2},{1<->2}], \"Tensor\"]]", "2", 0);
+    assert_eval_eq("CompleteGraphQ[GraphProduct[Graph[{1,2},{1<->2}], Graph[{1,2},{1<->2}], \"Strong\"]]", "True", 0);
+    assert_eval_eq("EdgeCount[GraphProduct[Graph[{1,2},{1<->2}], Graph[{1,2},{1<->2}], \"Lexicographic\"]]", "6", 0);
+    /* C4 [] K2 is the 3-regular cube (8 vertices, 12 edges). */
+    assert_eval_eq("VertexCount[GraphProduct[CycleGraph[4], Graph[{1,2},{1<->2}], \"Cartesian\"]]", "8", 0);
+    assert_eval_eq("EdgeCount[GraphProduct[CycleGraph[4], Graph[{1,2},{1<->2}], \"Cartesian\"]]", "12", 0);
+    assert_eval_eq("RegularGraphQ[GraphProduct[CycleGraph[4], Graph[{1,2},{1<->2}], \"Cartesian\"]]", "True", 0);
+    /* Cartesian grid P3 x P2 has 3*1 + 2*2 = 7 edges. */
+    assert_eval_eq("EdgeCount[GraphProduct[PathGraph[3], Graph[{1,2},{1<->2}], \"Cartesian\"]]", "7", 0);
+    /* Unknown type / non-string / non-graph stay unevaluated. */
+    assert_eval_eq("Head[GraphProduct[Graph[{1,2},{1<->2}], Graph[{1,2},{1<->2}], \"Nope\"]]", "GraphProduct", 0);
+    assert_eval_eq("Head[GraphProduct[5, Graph[{1,2},{1<->2}], \"Cartesian\"]]", "GraphProduct", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1238,6 +1257,7 @@ int main(void) {
     TEST(test_graph_join);
     TEST(test_index_graph);
     TEST(test_empty_and_mixed_q);
+    TEST(test_graph_product);
 
     printf("All graph tests passed!\n");
     return 0;

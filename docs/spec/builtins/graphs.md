@@ -332,6 +332,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
   target, an undirected one a visited non-parent neighbour. Returns the first
   cycle found (deterministic, not necessarily shortest); edges follow arc
   direction and mirror the graph's edge kind.
+- `GraphProduct[g1, g2, type]` — a product graph on the vertex pairs `V1 × V2`
+  (`{a, b}` labels), undirected, for `type` one of `"Cartesian"` (`a1=a2 & b1~b2`
+  or `b1=b2 & a1~a2`), `"Tensor"` (`a1~a2 & b1~b2`), `"Strong"` (Cartesian ∪
+  Tensor), or `"Lexicographic"` (`a1~a2`, or `a1=a2 & b1~b2`). `O((n1·n2)²)`.
+  `P₂ □ P₂ = C₄`, `C₄ □ K₂` is the 3-regular cube, `K₂ ⊠ K₂ = K₄`. Left
+  unevaluated for an unknown type.
 - `GraphUnion[g1, g2]` — the graph whose vertex set is the union of the two
   vertex sets and whose edge set is the union of the two edge sets, matched by
   vertex identity. Vertices from `g1` keep their order, new ones from `g2` are

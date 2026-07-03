@@ -508,6 +508,12 @@ void graph_init(void) {
     symtab_set_docstring("MixedGraphQ",
         "MixedGraphQ[g] gives True iff g has both directed and undirected edges.");
 
+    symtab_add_builtin("GraphProduct", builtin_graph_product);
+    symtab_get_def("GraphProduct")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphProduct",
+        "GraphProduct[g1, g2, type] gives a product graph on V1 x V2 for type "
+        "\"Cartesian\", \"Tensor\", \"Strong\", or \"Lexicographic\".");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

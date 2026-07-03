@@ -466,6 +466,7 @@ set(COMMON_SRC
     ../src/graph/indexgraph.c
     ../src/graph/emptygraphq.c
     ../src/graph/mixedgraphq.c
+    ../src/graph/graphproduct.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled
