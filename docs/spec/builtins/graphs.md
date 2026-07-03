@@ -217,6 +217,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `GraphComplement[g]` — the graph on the same vertices whose edges are exactly
   the non-edges of `g`; edgeless → complete graph, complete → edgeless, and
   applying it twice restores `g`. Directed graphs stay directed (`O(V²)`).
+- `GraphPower[g, k]` — the k-th power: the graph on the same vertices that joins
+  two vertices whenever `g` has a path of length `≤ k` between them (no
+  self-loops). A depth-limited BFS per source over the (direction-aware)
+  adjacency, `O(V·(V+E))`; directed graphs stay directed. `k` must be a positive
+  integer, else the call is left unevaluated. `PathGraph[4]³` and `CycleGraph[5]²`
+  are complete; `k = 1` returns `g` unchanged.
 - `VertexConnectivity[g]` — the minimum number of vertices whose removal
   disconnects `g` (`n-1` for `K_n`, `0` if already disconnected). Exact
   brute-force over vertex subsets, intended for small graphs.

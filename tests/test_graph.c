@@ -609,6 +609,23 @@ static void test_find_hamiltonian(void) {
     assert_eval_eq("Head[FindHamiltonianCycle[7]]", "FindHamiltonianCycle", 0);
 }
 
+static void test_graph_power(void) {
+    /* Undirected: distance-<=k closure. P4^2 adds {1,3},{2,4}; P4^3 = K4. */
+    assert_eval_eq("EdgeCount[GraphPower[PathGraph[4], 2]]", "5", 0);
+    assert_eval_eq("EdgeCount[GraphPower[PathGraph[4], 3]]", "6", 0);
+    assert_eval_eq("EdgeCount[GraphPower[CycleGraph[5], 2]]", "10", 0);  /* K5 */
+    assert_eval_eq("EdgeCount[GraphPower[CycleGraph[5], 1]]", "5", 0);   /* unchanged */
+    assert_eval_eq("VertexList[GraphPower[PathGraph[4], 2]]", "{1, 2, 3, 4}", 0);
+    assert_eval_eq("FreeQ[EdgeList[GraphPower[CycleGraph[4], 2]], UndirectedEdge[x_, x_]]", "True", 0);
+    assert_eval_eq("EdgeCount[GraphPower[Graph[{1,2,3},{}], 2]]", "0", 0);
+    /* Directed: reachability follows arcs; power stays directed. */
+    assert_eval_eq("DirectedGraphQ[GraphPower[Graph[{1,2,3},{1->2,2->3}], 2]]", "True", 0);
+    assert_eval_eq("MemberQ[EdgeList[GraphPower[Graph[{1,2,3},{1->2,2->3}], 2]], DirectedEdge[1,3]]", "True", 0);
+    /* Non-positive / symbolic k stays unevaluated. */
+    assert_eval_eq("Head[GraphPower[CycleGraph[3], 0]]", "GraphPower", 0);
+    assert_eval_eq("Head[GraphPower[CycleGraph[3], k]]", "GraphPower", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -647,6 +664,7 @@ int main(void) {
     TEST(test_betweenness);
     TEST(test_find_eulerian);
     TEST(test_find_hamiltonian);
+    TEST(test_graph_power);
 
     printf("All graph tests passed!\n");
     return 0;

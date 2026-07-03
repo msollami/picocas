@@ -301,6 +301,13 @@ void graph_init(void) {
         "FindHamiltonianCycle[g] gives a Hamiltonian cycle (a closed walk "
         "visiting every vertex once) as a vertex list, or {} if g has none.");
 
+    symtab_add_builtin("GraphPower", builtin_graph_power);
+    symtab_get_def("GraphPower")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphPower",
+        "GraphPower[g, k] gives the k-th power of g: the graph on the same "
+        "vertices joining two vertices whenever g has a path of length at most k "
+        "between them.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
