@@ -355,6 +355,30 @@ static void test_bipartite(void) {
     assert_eval_eq("BipartiteGraphQ[5]", "False", 0);
 }
 
+static void test_metrics(void) {
+    /* Path P5: eccentricities {4,3,2,3,4}; diameter 4, radius 2, center {3}. */
+    assert_eval_eq("VertexEccentricity[PathGraph[5]]", "{4, 3, 2, 3, 4}", 0);
+    assert_eval_eq("GraphDiameter[PathGraph[5]]", "4", 0);
+    assert_eval_eq("GraphRadius[PathGraph[5]]", "2", 0);
+    assert_eval_eq("GraphCenter[PathGraph[5]]", "{3}", 0);
+    /* Cycle C6: every eccentricity 3; center is all vertices. */
+    assert_eval_eq("GraphDiameter[CycleGraph[6]]", "3", 0);
+    assert_eval_eq("GraphCenter[CycleGraph[6]]", "{1, 2, 3, 4, 5, 6}", 0);
+    /* Complete graph: diameter 1. */
+    assert_eval_eq("GraphDiameter[CompleteGraph[5]]", "1", 0);
+    /* Disconnected: diameter/radius Infinity, empty center. */
+    assert_eval_eq("GraphDiameter[Graph[{1,2,3},{1<->2}]]", "Infinity", 0);
+    assert_eval_eq("GraphRadius[Graph[{1,2,3},{1<->2}]]", "Infinity", 0);
+    assert_eval_eq("GraphCenter[Graph[{1,2,3},{1<->2}]]", "{}", 0);
+    /* Directed out-star: source reaches all (ecc 1), leaves unreachable →
+       diameter Infinity but radius 1, center is the source. */
+    assert_eval_eq("GraphRadius[Graph[{0,1,2,3},{0->1,0->2,0->3}]]", "1", 0);
+    assert_eval_eq("GraphCenter[Graph[{0,1,2,3},{0->1,0->2,0->3}]]", "{0}", 0);
+    assert_eval_eq("VertexEccentricity[Graph[{1},{}], 1]", "0", 0);
+    /* Non-graph stays unevaluated. */
+    assert_eval_eq("Head[GraphDiameter[5]]", "GraphDiameter", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -378,6 +402,7 @@ int main(void) {
     TEST(test_highlight_graph);
     TEST(test_graph3d);
     TEST(test_bipartite);
+    TEST(test_metrics);
 
     printf("All graph tests passed!\n");
     return 0;

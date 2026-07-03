@@ -175,6 +175,31 @@ void graph_init(void) {
         "BipartiteGraphQ[g] gives True if the underlying undirected graph is "
         "2-colorable (has no odd cycle), and False otherwise.");
 
+    symtab_add_builtin("VertexEccentricity", builtin_vertex_eccentricity);
+    symtab_get_def("VertexEccentricity")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("VertexEccentricity",
+        "VertexEccentricity[g,v] gives the greatest shortest-path distance from "
+        "v to any vertex; VertexEccentricity[g] gives the list for all vertices "
+        "(Infinity if some vertex is unreachable).");
+
+    symtab_add_builtin("GraphDiameter", builtin_graph_diameter);
+    symtab_get_def("GraphDiameter")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphDiameter",
+        "GraphDiameter[g] gives the maximum vertex eccentricity (Infinity if g "
+        "is not strongly connected).");
+
+    symtab_add_builtin("GraphRadius", builtin_graph_radius);
+    symtab_get_def("GraphRadius")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphRadius",
+        "GraphRadius[g] gives the minimum vertex eccentricity (Infinity if no "
+        "vertex reaches all others).");
+
+    symtab_add_builtin("GraphCenter", builtin_graph_center);
+    symtab_get_def("GraphCenter")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphCenter",
+        "GraphCenter[g] gives the vertices whose eccentricity equals the graph "
+        "radius.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

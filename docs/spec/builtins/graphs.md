@@ -148,6 +148,14 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `BipartiteGraphQ[g]` — `True` iff the underlying undirected graph is
   2-colorable (no odd cycle). Single-BFS 2-coloring, `O(V+E)`; edge direction is
   ignored and an edgeless graph is vacuously bipartite.
+- `VertexEccentricity[g, v]` — the greatest shortest-path distance from `v` to
+  any vertex (`Infinity` if some vertex is unreachable); `VertexEccentricity[g]`
+  gives the list for all vertices.
+- `GraphDiameter[g]` / `GraphRadius[g]` — the max / min vertex eccentricity
+  (`Infinity` when not strongly connected / when no vertex reaches all others).
+- `GraphCenter[g]` — the vertices whose eccentricity equals the graph radius.
+  These derive from a BFS per vertex (`O(V·(V+E))`) and follow edge direction on
+  directed graphs.
 - `VertexConnectivity[g]` — the minimum number of vertices whose removal
   disconnects `g` (`n-1` for `K_n`, `0` if already disconnected). Exact
   brute-force over vertex subsets, intended for small graphs.

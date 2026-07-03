@@ -113,6 +113,10 @@ Expr* builtin_find_spanning_tree(Expr* res);            /* FindSpanningTree     
 Expr* builtin_connected_graph_q(Expr* res);             /* ConnectedGraphQ      */
 Expr* builtin_vertex_connectivity(Expr* res);           /* VertexConnectivity   */
 Expr* builtin_bipartite_graph_q(Expr* res);             /* BipartiteGraphQ      */
+Expr* builtin_vertex_eccentricity(Expr* res);           /* VertexEccentricity   */
+Expr* builtin_graph_diameter(Expr* res);                /* GraphDiameter        */
+Expr* builtin_graph_radius(Expr* res);                  /* GraphRadius          */
+Expr* builtin_graph_center(Expr* res);                  /* GraphCenter          */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
