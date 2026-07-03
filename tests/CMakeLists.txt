@@ -498,6 +498,7 @@ set(COMMON_SRC
     ../src/graph/helmgraph.c
     ../src/graph/geargraph.c
     ../src/graph/edgebetweenness.c
+    ../src/graph/dodecahedralgraph.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

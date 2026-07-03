@@ -183,6 +183,9 @@ constructor path:
   `{1..n}` (each a `List` label), adjacent iff disjoint. `K(n,1) = Kₙ`,
   `K(5,2)` is the Petersen graph, `K(2k,k)` a perfect matching. Disjointness via
   element bitmasks, `O(C(n,k)²)`; left unevaluated beyond a vertex cap.
+- `DodecahedralGraph[]` — the dodecahedron graph (a Platonic solid), which is
+  `GeneralizedPetersenGraph[10, 2]`: 20 vertices, 30 edges, 3-regular, girth 5,
+  non-bipartite, Hamiltonian, `χ = 3`. Takes no arguments.
 - `GeneralizedPetersenGraph[n, k]` — `GP(n, k)`: an outer `n`-cycle `1..n`, an
   inner star polygon `i_j ~ i_{j+k}` on `n+1..2n`, and spokes `o_j ~ i_j`; `2n`
   vertices, 3-regular. `GP(n,1)` is the `n`-prism (`GP(4,1)` the cube), `GP(5,2)`

@@ -1689,6 +1689,19 @@ static void test_edge_betweenness(void) {
     assert_eval_eq("Head[EdgeBetweennessCentrality[5]]", "EdgeBetweennessCentrality", 0);
 }
 
+static void test_dodecahedral_graph(void) {
+    assert_eval_eq("VertexCount[DodecahedralGraph[]]", "20", 0);
+    assert_eval_eq("EdgeCount[DodecahedralGraph[]]", "30", 0);
+    assert_eval_eq("RegularGraphQ[DodecahedralGraph[]]", "True", 0);
+    assert_eval_eq("First[DegreeCentrality[DodecahedralGraph[]]]", "3", 0);
+    assert_eval_eq("ConnectedGraphQ[DodecahedralGraph[]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[DodecahedralGraph[]]", "False", 0);
+    assert_eval_eq("ChromaticNumber[DodecahedralGraph[]]", "3", 0);
+    assert_eval_eq("HamiltonianGraphQ[DodecahedralGraph[]]", "True", 0);
+    assert_eval_eq("EdgeCount[DodecahedralGraph[]] == EdgeCount[GeneralizedPetersenGraph[10,2]]", "True", 0);
+    assert_eval_eq("Head[DodecahedralGraph[5]]", "DodecahedralGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1793,6 +1806,7 @@ int main(void) {
     TEST(test_helm_graph);
     TEST(test_gear_graph);
     TEST(test_edge_betweenness);
+    TEST(test_dodecahedral_graph);
 
     printf("All graph tests passed!\n");
     return 0;

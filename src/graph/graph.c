@@ -711,6 +711,12 @@ void graph_init(void) {
         "EdgeBetweennessCentrality[g] gives, for each edge, the number of "
         "shortest paths through it (exact rationals when paths tie).");
 
+    symtab_add_builtin("DodecahedralGraph", builtin_dodecahedral_graph);
+    symtab_get_def("DodecahedralGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("DodecahedralGraph",
+        "DodecahedralGraph[] gives the dodecahedron graph (GP(10,2)): 20 "
+        "vertices, 30 edges, 3-regular.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
