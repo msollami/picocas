@@ -949,6 +949,22 @@ static void test_hamiltonian_graph_q(void) {
     assert_eval_eq("Head[HamiltonianGraphQ[5]]", "HamiltonianGraphQ", 0);
 }
 
+static void test_regular_graph_q(void) {
+    assert_eval_eq("RegularGraphQ[CycleGraph[5]]", "True", 0);
+    assert_eval_eq("RegularGraphQ[CompleteGraph[4]]", "True", 0);
+    assert_eval_eq("RegularGraphQ[Graph[{1,2,3},{}]]", "True", 0);   /* 0-regular */
+    assert_eval_eq("RegularGraphQ[Graph[{1},{}]]", "True", 0);
+    assert_eval_eq("RegularGraphQ[Graph[{1,2,3,4,5,6},{1<->4,1<->5,1<->6,2<->4,2<->5,2<->6,3<->4,3<->5,3<->6}]]", "True", 0);
+    /* Not regular. */
+    assert_eval_eq("RegularGraphQ[PathGraph[4]]", "False", 0);
+    assert_eval_eq("RegularGraphQ[StarGraph[5]]", "False", 0);
+    assert_eval_eq("RegularGraphQ[WheelGraph[5]]", "False", 0);
+    /* Directed: equal in- and out-degrees. */
+    assert_eval_eq("RegularGraphQ[Graph[{1,2,3},{1->2,2->3,3->1}]]", "True", 0);
+    assert_eval_eq("RegularGraphQ[Graph[{1,2,3},{1->2,2->3}]]", "False", 0);
+    assert_eval_eq("Head[RegularGraphQ[5]]", "RegularGraphQ", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1007,6 +1023,7 @@ int main(void) {
     TEST(test_tree_graph_q);
     TEST(test_strongly_connected_q);
     TEST(test_hamiltonian_graph_q);
+    TEST(test_regular_graph_q);
 
     printf("All graph tests passed!\n");
     return 0;

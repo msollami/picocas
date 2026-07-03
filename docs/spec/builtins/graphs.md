@@ -272,6 +272,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `GraphCenter[g]` — the vertices whose eccentricity equals the graph radius.
   These derive from a BFS per vertex (`O(V·(V+E))`) and follow edge direction on
   directed graphs.
+- `RegularGraphQ[g]` — `True` iff every vertex has the same degree (equal
+  in-degrees and equal out-degrees for a directed graph); `O(V)`. A cycle is
+  2-regular, `K_n` is `(n−1)`-regular, `K_{3,3}` is 3-regular, an edgeless graph
+  0-regular; paths, stars, and wheels are not. A graph with ≤ 1 vertex is
+  vacuously regular.
 - `TreeGraphQ[g]` — `True` iff `g` is a tree: connected with no cycles, i.e.
   connected on the underlying undirected graph with exactly `n−1` distinct edges
   (`n ≥ 1`). One BFS plus an edge count, `O(V²)`; a single vertex is a tree, the

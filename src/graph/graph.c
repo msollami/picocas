@@ -426,6 +426,12 @@ void graph_init(void) {
         "HamiltonianGraphQ[g] gives True iff g has a Hamiltonian cycle (a closed "
         "walk visiting every vertex once).");
 
+    symtab_add_builtin("RegularGraphQ", builtin_regular_graph_q);
+    symtab_get_def("RegularGraphQ")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("RegularGraphQ",
+        "RegularGraphQ[g] gives True iff every vertex has the same degree "
+        "(equal in- and out-degrees for a directed graph).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

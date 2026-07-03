@@ -452,6 +452,7 @@ set(COMMON_SRC
     ../src/graph/treegraphq.c
     ../src/graph/stronglyconnectedq.c
     ../src/graph/hamiltonianq.c
+    ../src/graph/regulargraphq.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled
