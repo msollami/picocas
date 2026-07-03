@@ -212,6 +212,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   `Σ L_v / Σ C(d_v,2)` (`0` when there are no triples). Distinct from the mean of
   the local coefficients — it weights each vertex by how many triples it anchors.
   Exact rational; direction ignored; `O(V·d_max²)`.
+- `MeanClusteringCoefficient[g]` — the average of the local clustering
+  coefficients, `(1/n)Σ C_v` (every vertex counts equally, low-degree ones
+  contributing `0`); equals `Mean[LocalClusteringCoefficient[g]]`. Exact rational,
+  generally different from the global transitivity above.
 - `DegreeCentrality[g]` — for each vertex, the number of incident edges: the
   ordinary degree for an undirected graph, in-degree + out-degree for a directed
   one. The simplest centrality; one pass over the edges (`O(V+E)`), exact

@@ -359,6 +359,12 @@ void graph_init(void) {
         "times the number of triangles divided by the number of connected vertex "
         "triples (0 when there are none).");
 
+    symtab_add_builtin("MeanClusteringCoefficient", builtin_mean_clustering_coefficient);
+    symtab_get_def("MeanClusteringCoefficient")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("MeanClusteringCoefficient",
+        "MeanClusteringCoefficient[g] gives the average of the local clustering "
+        "coefficients over all vertices.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

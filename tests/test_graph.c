@@ -763,6 +763,20 @@ static void test_global_clustering(void) {
     assert_eval_eq("Head[GlobalClusteringCoefficient[5]]", "GlobalClusteringCoefficient", 0);
 }
 
+static void test_mean_clustering(void) {
+    assert_eval_eq("MeanClusteringCoefficient[CompleteGraph[4]]", "1", 0);
+    assert_eval_eq("MeanClusteringCoefficient[CycleGraph[5]]", "0", 0);
+    assert_eval_eq("MeanClusteringCoefficient[StarGraph[6]]", "0", 0);
+    assert_eval_eq("MeanClusteringCoefficient[Graph[{1,2,3},{}]]", "0", 0);
+    assert_eval_eq("MeanClusteringCoefficient[Graph[{1,2,3,4},{1<->2,2<->3,3<->1,3<->4}]]", "7/12", 0);
+    assert_eval_eq("MeanClusteringCoefficient[Graph[{1,2,3,4},{1<->2,1<->3,1<->4,2<->3,2<->4}]]", "5/6", 0);
+    /* Equals the mean of the local coefficients; differs from global transitivity. */
+    assert_eval_eq("MeanClusteringCoefficient[Graph[{1,2,3,4},{1<->2,2<->3,3<->1,3<->4}]] == Total[LocalClusteringCoefficient[Graph[{1,2,3,4},{1<->2,2<->3,3<->1,3<->4}]]]/4", "True", 0);
+    assert_eval_eq("MeanClusteringCoefficient[Graph[{1,2,3,4},{1<->2,1<->3,1<->4,2<->3,2<->4}]] != GlobalClusteringCoefficient[Graph[{1,2,3,4},{1<->2,1<->3,1<->4,2<->3,2<->4}]]", "True", 0);
+    assert_eval_eq("MeanClusteringCoefficient[Graph[{1,2,3},{1->2,2->3,3->1}]]", "1", 0);
+    assert_eval_eq("Head[MeanClusteringCoefficient[5]]", "MeanClusteringCoefficient", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -810,6 +824,7 @@ int main(void) {
     TEST(test_kcore_components);
     TEST(test_local_clustering);
     TEST(test_global_clustering);
+    TEST(test_mean_clustering);
 
     printf("All graph tests passed!\n");
     return 0;

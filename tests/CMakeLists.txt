@@ -441,6 +441,7 @@ set(COMMON_SRC
     ../src/graph/kcore.c
     ../src/graph/clustering.c
     ../src/graph/globalclustering.c
+    ../src/graph/meanclustering.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled
