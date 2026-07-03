@@ -1702,6 +1702,18 @@ static void test_dodecahedral_graph(void) {
     assert_eval_eq("Head[DodecahedralGraph[5]]", "DodecahedralGraph", 0);
 }
 
+static void test_icosahedral_graph(void) {
+    assert_eval_eq("VertexCount[IcosahedralGraph[]]", "12", 0);
+    assert_eval_eq("EdgeCount[IcosahedralGraph[]]", "30", 0);
+    assert_eval_eq("RegularGraphQ[IcosahedralGraph[]]", "True", 0);
+    assert_eval_eq("Union[DegreeCentrality[IcosahedralGraph[]]]", "{5}", 0);   /* 5-regular */
+    assert_eval_eq("ConnectedGraphQ[IcosahedralGraph[]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[IcosahedralGraph[]]", "False", 0);
+    assert_eval_eq("ChromaticNumber[IcosahedralGraph[]]", "4", 0);
+    assert_eval_eq("HamiltonianGraphQ[IcosahedralGraph[]]", "True", 0);
+    assert_eval_eq("Head[IcosahedralGraph[5]]", "IcosahedralGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1807,6 +1819,7 @@ int main(void) {
     TEST(test_gear_graph);
     TEST(test_edge_betweenness);
     TEST(test_dodecahedral_graph);
+    TEST(test_icosahedral_graph);
 
     printf("All graph tests passed!\n");
     return 0;

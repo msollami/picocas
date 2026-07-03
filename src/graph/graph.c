@@ -717,6 +717,12 @@ void graph_init(void) {
         "DodecahedralGraph[] gives the dodecahedron graph (GP(10,2)): 20 "
         "vertices, 30 edges, 3-regular.");
 
+    symtab_add_builtin("IcosahedralGraph", builtin_icosahedral_graph);
+    symtab_get_def("IcosahedralGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("IcosahedralGraph",
+        "IcosahedralGraph[] gives the icosahedron graph: 12 vertices, 30 edges, "
+        "5-regular.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

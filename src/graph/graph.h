@@ -202,6 +202,7 @@ Expr* builtin_helm_graph(Expr* res);                    /* HelmGraph[n]         
 Expr* builtin_gear_graph(Expr* res);                    /* GearGraph[n]         */
 Expr* builtin_edge_betweenness_centrality(Expr* res);   /* EdgeBetweennessCentrality */
 Expr* builtin_dodecahedral_graph(Expr* res);            /* DodecahedralGraph[]  */
+Expr* builtin_icosahedral_graph(Expr* res);             /* IcosahedralGraph[]   */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
