@@ -426,6 +426,7 @@ set(COMMON_SRC
     ../src/graph/kirchhoff.c
     ../src/graph/edgeconnectivity.c
     ../src/graph/linegraph.c
+    ../src/graph/eulerianq.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

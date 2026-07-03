@@ -460,6 +460,25 @@ static void test_line_graph(void) {
     assert_eval_eq("DirectedGraphQ[LineGraph[Graph[{1,2,3},{1->2,2->3}]]]", "True", 0);
 }
 
+static void test_eulerian(void) {
+    /* Even + connected → Eulerian; odd degree → not. */
+    assert_eval_eq("EulerianGraphQ[CycleGraph[5]]", "True", 0);
+    assert_eval_eq("EulerianGraphQ[PathGraph[4]]", "False", 0);
+    assert_eval_eq("EulerianGraphQ[CompleteGraph[3]]", "True", 0);
+    assert_eval_eq("EulerianGraphQ[CompleteGraph[4]]", "False", 0);
+    assert_eval_eq("EulerianGraphQ[CompleteGraph[5]]", "True", 0);
+    /* Figure-eight (two triangles sharing a vertex) is Eulerian; two disjoint
+       cycles are not (disconnected). An isolated vertex is ignored. */
+    assert_eval_eq("EulerianGraphQ[Graph[{1,2,3,4,5},{1<->2,2<->3,3<->1,1<->4,4<->5,5<->1}]]", "True", 0);
+    assert_eval_eq("EulerianGraphQ[Graph[{1,2,3,4,5,6},{1<->2,2<->3,3<->1,4<->5,5<->6,6<->4}]]", "False", 0);
+    assert_eval_eq("EulerianGraphQ[Graph[{1,2,3,4},{1<->2,2<->3,3<->1}]]", "True", 0);
+    assert_eval_eq("EulerianGraphQ[Graph[{1,2,3},{}]]", "True", 0);
+    /* Directed: in==out everywhere and connected → Eulerian; a path is not. */
+    assert_eval_eq("EulerianGraphQ[Graph[{1,2,3},{1->2,2->3,3->1}]]", "True", 0);
+    assert_eval_eq("EulerianGraphQ[Graph[{1,2,3},{1->2,2->3}]]", "False", 0);
+    assert_eval_eq("EulerianGraphQ[5]", "False", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -489,6 +508,7 @@ int main(void) {
     TEST(test_kirchhoff);
     TEST(test_edge_connectivity);
     TEST(test_line_graph);
+    TEST(test_eulerian);
 
     printf("All graph tests passed!\n");
     return 0;

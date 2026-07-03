@@ -236,6 +236,13 @@ void graph_init(void) {
         "LineGraph[g] gives the line graph of g: its vertices are the edges of "
         "g, adjacent when they share an endpoint (head-to-tail if directed).");
 
+    symtab_add_builtin("EulerianGraphQ", builtin_eulerian_graph_q);
+    symtab_get_def("EulerianGraphQ")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("EulerianGraphQ",
+        "EulerianGraphQ[g] gives True if g has an Eulerian cycle: connected with "
+        "all even degrees (undirected), or in-degree = out-degree everywhere "
+        "(directed).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

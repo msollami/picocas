@@ -156,6 +156,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `BipartiteGraphQ[g]` — `True` iff the underlying undirected graph is
   2-colorable (no odd cycle). Single-BFS 2-coloring, `O(V+E)`; edge direction is
   ignored and an edgeless graph is vacuously bipartite.
+- `EulerianGraphQ[g]` — `True` iff `g` has an Eulerian cycle: connected (on
+  nonzero-degree vertices) with all even degrees for an undirected graph, or
+  in-degree = out-degree everywhere for a directed one. `O(V+E)`; isolated
+  vertices are ignored and an edgeless graph is vacuously Eulerian.
 - `VertexEccentricity[g, v]` — the greatest shortest-path distance from `v` to
   any vertex (`Infinity` if some vertex is unreachable); `VertexEccentricity[g]`
   gives the list for all vertices.
