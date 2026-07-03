@@ -980,6 +980,23 @@ static void test_complete_graph_q(void) {
     assert_eval_eq("Head[CompleteGraphQ[5]]", "CompleteGraphQ", 0);
 }
 
+static void test_graph_union(void) {
+    /* Union merges vertices and edges. */
+    assert_eval_eq("VertexList[GraphUnion[Graph[{1,2},{1<->2}], Graph[{2,3},{2<->3}]]]", "{1, 2, 3}", 0);
+    assert_eval_eq("VertexCount[GraphUnion[Graph[{1,2,3},{1<->2,2<->3}], Graph[{3,4,5},{3<->4,4<->5}]]]", "5", 0);
+    assert_eval_eq("EdgeCount[GraphUnion[Graph[{1,2,3},{1<->2,2<->3}], Graph[{3,4,5},{3<->4,4<->5}]]]", "4", 0);
+    /* Shared / symmetric edges deduped; self-union is idempotent. */
+    assert_eval_eq("EdgeCount[GraphUnion[Graph[{1,2,3},{1<->2,2<->3}], Graph[{2,3,4},{2<->3,3<->4}]]]", "3", 0);
+    assert_eval_eq("EdgeCount[GraphUnion[Graph[{1,2},{1<->2}], Graph[{1,2},{2<->1}]]]", "1", 0);
+    assert_eval_eq("EdgeCount[GraphUnion[CycleGraph[4], CycleGraph[4]]] == EdgeCount[CycleGraph[4]]", "True", 0);
+    /* Directed edges are not symmetric. */
+    assert_eval_eq("EdgeCount[GraphUnion[Graph[{1,2},{1->2}], Graph[{1,2},{2->1}]]]", "2", 0);
+    /* Edgeless union and validity. */
+    assert_eval_eq("VertexCount[GraphUnion[Graph[{1,2},{}], Graph[{3,4},{}]]]", "4", 0);
+    assert_eval_eq("GraphQ[GraphUnion[PathGraph[3], CycleGraph[3]]]", "True", 0);
+    assert_eval_eq("Head[GraphUnion[5, CycleGraph[3]]]", "GraphUnion", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1040,6 +1057,7 @@ int main(void) {
     TEST(test_hamiltonian_graph_q);
     TEST(test_regular_graph_q);
     TEST(test_complete_graph_q);
+    TEST(test_graph_union);
 
     printf("All graph tests passed!\n");
     return 0;

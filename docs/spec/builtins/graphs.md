@@ -311,6 +311,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   target, an undirected one a visited non-parent neighbour. Returns the first
   cycle found (deterministic, not necessarily shortest); edges follow arc
   direction and mirror the graph's edge kind.
+- `GraphUnion[g1, g2]` — the graph whose vertex set is the union of the two
+  vertex sets and whose edge set is the union of the two edge sets, matched by
+  vertex identity. Vertices from `g1` keep their order, new ones from `g2` are
+  appended; duplicate and (for undirected) symmetric edges are collapsed, while
+  directed edges stay distinct from their reverse. Returns a canonical `Graph`.
 - `GraphComplement[g]` — the graph on the same vertices whose edges are exactly
   the non-edges of `g`; edgeless → complete graph, complete → edgeless, and
   applying it twice restores `g`. Directed graphs stay directed (`O(V²)`).

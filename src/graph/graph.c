@@ -438,6 +438,12 @@ void graph_init(void) {
         "CompleteGraphQ[g] gives True iff every pair of distinct vertices in g "
         "is adjacent.");
 
+    symtab_add_builtin("GraphUnion", builtin_graph_union);
+    symtab_get_def("GraphUnion")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GraphUnion",
+        "GraphUnion[g1, g2] gives the graph with the union of the vertices and "
+        "the union of the edges of g1 and g2.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
