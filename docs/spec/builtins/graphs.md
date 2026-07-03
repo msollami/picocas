@@ -233,6 +233,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
   in `[0, 1]`: `2m/(n(n−1))` for an undirected graph, `m/(n(n−1))` for a directed
   one (`1` for a complete graph, `0` for an empty one or fewer than two
   vertices). Reduced by the evaluator, so it prints as a clean integer/`Rational`.
+- `FindClique[g]` — a largest clique (a set of pairwise-adjacent vertices) as a
+  list containing one vertex list (`{{1, 2, 3, 4}}` for `K₄`), or `{}` when `g`
+  has no vertices. A max-clique specialisation of Bron–Kerbosch: grow a clique
+  over candidates adjacent to all of it, pruning the branch when the remaining
+  candidates cannot beat the best clique found. Exponential worst case but fast
+  on real graphs; direction ignored; deterministic (first maximum kept).
 - `VertexEccentricity[g, v]` — the greatest shortest-path distance from `v` to
   any vertex (`Infinity` if some vertex is unreachable); `VertexEccentricity[g]`
   gives the list for all vertices.

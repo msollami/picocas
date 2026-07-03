@@ -442,6 +442,7 @@ set(COMMON_SRC
     ../src/graph/clustering.c
     ../src/graph/globalclustering.c
     ../src/graph/meanclustering.c
+    ../src/graph/findclique.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

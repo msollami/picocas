@@ -365,6 +365,12 @@ void graph_init(void) {
         "MeanClusteringCoefficient[g] gives the average of the local clustering "
         "coefficients over all vertices.");
 
+    symtab_add_builtin("FindClique", builtin_find_clique);
+    symtab_get_def("FindClique")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FindClique",
+        "FindClique[g] gives a largest clique (a set of pairwise-adjacent "
+        "vertices) as a list containing one vertex list.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

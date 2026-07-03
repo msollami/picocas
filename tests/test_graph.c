@@ -777,6 +777,23 @@ static void test_mean_clustering(void) {
     assert_eval_eq("Head[MeanClusteringCoefficient[5]]", "MeanClusteringCoefficient", 0);
 }
 
+static void test_find_clique(void) {
+    /* Cliques of complete graphs are the whole graph. */
+    assert_eval_eq("FindClique[CompleteGraph[4]]", "{{1, 2, 3, 4}}", 0);
+    assert_eval_eq("FindClique[CompleteGraph[3]]", "{{1, 2, 3}}", 0);
+    assert_eval_eq("FindClique[Graph[{1,2,3},{1<->2,2<->3,3<->1}]]", "{{1, 2, 3}}", 0);
+    assert_eval_eq("FindClique[Graph[{1,2},{1<->2}]]", "{{1, 2}}", 0);
+    /* Max clique sizes. */
+    assert_eval_eq("Length[First[FindClique[CycleGraph[5]]]]", "2", 0);
+    assert_eval_eq("Length[First[FindClique[CycleGraph[4]]]]", "2", 0);
+    assert_eval_eq("Length[First[FindClique[Graph[{1,2,3,4},{1<->2,1<->3,1<->4,2<->3,2<->4}]]]]", "3", 0);
+    assert_eval_eq("Length[First[FindClique[Graph[{1,2,3,4,5,6},{1<->2,2<->3,3<->1,4<->5,5<->6,6<->4}]]]]", "3", 0);
+    assert_eval_eq("Length[First[FindClique[Graph[{1,2,3},{}]]]]", "1", 0);
+    /* Direction ignored. */
+    assert_eval_eq("Length[First[FindClique[Graph[{1,2,3},{1->2,2->3,3->1}]]]]", "3", 0);
+    assert_eval_eq("Head[FindClique[5]]", "FindClique", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -825,6 +842,7 @@ int main(void) {
     TEST(test_local_clustering);
     TEST(test_global_clustering);
     TEST(test_mean_clustering);
+    TEST(test_find_clique);
 
     printf("All graph tests passed!\n");
     return 0;

@@ -143,6 +143,7 @@ Expr* builtin_kcore_components(Expr* res);              /* KCoreComponents[g,k] 
 Expr* builtin_local_clustering_coefficient(Expr* res);  /* LocalClusteringCoeff */
 Expr* builtin_global_clustering_coefficient(Expr* res); /* GlobalClusteringCoeff*/
 Expr* builtin_mean_clustering_coefficient(Expr* res);   /* MeanClusteringCoeff  */
+Expr* builtin_find_clique(Expr* res);                   /* FindClique[g]        */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
