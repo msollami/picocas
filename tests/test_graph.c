@@ -557,6 +557,21 @@ static void test_transitive_closure(void) {
     assert_eval_eq("Head[TransitiveClosure[5]]", "TransitiveClosure", 0);
 }
 
+static void test_betweenness(void) {
+    /* Path: internal vertex k has (k-1)(n-k); complete has all 0; star center
+       carries every leaf-leaf path. */
+    assert_eval_eq("BetweennessCentrality[PathGraph[3]]", "{0, 1, 0}", 0);
+    assert_eval_eq("BetweennessCentrality[PathGraph[5]]", "{0, 3, 4, 3, 0}", 0);
+    assert_eval_eq("BetweennessCentrality[CompleteGraph[4]]", "{0, 0, 0, 0}", 0);
+    assert_eval_eq("BetweennessCentrality[StarGraph[5]]", "{6, 0, 0, 0, 0}", 0);
+    /* Tied shortest paths give exact fractions: C4 antipodal pairs → 1/2 each. */
+    assert_eval_eq("BetweennessCentrality[CycleGraph[4]]", "{1/2, 1/2, 1/2, 1/2}", 0);
+    /* Directed counts ordered pairs (no halving). */
+    assert_eval_eq("BetweennessCentrality[Graph[{1,2,3},{1->2,2->3}]]", "{0, 1, 0}", 0);
+    assert_eval_eq("BetweennessCentrality[Graph[{1,2,3},{}]]", "{0, 0, 0}", 0);
+    assert_eval_eq("Head[BetweennessCentrality[5]]", "BetweennessCentrality", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -592,6 +607,7 @@ int main(void) {
     TEST(test_grid_hypercube);
     TEST(test_closeness);
     TEST(test_transitive_closure);
+    TEST(test_betweenness);
 
     printf("All graph tests passed!\n");
     return 0;

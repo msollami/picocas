@@ -282,6 +282,13 @@ void graph_init(void) {
         "(directed); for an undirected graph each connected component becomes a "
         "complete graph.");
 
+    symtab_add_builtin("BetweennessCentrality", builtin_betweenness_centrality);
+    symtab_get_def("BetweennessCentrality")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("BetweennessCentrality",
+        "BetweennessCentrality[g] gives, for each vertex, the number of shortest "
+        "paths passing through it (fractional when paths tie); undirected pairs "
+        "counted once.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

@@ -180,6 +180,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   `c_i = (r_i−1)² / ((n−1)·S_i)`, where `r_i` vertices are reachable from `i` at
   total distance `S_i` (`(n−1)/S_i` when connected, `0` when isolated). Exact
   rationals; `O(V·(V+E))` via a BFS per vertex; follows edge direction.
+- `BetweennessCentrality[g]` — for each vertex, the number of shortest paths
+  through it, `Σ σ_sv·σ_vt/σ_st` (fractional when paths tie — every C₄ vertex is
+  `1/2`). Undirected pairs are counted once; directed keeps the ordered sum.
+  Exact rationals from all-pairs BFS path counts.
 - `VertexEccentricity[g, v]` — the greatest shortest-path distance from `v` to
   any vertex (`Infinity` if some vertex is unreachable); `VertexEccentricity[g]`
   gives the list for all vertices.
