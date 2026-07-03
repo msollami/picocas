@@ -652,6 +652,11 @@ void graph_init(void) {
         "GraphAssortativity[g] gives the degree assortativity coefficient of g "
         "(exact rational in [-1,1]; Indeterminate for a regular graph).");
 
+    symtab_add_builtin("IncidenceList", builtin_incidence_list);
+    symtab_get_def("IncidenceList")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("IncidenceList",
+        "IncidenceList[g, v] gives the list of edges of g incident to vertex v.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

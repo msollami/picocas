@@ -1554,6 +1554,21 @@ static void test_graph_assortativity(void) {
     assert_eval_eq("Head[GraphAssortativity[5]]", "GraphAssortativity", 0);
 }
 
+static void test_incidence_list(void) {
+    assert_eval_eq("IncidenceList[CycleGraph[4], 1]", "{1 <-> 2, 4 <-> 1}", 0);
+    assert_eval_eq("Length[IncidenceList[CycleGraph[4], 1]]", "2", 0);
+    assert_eval_eq("Length[IncidenceList[StarGraph[5], 1]]", "4", 0);
+    assert_eval_eq("Length[IncidenceList[StarGraph[5], 2]]", "1", 0);
+    assert_eval_eq("IncidenceList[CycleGraph[3], 9]", "{}", 0);
+    assert_eval_eq("IncidenceList[Graph[{1,2},{}], 1]", "{}", 0);
+    /* Directed: includes both in- and out-edges at the vertex. */
+    assert_eval_eq("Length[IncidenceList[Graph[{1,2,3},{1->2,2->3}], 2]]", "2", 0);
+    assert_eval_eq("IncidenceList[Graph[{1,2,3},{1->2,2->3}], 1]", "{1 -> 2}", 0);
+    /* Incidence count matches the (undirected) vertex degree. */
+    assert_eval_eq("Length[IncidenceList[CompleteGraph[4], 1]] == VertexDegree[CompleteGraph[4], 1]", "True", 0);
+    assert_eval_eq("Head[IncidenceList[5, 1]]", "IncidenceList", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1649,6 +1664,7 @@ int main(void) {
     TEST(test_find_edge_cover);
     TEST(test_find_vertex_coloring);
     TEST(test_graph_assortativity);
+    TEST(test_incidence_list);
 
     printf("All graph tests passed!\n");
     return 0;

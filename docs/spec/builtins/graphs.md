@@ -77,6 +77,10 @@ non-graph argument.
   `AdjacencyList[g, v]` — neighbors of `v`. Directed edges contribute
   successors (`v -> u` makes `u` a neighbor of `v`); undirected edges go both
   ways.
+- `IncidenceList[g, v]` — the list of edges of `g` incident to vertex `v` (both
+  in- and out-edges for a directed graph), in edge order; the edge counterpart of
+  `AdjacencyList`. `O(E)`, kinds preserved; unknown vertex → `{}`. The count
+  equals the undirected vertex degree.
 - `VertexDegree[g]` / `VertexDegree[g, v]` — total degree (incident edges).
   `VertexInDegree` / `VertexOutDegree` give in-/out-degrees: a `DirectedEdge`
   adds to the source's out-degree and target's in-degree; an `UndirectedEdge`

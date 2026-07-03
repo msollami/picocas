@@ -490,6 +490,7 @@ set(COMMON_SRC
     ../src/graph/findedgecover.c
     ../src/graph/findvertexcoloring.c
     ../src/graph/graphassortativity.c
+    ../src/graph/incidencelist.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled
