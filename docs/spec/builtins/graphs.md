@@ -183,6 +183,15 @@ All are unweighted and build an integer-indexed adjacency on demand.
   path but no cycle (e.g. `PathGraph[3]`) correctly yields `{}`. Works for
   directed (follows out-edges) and undirected graphs; agrees with
   `EulerianGraphQ` on whether a cycle exists.
+- `FindHamiltonianCycle[g]` — a Hamiltonian cycle as a vertex list
+  `{v0, …, v0}` (a closed walk visiting every vertex exactly once), or `{}` when
+  none exists. Depth-first backtracking with visited-set pruning; cheap
+  necessary-condition prunes (fewer than 3 vertices, or any vertex without an
+  out- and in-neighbour) short-circuit impossible graphs. The search fixes the
+  start at the first vertex — WLOG, since a Hamiltonian cycle passes through
+  every vertex — so the result is deterministic. Follows arc direction on
+  directed graphs; exponential in the worst case, but instant on the small
+  graphs typical of a gallery.
 - `ClosenessCentrality[g]` — the list of closeness centralities
   `c_i = (r_i−1)² / ((n−1)·S_i)`, where `r_i` vertices are reachable from `i` at
   total distance `S_i` (`(n−1)/S_i` when connected, `0` when isolated). Exact

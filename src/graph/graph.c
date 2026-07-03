@@ -295,6 +295,12 @@ void graph_init(void) {
         "FindEulerianCycle[g] gives an Eulerian cycle (a closed walk using every "
         "edge once) as a vertex list, or {} if g has none.");
 
+    symtab_add_builtin("FindHamiltonianCycle", builtin_find_hamiltonian_cycle);
+    symtab_get_def("FindHamiltonianCycle")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FindHamiltonianCycle",
+        "FindHamiltonianCycle[g] gives a Hamiltonian cycle (a closed walk "
+        "visiting every vertex once) as a vertex list, or {} if g has none.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

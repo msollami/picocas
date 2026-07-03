@@ -589,6 +589,26 @@ static void test_find_eulerian(void) {
     assert_eval_eq("Head[FindEulerianCycle[5]]", "FindEulerianCycle", 0);
 }
 
+static void test_find_hamiltonian(void) {
+    /* Cycles/complete graphs have Hamiltonian cycles: n+1 closed vertex list. */
+    assert_eval_eq("FindHamiltonianCycle[CycleGraph[3]]", "{1, 2, 3, 1}", 0);
+    assert_eval_eq("Length[FindHamiltonianCycle[CycleGraph[5]]]", "6", 0);
+    assert_eval_eq("Length[FindHamiltonianCycle[CompleteGraph[4]]]", "5", 0);
+    assert_eval_eq("Sort[Union[FindHamiltonianCycle[CompleteGraph[4]]]]", "{1, 2, 3, 4}", 0);
+    assert_eval_eq("First[FindHamiltonianCycle[CycleGraph[5]]] === Last[FindHamiltonianCycle[CycleGraph[5]]]", "True", 0);
+    assert_eval_eq("Length[FindHamiltonianCycle[WheelGraph[5]]]", "6", 0);
+    /* Directed Hamiltonian cycle follows arc direction. */
+    assert_eval_eq("Length[FindHamiltonianCycle[Graph[{1,2,3},{1->2,2->3,3->1}]]]", "4", 0);
+    /* No Hamiltonian cycle: paths, stars, n<3, edgeless, disconnected, broken directed → {}. */
+    assert_eval_eq("FindHamiltonianCycle[PathGraph[4]]", "{}", 0);
+    assert_eval_eq("FindHamiltonianCycle[StarGraph[5]]", "{}", 0);
+    assert_eval_eq("FindHamiltonianCycle[Graph[{1,2},{1<->2}]]", "{}", 0);
+    assert_eval_eq("FindHamiltonianCycle[Graph[{1,2,3},{}]]", "{}", 0);
+    assert_eval_eq("FindHamiltonianCycle[Graph[{1,2,3,4,5,6},{1<->2,2<->3,3<->1,4<->5,5<->6,6<->4}]]", "{}", 0);
+    assert_eval_eq("FindHamiltonianCycle[Graph[{1,2,3},{1->2,2->3,1->3}]]", "{}", 0);
+    assert_eval_eq("Head[FindHamiltonianCycle[7]]", "FindHamiltonianCycle", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -626,6 +646,7 @@ int main(void) {
     TEST(test_transitive_closure);
     TEST(test_betweenness);
     TEST(test_find_eulerian);
+    TEST(test_find_hamiltonian);
 
     printf("All graph tests passed!\n");
     return 0;

@@ -132,6 +132,7 @@ Expr* builtin_closeness_centrality(Expr* res);          /* ClosenessCentrality  
 Expr* builtin_transitive_closure(Expr* res);            /* TransitiveClosure    */
 Expr* builtin_betweenness_centrality(Expr* res);        /* BetweennessCentrality*/
 Expr* builtin_find_eulerian_cycle(Expr* res);           /* FindEulerianCycle    */
+Expr* builtin_find_hamiltonian_cycle(Expr* res);        /* FindHamiltonianCycle */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
