@@ -224,6 +224,12 @@ void graph_init(void) {
         "KirchhoffMatrix[g] gives the graph Laplacian D - A (degree diagonal "
         "minus adjacency matrix); each row sums to 0.");
 
+    symtab_add_builtin("EdgeConnectivity", builtin_edge_connectivity);
+    symtab_get_def("EdgeConnectivity")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("EdgeConnectivity",
+        "EdgeConnectivity[g] gives the minimum number of edges whose removal "
+        "disconnects g (0 if g is already disconnected).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

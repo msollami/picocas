@@ -427,6 +427,22 @@ static void test_kirchhoff(void) {
     assert_eval_eq("Head[KirchhoffMatrix[5]]", "KirchhoffMatrix", 0);
 }
 
+static void test_edge_connectivity(void) {
+    /* Complete K_n -> n-1; cycle -> 2; path/tree/star -> 1. */
+    assert_eval_eq("EdgeConnectivity[CompleteGraph[4]]", "3", 0);
+    assert_eval_eq("EdgeConnectivity[CycleGraph[5]]", "2", 0);
+    assert_eval_eq("EdgeConnectivity[PathGraph[4]]", "1", 0);
+    assert_eval_eq("EdgeConnectivity[Graph[{0,1,2,3},{0<->1,0<->2,0<->3}]]", "1", 0);
+    /* A bridge between two triangles -> 1. */
+    assert_eval_eq("EdgeConnectivity[Graph[{1,2,3,4,5,6},{1<->2,2<->3,3<->1,4<->5,5<->6,6<->4,3<->4}]]", "1", 0);
+    /* Disconnected -> 0. */
+    assert_eval_eq("EdgeConnectivity[Graph[{1,2,3},{1<->2}]]", "0", 0);
+    /* Directed: strongly connected cycle -> 1; a path is not, -> 0. */
+    assert_eval_eq("EdgeConnectivity[Graph[{1,2,3},{1->2,2->3,3->1}]]", "1", 0);
+    assert_eval_eq("EdgeConnectivity[Graph[{1,2,3},{1->2,2->3}]]", "0", 0);
+    assert_eval_eq("Head[EdgeConnectivity[5]]", "EdgeConnectivity", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -454,6 +470,7 @@ int main(void) {
     TEST(test_acyclic);
     TEST(test_complement);
     TEST(test_kirchhoff);
+    TEST(test_edge_connectivity);
 
     printf("All graph tests passed!\n");
     return 0;

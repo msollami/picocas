@@ -173,6 +173,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
 - `VertexConnectivity[g]` — the minimum number of vertices whose removal
   disconnects `g` (`n-1` for `K_n`, `0` if already disconnected). Exact
   brute-force over vertex subsets, intended for small graphs.
+- `EdgeConnectivity[g]` — the minimum number of edges whose removal disconnects
+  `g` (`n-1` for `K_n`, `2` for a cycle, `1` for a tree/bridge, `0` if already
+  disconnected). Max-flow/min-cut (Edmonds–Karp, unit capacities): one source
+  suffices for undirected graphs, all ordered pairs for directed.
 
 ```
 FindShortestPath[Graph[{1,2,3,4},{1->2,2->3,3->4}], 1, 4]   (* {1, 2, 3, 4} *)
