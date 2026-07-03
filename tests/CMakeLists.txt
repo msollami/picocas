@@ -444,6 +444,7 @@ set(COMMON_SRC
     ../src/graph/meanclustering.c
     ../src/graph/findclique.c
     ../src/graph/findindependent.c
+    ../src/graph/findvertexcover.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

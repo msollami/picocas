@@ -378,6 +378,12 @@ void graph_init(void) {
         "set of pairwise non-adjacent vertices) as a list containing one vertex "
         "list.");
 
+    symtab_add_builtin("FindVertexCover", builtin_find_vertex_cover);
+    symtab_get_def("FindVertexCover")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FindVertexCover",
+        "FindVertexCover[g] gives a minimum vertex cover (a smallest set of "
+        "vertices touching every edge) as a vertex list.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

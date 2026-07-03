@@ -244,6 +244,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
   vertices. Computed as a maximum clique of the complement — the same
   branch-and-bound search run over the non-adjacency. A star returns its leaves,
   a complete graph a singleton; direction ignored, deterministic.
+- `FindVertexCover[g]` — a minimum vertex cover (a smallest set of vertices
+  touching every edge) as a flat vertex list, or `{}` when `g` has no edges. By
+  the Gallai identity it is the complement of a maximum independent set, so it
+  reuses that search and returns the vertices outside the set (`|cover| +
+  |independent set| = n`). A star's cover is its centre, `K_n`'s is `n−1`
+  vertices; direction ignored, deterministic.
 - `VertexEccentricity[g, v]` — the greatest shortest-path distance from `v` to
   any vertex (`Infinity` if some vertex is unreachable); `VertexEccentricity[g]`
   gives the list for all vertices.

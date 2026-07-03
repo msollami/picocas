@@ -810,6 +810,24 @@ static void test_find_independent(void) {
     assert_eval_eq("Head[FindIndependentVertexSet[5]]", "FindIndependentVertexSet", 0);
 }
 
+static void test_find_vertex_cover(void) {
+    /* Edgeless → empty cover; complete K_n → n-1. */
+    assert_eval_eq("FindVertexCover[Graph[{1,2,3},{}]]", "{}", 0);
+    assert_eval_eq("Length[FindVertexCover[CompleteGraph[4]]]", "3", 0);
+    /* Cycle / path / star / single edge sizes. */
+    assert_eval_eq("FindVertexCover[CycleGraph[4]]", "{2, 4}", 0);
+    assert_eval_eq("Length[FindVertexCover[PathGraph[4]]]", "2", 0);
+    assert_eval_eq("FindVertexCover[StarGraph[5]]", "{1}", 0);
+    assert_eval_eq("Length[FindVertexCover[Graph[{1,2},{1<->2}]]]", "1", 0);
+    assert_eval_eq("Length[FindVertexCover[Graph[{1,2,3},{1<->2,2<->3,3<->1}]]]", "2", 0);
+    /* Gallai identity: |min cover| + |max independent set| = n. */
+    assert_eval_eq("Length[FindVertexCover[CycleGraph[5]]] + Length[First[FindIndependentVertexSet[CycleGraph[5]]]] == 5", "True", 0);
+    assert_eval_eq("Length[FindVertexCover[CompleteGraph[5]]] + Length[First[FindIndependentVertexSet[CompleteGraph[5]]]] == 5", "True", 0);
+    /* Direction ignored. */
+    assert_eval_eq("Length[FindVertexCover[Graph[{1,2,3},{1->2,2->3}]]]", "1", 0);
+    assert_eval_eq("Head[FindVertexCover[5]]", "FindVertexCover", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -860,6 +878,7 @@ int main(void) {
     TEST(test_mean_clustering);
     TEST(test_find_clique);
     TEST(test_find_independent);
+    TEST(test_find_vertex_cover);
 
     printf("All graph tests passed!\n");
     return 0;

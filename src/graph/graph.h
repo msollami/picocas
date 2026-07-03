@@ -145,6 +145,7 @@ Expr* builtin_global_clustering_coefficient(Expr* res); /* GlobalClusteringCoeff
 Expr* builtin_mean_clustering_coefficient(Expr* res);   /* MeanClusteringCoeff  */
 Expr* builtin_find_clique(Expr* res);                   /* FindClique[g]        */
 Expr* builtin_find_independent_vertex_set(Expr* res);   /* FindIndependentVertexSet */
+Expr* builtin_find_vertex_cover(Expr* res);             /* FindVertexCover[g]   */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
