@@ -140,6 +140,7 @@ Expr* builtin_graph_density(Expr* res);                 /* GraphDensity[g]      
 Expr* builtin_degree_centrality(Expr* res);             /* DegreeCentrality[g]  */
 Expr* builtin_find_hamiltonian_path(Expr* res);         /* FindHamiltonianPath  */
 Expr* builtin_kcore_components(Expr* res);              /* KCoreComponents[g,k] */
+Expr* builtin_local_clustering_coefficient(Expr* res);  /* LocalClusteringCoeff */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

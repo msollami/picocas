@@ -346,6 +346,12 @@ void graph_init(void) {
         "(the maximal subgraph in which every vertex has degree at least k), as "
         "a list of vertex lists.");
 
+    symtab_add_builtin("LocalClusteringCoefficient", builtin_local_clustering_coefficient);
+    symtab_get_def("LocalClusteringCoefficient")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("LocalClusteringCoefficient",
+        "LocalClusteringCoefficient[g] gives, for each vertex, the fraction of "
+        "its neighbor pairs that are adjacent (0 for degree < 2).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

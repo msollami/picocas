@@ -730,6 +730,22 @@ static void test_kcore_components(void) {
     assert_eval_eq("Head[KCoreComponents[5, 2]]", "KCoreComponents", 0);
 }
 
+static void test_local_clustering(void) {
+    /* Cliques → 1 everywhere; triangle-free (cycles, stars, paths) → 0. */
+    assert_eval_eq("LocalClusteringCoefficient[CompleteGraph[4]]", "{1, 1, 1, 1}", 0);
+    assert_eval_eq("LocalClusteringCoefficient[CompleteGraph[3]]", "{1, 1, 1}", 0);
+    assert_eval_eq("LocalClusteringCoefficient[CycleGraph[5]]", "{0, 0, 0, 0, 0}", 0);
+    assert_eval_eq("LocalClusteringCoefficient[PathGraph[3]]", "{0, 0, 0}", 0);
+    assert_eval_eq("LocalClusteringCoefficient[StarGraph[5]]", "{0, 0, 0, 0, 0}", 0);
+    assert_eval_eq("LocalClusteringCoefficient[Graph[{1,2,3},{}]]", "{0, 0, 0}", 0);
+    /* Fractional cases: exact rationals. */
+    assert_eval_eq("LocalClusteringCoefficient[Graph[{1,2,3,4},{1<->2,2<->3,3<->1,3<->4}]]", "{1, 1, 1/3, 0}", 0);
+    assert_eval_eq("LocalClusteringCoefficient[Graph[{1,2,3,4},{1<->2,1<->3,1<->4,2<->3,2<->4}]]", "{2/3, 2/3, 1, 1}", 0);
+    /* Direction ignored (underlying undirected graph). */
+    assert_eval_eq("LocalClusteringCoefficient[Graph[{1,2,3},{1->2,2->3,3->1}]]", "{1, 1, 1}", 0);
+    assert_eval_eq("Head[LocalClusteringCoefficient[5]]", "LocalClusteringCoefficient", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -775,6 +791,7 @@ int main(void) {
     TEST(test_degree_centrality);
     TEST(test_find_hamiltonian_path);
     TEST(test_kcore_components);
+    TEST(test_local_clustering);
 
     printf("All graph tests passed!\n");
     return 0;
