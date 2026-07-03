@@ -1525,6 +1525,21 @@ static void test_find_edge_cover(void) {
     assert_eval_eq("Head[FindEdgeCover[5]]", "FindEdgeCover", 0);
 }
 
+static void test_find_vertex_coloring(void) {
+    assert_eval_eq("FindVertexColoring[CompleteGraph[3]]", "{1, 2, 3}", 0);
+    assert_eval_eq("FindVertexColoring[CycleGraph[4]]", "{1, 2, 1, 2}", 0);
+    assert_eval_eq("FindVertexColoring[Graph[{1,2,3},{}]]", "{1, 1, 1}", 0);
+    assert_eval_eq("FindVertexColoring[Graph[{1},{}]]", "{1}", 0);
+    assert_eval_eq("Length[FindVertexColoring[CycleGraph[6]]]", "6", 0);
+    /* Number of colours used equals the chromatic number. */
+    assert_eval_eq("Max[FindVertexColoring[CycleGraph[5]]] == ChromaticNumber[CycleGraph[5]]", "True", 0);
+    assert_eval_eq("Max[FindVertexColoring[CompleteGraph[4]]] == 4", "True", 0);
+    assert_eval_eq("Max[FindVertexColoring[PathGraph[5]]]", "2", 0);
+    assert_eval_eq("Max[FindVertexColoring[StarGraph[5]]]", "2", 0);
+    assert_eval_eq("Length[Union[FindVertexColoring[CompleteGraph[4]]]]", "4", 0);
+    assert_eval_eq("Head[FindVertexColoring[5]]", "FindVertexColoring", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1618,6 +1633,7 @@ int main(void) {
     TEST(test_find_matching);
     TEST(test_find_dominating_set);
     TEST(test_find_edge_cover);
+    TEST(test_find_vertex_coloring);
 
     printf("All graph tests passed!\n");
     return 0;

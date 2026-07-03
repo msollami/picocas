@@ -488,6 +488,7 @@ set(COMMON_SRC
     ../src/graph/findmatching.c
     ../src/graph/finddominatingset.c
     ../src/graph/findedgecover.c
+    ../src/graph/findvertexcoloring.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

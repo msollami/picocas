@@ -640,6 +640,12 @@ void graph_init(void) {
         "FindEdgeCover[g] gives a minimum edge cover: a smallest set of edges "
         "such that every vertex is incident to at least one ({} if none exists).");
 
+    symtab_add_builtin("FindVertexColoring", builtin_find_vertex_coloring);
+    symtab_get_def("FindVertexColoring")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FindVertexColoring",
+        "FindVertexColoring[g] gives a proper coloring of g using the fewest "
+        "colors, as a list of color indices (one per vertex).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

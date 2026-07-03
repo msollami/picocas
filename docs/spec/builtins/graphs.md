@@ -376,6 +376,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   unevaluated beyond a modest edge bound; direction ignored. Useful for the
   chromatic number: the least `k` with `ChromaticPolynomial[g, k] > 0` (an odd
   cycle gives `0` at `k = 2`, a bipartite graph a positive value).
+- `FindVertexColoring[g]` — a proper colouring using the fewest colours (χ), as a
+  list of colour indices `1..χ`, one per vertex. Tries `k = 1, 2, …` colours and
+  backtracks (with a symmetry cut) to the first feasible `k`; adjacent vertices
+  always differ and the number of distinct colours equals `ChromaticNumber[g]`.
+  Direction ignored.
 - `ChromaticNumber[g]` — the least number of colours for a proper colouring.
   Tries `k = 1, 2, …` and tests k-colourability by backtracking (each vertex
   takes a colour clashing with no coloured neighbour), with a symmetry cut
