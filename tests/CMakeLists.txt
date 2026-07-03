@@ -468,6 +468,7 @@ set(COMMON_SRC
     ../src/graph/mixedgraphq.c
     ../src/graph/graphproduct.c
     ../src/graph/turangraph.c
+    ../src/graph/completekarytree.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

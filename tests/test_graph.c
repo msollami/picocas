@@ -1203,6 +1203,25 @@ static void test_turan_graph(void) {
     assert_eval_eq("Head[TuranGraph[5,x]]", "TuranGraph", 0);
 }
 
+static void test_complete_kary_tree(void) {
+    /* Binary trees (default k=2). */
+    assert_eval_eq("VertexCount[CompleteKaryTree[2]]", "3", 0);
+    assert_eval_eq("VertexCount[CompleteKaryTree[3]]", "7", 0);
+    assert_eval_eq("EdgeCount[CompleteKaryTree[3]]", "6", 0);
+    assert_eval_eq("EdgeList[CompleteKaryTree[2]]", "{1 <-> 2, 1 <-> 3}", 0);
+    assert_eval_eq("TreeGraphQ[CompleteKaryTree[3]]", "True", 0);
+    /* k-ary: L3 ternary = 13 vertices; root has k children. */
+    assert_eval_eq("VertexCount[CompleteKaryTree[3,3]]", "13", 0);
+    assert_eval_eq("VertexOutDegree[CompleteKaryTree[2,3], 1]", "3", 0);
+    /* k=1 is a path; L=1 is a single vertex. */
+    assert_eval_eq("PathGraphQ[CompleteKaryTree[5,1]]", "True", 0);
+    assert_eval_eq("VertexCount[CompleteKaryTree[1]]", "1", 0);
+    assert_eval_eq("EdgeCount[CompleteKaryTree[1]]", "0", 0);
+    /* Bad arguments stay unevaluated. */
+    assert_eval_eq("Head[CompleteKaryTree[0]]", "CompleteKaryTree", 0);
+    assert_eval_eq("Head[CompleteKaryTree[x]]", "CompleteKaryTree", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1276,6 +1295,7 @@ int main(void) {
     TEST(test_empty_and_mixed_q);
     TEST(test_graph_product);
     TEST(test_turan_graph);
+    TEST(test_complete_kary_tree);
 
     printf("All graph tests passed!\n");
     return 0;

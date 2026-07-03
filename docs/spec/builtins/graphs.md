@@ -153,6 +153,11 @@ constructor path:
   `n`-vertex graph with the most edges and no `(r+1)`-clique. `O(n²)`. `T(n,1)` is
   edgeless, `T(n,n) = Kₙ`, `T(4,2) = C₄`, `T(6,3)` the octahedron; its chromatic
   number is `min(n, r)`.
+- `CompleteKaryTree[L]` / `CompleteKaryTree[L, k]` — the complete k-ary tree with
+  `L` levels (`k = 2` by default): a root whose every internal node has `k`
+  children, filled to depth `L`. Vertices `1..V` in breadth-first order,
+  `V = (kᴸ−1)/(k−1)` (or `L` when `k = 1`, a path); `V−1` tree edges. Always a
+  tree; left unevaluated beyond a size cap.
 
 ```
 EdgeCount[CompleteGraph[5]]      (* 10                        *)

@@ -169,6 +169,7 @@ Expr* builtin_empty_graph_q(Expr* res);                 /* EmptyGraphQ[g]       
 Expr* builtin_mixed_graph_q(Expr* res);                 /* MixedGraphQ[g]       */
 Expr* builtin_graph_product(Expr* res);                 /* GraphProduct[g1,g2,t] */
 Expr* builtin_turan_graph(Expr* res);                   /* TuranGraph[n, r]     */
+Expr* builtin_complete_kary_tree(Expr* res);            /* CompleteKaryTree[L,k] */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

@@ -520,6 +520,12 @@ void graph_init(void) {
         "TuranGraph[n, r] gives the Turan graph: the balanced complete r-partite "
         "graph on n vertices (the largest (r+1)-clique-free graph).");
 
+    symtab_add_builtin("CompleteKaryTree", builtin_complete_kary_tree);
+    symtab_get_def("CompleteKaryTree")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("CompleteKaryTree",
+        "CompleteKaryTree[L] / CompleteKaryTree[L, k] gives the complete k-ary "
+        "tree with L levels (k=2 by default).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
