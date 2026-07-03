@@ -172,6 +172,7 @@ Expr* builtin_turan_graph(Expr* res);                   /* TuranGraph[n, r]     
 Expr* builtin_complete_kary_tree(Expr* res);            /* CompleteKaryTree[L,k] */
 Expr* builtin_circulant_graph(Expr* res);               /* CirculantGraph[n,js] */
 Expr* builtin_ladder_graph(Expr* res);                  /* LadderGraph[n]       */
+Expr* builtin_cocktail_party_graph(Expr* res);          /* CocktailPartyGraph[n] */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

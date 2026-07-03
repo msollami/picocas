@@ -538,6 +538,12 @@ void graph_init(void) {
         "LadderGraph[n] gives the ladder graph: two n-vertex paths joined by n "
         "rungs (the product P_n x P_2).");
 
+    symtab_add_builtin("CocktailPartyGraph", builtin_cocktail_party_graph);
+    symtab_get_def("CocktailPartyGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("CocktailPartyGraph",
+        "CocktailPartyGraph[n] gives the cocktail-party graph K_{n x 2}: 2n "
+        "vertices in n couples, each joined to all but its partner.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

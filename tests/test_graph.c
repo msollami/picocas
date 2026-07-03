@@ -1256,6 +1256,21 @@ static void test_ladder_graph(void) {
     assert_eval_eq("Head[LadderGraph[x]]", "LadderGraph", 0);
 }
 
+static void test_cocktail_party_graph(void) {
+    assert_eval_eq("EdgeCount[CocktailPartyGraph[2]]", "4", 0);     /* C4 */
+    assert_eval_eq("EdgeCount[CocktailPartyGraph[3]]", "12", 0);    /* octahedron */
+    assert_eval_eq("VertexCount[CocktailPartyGraph[3]]", "6", 0);
+    assert_eval_eq("EdgeCount[CocktailPartyGraph[1]]", "0", 0);
+    assert_eval_eq("EdgeCount[CocktailPartyGraph[4]] == 2*4*3", "True", 0);
+    assert_eval_eq("RegularGraphQ[CocktailPartyGraph[4]]", "True", 0);
+    assert_eval_eq("First[DegreeCentrality[CocktailPartyGraph[4]]]", "6", 0);  /* 2n-2 */
+    assert_eval_eq("ChromaticNumber[CocktailPartyGraph[3]]", "3", 0);
+    /* Same as the balanced complete n-partite Turán graph on 2n vertices. */
+    assert_eval_eq("EdgeCount[CocktailPartyGraph[3]] == EdgeCount[TuranGraph[6,3]]", "True", 0);
+    assert_eval_eq("Head[CocktailPartyGraph[0]]", "CocktailPartyGraph", 0);
+    assert_eval_eq("Head[CocktailPartyGraph[x]]", "CocktailPartyGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1332,6 +1347,7 @@ int main(void) {
     TEST(test_complete_kary_tree);
     TEST(test_circulant_graph);
     TEST(test_ladder_graph);
+    TEST(test_cocktail_party_graph);
 
     printf("All graph tests passed!\n");
     return 0;

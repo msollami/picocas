@@ -165,6 +165,10 @@ constructor path:
 - `LadderGraph[n]` — the ladder `Lₙ`: two `n`-vertex path rails joined by `n`
   rungs (`= Pₙ □ P₂`); `2n` vertices, `3n−2` edges, bipartite. `L₁` is an edge,
   `L₂ = C₄`. `O(n)`.
+- `CocktailPartyGraph[n]` — the cocktail-party graph `K_{n×2}`: `2n` vertices in
+  `n` couples, each joined to all but its partner (complement of a perfect
+  matching). `(2n−2)`-regular with `2n(n−1)` edges. `CocktailPartyGraph[2] = C₄`,
+  `CocktailPartyGraph[3]` is the octahedron; equals `TuranGraph[2n, n]`. `O(n²)`.
 
 ```
 EdgeCount[CompleteGraph[5]]      (* 10                        *)
