@@ -746,6 +746,23 @@ static void test_local_clustering(void) {
     assert_eval_eq("Head[LocalClusteringCoefficient[5]]", "LocalClusteringCoefficient", 0);
 }
 
+static void test_global_clustering(void) {
+    /* Cliques → 1; triangle-free → 0. */
+    assert_eval_eq("GlobalClusteringCoefficient[CompleteGraph[4]]", "1", 0);
+    assert_eval_eq("GlobalClusteringCoefficient[CompleteGraph[3]]", "1", 0);
+    assert_eval_eq("GlobalClusteringCoefficient[CycleGraph[5]]", "0", 0);
+    assert_eval_eq("GlobalClusteringCoefficient[PathGraph[3]]", "0", 0);
+    assert_eval_eq("GlobalClusteringCoefficient[StarGraph[6]]", "0", 0);
+    assert_eval_eq("GlobalClusteringCoefficient[Graph[{1,2},{1<->2}]]", "0", 0);
+    assert_eval_eq("GlobalClusteringCoefficient[Graph[{1,2,3},{}]]", "0", 0);
+    /* Fractional transitivity: exact rationals. */
+    assert_eval_eq("GlobalClusteringCoefficient[Graph[{1,2,3,4},{1<->2,2<->3,3<->1,3<->4}]]", "3/5", 0);
+    assert_eval_eq("GlobalClusteringCoefficient[Graph[{1,2,3,4},{1<->2,1<->3,1<->4,2<->3,2<->4}]]", "3/4", 0);
+    /* Direction ignored. */
+    assert_eval_eq("GlobalClusteringCoefficient[Graph[{1,2,3},{1->2,2->3,3->1}]]", "1", 0);
+    assert_eval_eq("Head[GlobalClusteringCoefficient[5]]", "GlobalClusteringCoefficient", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -792,6 +809,7 @@ int main(void) {
     TEST(test_find_hamiltonian_path);
     TEST(test_kcore_components);
     TEST(test_local_clustering);
+    TEST(test_global_clustering);
 
     printf("All graph tests passed!\n");
     return 0;

@@ -440,6 +440,7 @@ set(COMMON_SRC
     ../src/graph/findhamiltonpath.c
     ../src/graph/kcore.c
     ../src/graph/clustering.c
+    ../src/graph/globalclustering.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

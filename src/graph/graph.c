@@ -352,6 +352,13 @@ void graph_init(void) {
         "LocalClusteringCoefficient[g] gives, for each vertex, the fraction of "
         "its neighbor pairs that are adjacent (0 for degree < 2).");
 
+    symtab_add_builtin("GlobalClusteringCoefficient", builtin_global_clustering_coefficient);
+    symtab_get_def("GlobalClusteringCoefficient")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("GlobalClusteringCoefficient",
+        "GlobalClusteringCoefficient[g] gives the graph transitivity: three "
+        "times the number of triangles divided by the number of connected vertex "
+        "triples (0 when there are none).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

@@ -207,6 +207,11 @@ All are unweighted and build an integer-indexed adjacency on demand.
   when `deg(v) < 2`). Exact rationals in vertex order; a clique gives all `1`, a
   triangle-free graph (cycle, star, tree) all `0`. Edge direction is ignored
   (computed on the underlying undirected graph); `O(V·d_max²)`.
+- `GlobalClusteringCoefficient[g]` — the graph transitivity: three times the
+  number of triangles over the number of connected vertex triples,
+  `Σ L_v / Σ C(d_v,2)` (`0` when there are no triples). Distinct from the mean of
+  the local coefficients — it weights each vertex by how many triples it anchors.
+  Exact rational; direction ignored; `O(V·d_max²)`.
 - `DegreeCentrality[g]` — for each vertex, the number of incident edges: the
   ordinary degree for an undirected graph, in-degree + out-degree for a directed
   one. The simplest centrality; one pass over the edges (`O(V+E)`), exact
