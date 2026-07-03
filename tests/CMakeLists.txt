@@ -447,6 +447,7 @@ set(COMMON_SRC
     ../src/graph/findvertexcover.c
     ../src/graph/reciprocity.c
     ../src/graph/chromaticpoly.c
+    ../src/graph/chromaticnumber.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

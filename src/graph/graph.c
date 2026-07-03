@@ -396,6 +396,12 @@ void graph_init(void) {
         "ChromaticPolynomial[g, k] gives the chromatic polynomial of g in k: the "
         "number of proper k-colorings (a polynomial for symbolic k).");
 
+    symtab_add_builtin("ChromaticNumber", builtin_chromatic_number);
+    symtab_get_def("ChromaticNumber")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("ChromaticNumber",
+        "ChromaticNumber[g] gives the least number of colors needed to color g "
+        "so that adjacent vertices differ.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

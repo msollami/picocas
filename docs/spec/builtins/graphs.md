@@ -278,6 +278,12 @@ All are unweighted and build an integer-indexed adjacency on demand.
   unevaluated beyond a modest edge bound; direction ignored. Useful for the
   chromatic number: the least `k` with `ChromaticPolynomial[g, k] > 0` (an odd
   cycle gives `0` at `k = 2`, a bipartite graph a positive value).
+- `ChromaticNumber[g]` — the least number of colours for a proper colouring.
+  Tries `k = 1, 2, …` and tests k-colourability by backtracking (each vertex
+  takes a colour clashing with no coloured neighbour), with a symmetry cut
+  (a vertex opens at most one new colour) and early stop at the first feasible
+  `k`. Works for any edge count (unlike the polynomial); direction ignored.
+  Bipartite → `2`, odd cycle / triangle → `3`, `K_n` → `n`, edgeless → `1`.
 - `FindCycle[g]` — a cycle in `g` as a list containing one cycle, that cycle
   being a list of its edges (`{{1<->2, 2<->3, 3<->1}}`), or `{}` if `g` is
   acyclic. DFS back-edge detection, `O(V+E)`: a directed cycle needs an on-stack

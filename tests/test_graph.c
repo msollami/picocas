@@ -865,6 +865,24 @@ static void test_chromatic_polynomial(void) {
     assert_eval_eq("Head[ChromaticPolynomial[5, k]]", "ChromaticPolynomial", 0);
 }
 
+static void test_chromatic_number(void) {
+    assert_eval_eq("ChromaticNumber[Graph[{1,2,3},{}]]", "1", 0);
+    assert_eval_eq("ChromaticNumber[Graph[{1},{}]]", "1", 0);
+    assert_eval_eq("ChromaticNumber[CompleteGraph[4]]", "4", 0);
+    assert_eval_eq("ChromaticNumber[CompleteGraph[5]]", "5", 0);
+    assert_eval_eq("ChromaticNumber[CycleGraph[4]]", "2", 0);   /* bipartite */
+    assert_eval_eq("ChromaticNumber[CycleGraph[5]]", "3", 0);   /* odd cycle */
+    assert_eval_eq("ChromaticNumber[Graph[{1,2,3},{1<->2,2<->3,3<->1}]]", "3", 0);
+    assert_eval_eq("ChromaticNumber[PathGraph[4]]", "2", 0);
+    assert_eval_eq("ChromaticNumber[StarGraph[6]]", "2", 0);
+    assert_eval_eq("ChromaticNumber[WheelGraph[6]]", "4", 0);   /* odd rim */
+    assert_eval_eq("ChromaticNumber[WheelGraph[7]]", "3", 0);   /* even rim */
+    /* Consistent with the chromatic polynomial: not 2-colorable ⇒ P(2)=0. */
+    assert_eval_eq("ChromaticNumber[CycleGraph[5]] == 3 && ChromaticPolynomial[CycleGraph[5],2]==0", "True", 0);
+    assert_eval_eq("ChromaticNumber[Graph[{1,2,3},{1->2,2->3,3->1}]]", "3", 0);
+    assert_eval_eq("Head[ChromaticNumber[5]]", "ChromaticNumber", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -918,6 +936,7 @@ int main(void) {
     TEST(test_find_vertex_cover);
     TEST(test_graph_reciprocity);
     TEST(test_chromatic_polynomial);
+    TEST(test_chromatic_number);
 
     printf("All graph tests passed!\n");
     return 0;
