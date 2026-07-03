@@ -580,6 +580,12 @@ void graph_init(void) {
         "Subgraph[g, {v1, ...}] gives the subgraph of g induced by the listed "
         "vertices (edges with both endpoints among them).");
 
+    symtab_add_builtin("VertexDelete", builtin_vertex_delete);
+    symtab_get_def("VertexDelete")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("VertexDelete",
+        "VertexDelete[g, v] (or VertexDelete[g, {v1, ...}]) removes the given "
+        "vertices and all incident edges from g.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

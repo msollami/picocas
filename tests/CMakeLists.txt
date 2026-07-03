@@ -478,6 +478,7 @@ set(COMMON_SRC
     ../src/graph/vertexcoreness.c
     ../src/graph/transitivereduction.c
     ../src/graph/subgraph.c
+    ../src/graph/vertexdelete.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled

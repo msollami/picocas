@@ -179,6 +179,7 @@ Expr* builtin_friendship_graph(Expr* res);              /* FriendshipGraph[n]   
 Expr* builtin_vertex_coreness(Expr* res);               /* VertexCoreness[g]    */
 Expr* builtin_transitive_reduction_graph(Expr* res);    /* TransitiveReductionGraph */
 Expr* builtin_subgraph(Expr* res);                      /* Subgraph[g, {verts}] */
+Expr* builtin_vertex_delete(Expr* res);                 /* VertexDelete[g, v]   */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

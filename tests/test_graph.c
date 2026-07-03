@@ -1372,6 +1372,20 @@ static void test_subgraph(void) {
     assert_eval_eq("Head[Subgraph[5, {1}]]", "Subgraph", 0);
 }
 
+static void test_vertex_delete(void) {
+    assert_eval_eq("CompleteGraphQ[VertexDelete[CompleteGraph[4], 1]]", "True", 0);
+    assert_eval_eq("VertexList[VertexDelete[CompleteGraph[4], 1]]", "{2, 3, 4}", 0);
+    assert_eval_eq("EdgeCount[VertexDelete[CompleteGraph[4], {1,2}]]", "1", 0);
+    assert_eval_eq("VertexCount[VertexDelete[CompleteGraph[4], {1,2}]]", "2", 0);
+    assert_eval_eq("EdgeCount[VertexDelete[PathGraph[3], 2]]", "0", 0);
+    assert_eval_eq("VertexList[VertexDelete[PathGraph[3], 2]]", "{1, 3}", 0);
+    assert_eval_eq("EdgeCount[VertexDelete[CycleGraph[4], 1]]", "2", 0);
+    assert_eval_eq("EdgeList[VertexDelete[Graph[{1,2,3},{1->2,2->3}], 1]]", "{2 -> 3}", 0);
+    assert_eval_eq("VertexCount[VertexDelete[CompleteGraph[3], 9]]", "3", 0);   /* non-vertex: unchanged */
+    assert_eval_eq("VertexCount[VertexDelete[CompleteGraph[3], {1,2,3}]]", "0", 0);
+    assert_eval_eq("Head[VertexDelete[5, 1]]", "VertexDelete", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1455,6 +1469,7 @@ int main(void) {
     TEST(test_vertex_coreness);
     TEST(test_transitive_reduction);
     TEST(test_subgraph);
+    TEST(test_vertex_delete);
 
     printf("All graph tests passed!\n");
     return 0;
