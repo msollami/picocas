@@ -693,6 +693,12 @@ void graph_init(void) {
         "SunletGraph[n] gives the n-sunlet: a cycle C_n with a pendant vertex "
         "attached to each cycle vertex (2n vertices, 2n edges).");
 
+    symtab_add_builtin("HelmGraph", builtin_helm_graph);
+    symtab_get_def("HelmGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("HelmGraph",
+        "HelmGraph[n] gives the helm graph: a wheel on an n-cycle rim with a "
+        "pendant vertex attached to each rim vertex (2n+1 vertices, 3n edges).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

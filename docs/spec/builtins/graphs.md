@@ -188,6 +188,9 @@ constructor path:
   vertices, 3-regular. `GP(n,1)` is the `n`-prism (`GP(4,1)` the cube), `GP(5,2)`
   the Petersen graph, `GP(8,3)` the Möbius–Kantor, `GP(10,3)` the Desargues.
   `O(n²)`; needs `n ≥ 3`, `1 ≤ k < n`.
+- `HelmGraph[n]` — the helm: a wheel (hub joined to an `n`-cycle rim) with a
+  pendant vertex attached to each rim vertex. `2n+1` vertices, `3n` edges; the hub
+  has degree `n`, each rim vertex degree 4, each pendant degree 1. `O(n)`.
 - `SunletGraph[n]` — the n-sunlet: a cycle `Cₙ` with one pendant vertex attached
   to each cycle vertex (the corona `Cₙ ∘ K₁`). `2n` vertices, `2n` edges; cycle
   vertices have degree 3, pendants degree 1. Bipartite iff `n` is even. `O(n)`.
