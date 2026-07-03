@@ -1435,6 +1435,22 @@ static void test_vertex_add(void) {
     assert_eval_eq("Head[VertexAdd[5, 1]]", "VertexAdd", 0);
 }
 
+static void test_neighborhood_graph(void) {
+    assert_eval_eq("CompleteGraphQ[NeighborhoodGraph[CompleteGraph[4], 1]]", "True", 0);
+    assert_eval_eq("Sort[VertexList[NeighborhoodGraph[CycleGraph[5], 1]]]", "{1, 2, 5}", 0);
+    assert_eval_eq("EdgeCount[NeighborhoodGraph[CycleGraph[5], 1]]", "2", 0);
+    assert_eval_eq("VertexCount[NeighborhoodGraph[PathGraph[5], 3]]", "3", 0);
+    assert_eval_eq("EdgeCount[NeighborhoodGraph[PathGraph[5], 3]]", "2", 0);
+    assert_eval_eq("MemberQ[VertexList[NeighborhoodGraph[CycleGraph[5], 1]], 1]", "True", 0);
+    /* k controls the radius: 0 → just v, larger k widens. */
+    assert_eval_eq("VertexCount[NeighborhoodGraph[CompleteGraph[4], 1, 0]]", "1", 0);
+    assert_eval_eq("EdgeCount[NeighborhoodGraph[CompleteGraph[4], 1, 0]]", "0", 0);
+    assert_eval_eq("VertexCount[NeighborhoodGraph[PathGraph[5], 3, 2]]", "5", 0);
+    /* Bad arguments stay unevaluated. */
+    assert_eval_eq("Head[NeighborhoodGraph[CycleGraph[3], 9]]", "NeighborhoodGraph", 0);
+    assert_eval_eq("Head[NeighborhoodGraph[5, 1]]", "NeighborhoodGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1522,6 +1538,7 @@ int main(void) {
     TEST(test_edge_delete);
     TEST(test_edge_add);
     TEST(test_vertex_add);
+    TEST(test_neighborhood_graph);
 
     printf("All graph tests passed!\n");
     return 0;

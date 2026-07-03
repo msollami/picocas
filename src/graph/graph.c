@@ -604,6 +604,12 @@ void graph_init(void) {
         "VertexAdd[g, v] (or VertexAdd[g, {v1, ...}]) adds the given vertices to "
         "g as isolated vertices, leaving edges unchanged.");
 
+    symtab_add_builtin("NeighborhoodGraph", builtin_neighborhood_graph);
+    symtab_get_def("NeighborhoodGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("NeighborhoodGraph",
+        "NeighborhoodGraph[g, v] (or [g, v, k]) gives the subgraph induced by v "
+        "and all vertices within distance k (k=1 by default).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

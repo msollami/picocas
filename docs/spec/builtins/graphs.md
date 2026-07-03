@@ -398,6 +398,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   as isolated vertices (edges unchanged); a `List` names several, any other
   expression is a single vertex, and an already-present vertex is not duplicated.
   New vertices are appended after the existing ones. `O((V+#new)·#new)`.
+- `NeighborhoodGraph[g, v]` / `NeighborhoodGraph[g, v, k]` — the subgraph induced
+  by `v` and every vertex within graph distance `k` (`k = 1` by default), keeping
+  all edges between kept vertices. A depth-limited BFS from `v` over the
+  direction-aware adjacency, `O(V+E)`; `k = 0` gives just `v`.
 - `GraphUnion[g1, g2]` — the graph whose vertex set is the union of the two
   vertex sets and whose edge set is the union of the two edge sets, matched by
   vertex identity. Vertices from `g1` keep their order, new ones from `g2` are

@@ -482,6 +482,7 @@ set(COMMON_SRC
     ../src/graph/edgedelete.c
     ../src/graph/edgeadd.c
     ../src/graph/vertexadd.c
+    ../src/graph/neighborhoodgraph.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled
