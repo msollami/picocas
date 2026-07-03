@@ -182,6 +182,7 @@ Expr* builtin_subgraph(Expr* res);                      /* Subgraph[g, {verts}] 
 Expr* builtin_vertex_delete(Expr* res);                 /* VertexDelete[g, v]   */
 Expr* builtin_edge_delete(Expr* res);                   /* EdgeDelete[g, e]     */
 Expr* builtin_edge_add(Expr* res);                      /* EdgeAdd[g, e]        */
+Expr* builtin_vertex_add(Expr* res);                    /* VertexAdd[g, v]      */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

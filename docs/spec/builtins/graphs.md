@@ -394,6 +394,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   `EdgeDelete`; self-loops and duplicate (symmetric) edges are skipped to keep the
   simple-graph invariant. Adding a chord `1<->3` closes `PathGraph[3]` into a
   triangle. `O((V+E)·#specs)`.
+- `VertexAdd[g, v]` / `VertexAdd[g, {v1, …}]` — `g` with the given vertices added
+  as isolated vertices (edges unchanged); a `List` names several, any other
+  expression is a single vertex, and an already-present vertex is not duplicated.
+  New vertices are appended after the existing ones. `O((V+#new)·#new)`.
 - `GraphUnion[g1, g2]` — the graph whose vertex set is the union of the two
   vertex sets and whose edge set is the union of the two edge sets, matched by
   vertex identity. Vertices from `g1` keep their order, new ones from `g2` are

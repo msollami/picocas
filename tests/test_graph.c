@@ -1422,6 +1422,19 @@ static void test_edge_add(void) {
     assert_eval_eq("Head[EdgeAdd[5, 1<->2]]", "EdgeAdd", 0);
 }
 
+static void test_vertex_add(void) {
+    assert_eval_eq("VertexCount[VertexAdd[CompleteGraph[3], 4]]", "4", 0);
+    assert_eval_eq("EdgeCount[VertexAdd[CompleteGraph[3], 4]]", "3", 0);   /* isolated */
+    assert_eval_eq("VertexList[VertexAdd[CompleteGraph[3], 4]]", "{1, 2, 3, 4}", 0);
+    assert_eval_eq("VertexCount[VertexAdd[Graph[{1,2},{1<->2}], {3,4}]]", "4", 0);
+    assert_eval_eq("VertexCount[VertexAdd[CompleteGraph[3], 2]]", "3", 0);  /* duplicate ignored */
+    assert_eval_eq("VertexList[VertexAdd[Graph[{1},{}], x]]", "{1, x}", 0);
+    assert_eval_eq("Last[DegreeCentrality[VertexAdd[CompleteGraph[3], 4]]]", "0", 0);
+    assert_eval_eq("GraphQ[VertexAdd[CompleteGraph[3], 4]]", "True", 0);
+    assert_eval_eq("VertexCount[VertexAdd[Graph[{},{}], {1,2}]]", "2", 0);
+    assert_eval_eq("Head[VertexAdd[5, 1]]", "VertexAdd", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1508,6 +1521,7 @@ int main(void) {
     TEST(test_vertex_delete);
     TEST(test_edge_delete);
     TEST(test_edge_add);
+    TEST(test_vertex_add);
 
     printf("All graph tests passed!\n");
     return 0;

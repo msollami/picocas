@@ -598,6 +598,12 @@ void graph_init(void) {
         "EdgeAdd[g, e] (or EdgeAdd[g, {e1, ...}]) adds the given edges to g, "
         "introducing any missing endpoints as new vertices.");
 
+    symtab_add_builtin("VertexAdd", builtin_vertex_add);
+    symtab_get_def("VertexAdd")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("VertexAdd",
+        "VertexAdd[g, v] (or VertexAdd[g, {v1, ...}]) adds the given vertices to "
+        "g as isolated vertices, leaving edges unchanged.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;
