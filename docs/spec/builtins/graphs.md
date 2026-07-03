@@ -83,6 +83,10 @@ non-graph argument.
   adds to both in- and out-degree of each endpoint.
 - `DirectedGraphQ[g]` — `True` iff `g` is a valid graph whose edges are all
   directed.
+- `EmptyGraphQ[g]` — `True` iff `g` has no edges (edgeless, on any number of
+  vertices). `O(1)`.
+- `MixedGraphQ[g]` — `True` iff `g` has both a directed and an undirected edge; a
+  purely directed, purely undirected, or edgeless graph is not mixed. `O(E)`.
 
 ```
 VertexList[Graph[{1,2,3,4},{1->2,2->3,3->4,4->1}]]   (* {1, 2, 3, 4}        *)

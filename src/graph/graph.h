@@ -165,6 +165,8 @@ Expr* builtin_pagerank_centrality(Expr* res);           /* PageRankCentrality   
 Expr* builtin_katz_centrality(Expr* res);               /* KatzCentrality[g,a]  */
 Expr* builtin_graph_join(Expr* res);                    /* GraphJoin[g1, g2]    */
 Expr* builtin_index_graph(Expr* res);                   /* IndexGraph[g] / [g,k] */
+Expr* builtin_empty_graph_q(Expr* res);                 /* EmptyGraphQ[g]       */
+Expr* builtin_mixed_graph_q(Expr* res);                 /* MixedGraphQ[g]       */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

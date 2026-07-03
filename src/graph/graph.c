@@ -498,6 +498,16 @@ void graph_init(void) {
         "IndexGraph[g] renames the vertices of g to consecutive integers from 1 "
         "(IndexGraph[g, k] from k), remapping edges.");
 
+    symtab_add_builtin("EmptyGraphQ", builtin_empty_graph_q);
+    symtab_get_def("EmptyGraphQ")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("EmptyGraphQ",
+        "EmptyGraphQ[g] gives True iff g has no edges.");
+
+    symtab_add_builtin("MixedGraphQ", builtin_mixed_graph_q);
+    symtab_get_def("MixedGraphQ")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("MixedGraphQ",
+        "MixedGraphQ[g] gives True iff g has both directed and undirected edges.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

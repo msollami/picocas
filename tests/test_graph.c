@@ -1152,6 +1152,21 @@ static void test_index_graph(void) {
     assert_eval_eq("Head[IndexGraph[5]]", "IndexGraph", 0);
 }
 
+static void test_empty_and_mixed_q(void) {
+    /* EmptyGraphQ: no edges. */
+    assert_eval_eq("EmptyGraphQ[Graph[{1,2,3},{}]]", "True", 0);
+    assert_eval_eq("EmptyGraphQ[Graph[{1},{}]]", "True", 0);
+    assert_eval_eq("EmptyGraphQ[CycleGraph[3]]", "False", 0);
+    assert_eval_eq("EmptyGraphQ[Graph[{1,2},{1<->2}]]", "False", 0);
+    assert_eval_eq("Head[EmptyGraphQ[5]]", "EmptyGraphQ", 0);
+    /* MixedGraphQ: both directed and undirected edges present. */
+    assert_eval_eq("MixedGraphQ[Graph[{1,2,3},{1->2,2<->3}]]", "True", 0);
+    assert_eval_eq("MixedGraphQ[Graph[{1,2,3},{1->2,2->3}]]", "False", 0);
+    assert_eval_eq("MixedGraphQ[CycleGraph[4]]", "False", 0);
+    assert_eval_eq("MixedGraphQ[Graph[{1,2},{}]]", "False", 0);
+    assert_eval_eq("Head[MixedGraphQ[5]]", "MixedGraphQ", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1222,6 +1237,7 @@ int main(void) {
     TEST(test_katz_centrality);
     TEST(test_graph_join);
     TEST(test_index_graph);
+    TEST(test_empty_and_mixed_q);
 
     printf("All graph tests passed!\n");
     return 0;
