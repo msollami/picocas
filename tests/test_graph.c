@@ -883,6 +883,21 @@ static void test_chromatic_number(void) {
     assert_eval_eq("Head[ChromaticNumber[5]]", "ChromaticNumber", 0);
 }
 
+static void test_degree_sequence(void) {
+    assert_eval_eq("DegreeSequence[CompleteGraph[4]]", "{3, 3, 3, 3}", 0);
+    assert_eval_eq("DegreeSequence[StarGraph[5]]", "{4, 1, 1, 1, 1}", 0);
+    assert_eval_eq("DegreeSequence[PathGraph[4]]", "{2, 2, 1, 1}", 0);
+    assert_eval_eq("DegreeSequence[CycleGraph[5]]", "{2, 2, 2, 2, 2}", 0);
+    assert_eval_eq("DegreeSequence[Graph[{1,2,3},{}]]", "{0, 0, 0}", 0);
+    assert_eval_eq("DegreeSequence[Graph[{1,2,3,4},{1<->2,1<->3,1<->4,2<->3,2<->4}]]", "{3, 3, 2, 2}", 0);
+    /* Directed: total degree, sorted descending. */
+    assert_eval_eq("DegreeSequence[Graph[{1,2,3},{1->2,2->3}]]", "{2, 1, 1}", 0);
+    /* Handshake lemma and permutation-of-DegreeCentrality consistency. */
+    assert_eval_eq("Total[DegreeSequence[CompleteGraph[6]]] == 2*EdgeCount[CompleteGraph[6]]", "True", 0);
+    assert_eval_eq("Sort[DegreeSequence[StarGraph[5]]] == Sort[DegreeCentrality[StarGraph[5]]]", "True", 0);
+    assert_eval_eq("Head[DegreeSequence[5]]", "DegreeSequence", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -937,6 +952,7 @@ int main(void) {
     TEST(test_graph_reciprocity);
     TEST(test_chromatic_polynomial);
     TEST(test_chromatic_number);
+    TEST(test_degree_sequence);
 
     printf("All graph tests passed!\n");
     return 0;

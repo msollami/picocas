@@ -149,6 +149,7 @@ Expr* builtin_find_vertex_cover(Expr* res);             /* FindVertexCover[g]   
 Expr* builtin_graph_reciprocity(Expr* res);             /* GraphReciprocity[g]  */
 Expr* builtin_chromatic_polynomial(Expr* res);          /* ChromaticPolynomial  */
 Expr* builtin_chromatic_number(Expr* res);              /* ChromaticNumber[g]   */
+Expr* builtin_degree_sequence(Expr* res);               /* DegreeSequence[g]    */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */

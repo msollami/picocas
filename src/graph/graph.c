@@ -402,6 +402,12 @@ void graph_init(void) {
         "ChromaticNumber[g] gives the least number of colors needed to color g "
         "so that adjacent vertices differ.");
 
+    symtab_add_builtin("DegreeSequence", builtin_degree_sequence);
+    symtab_get_def("DegreeSequence")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("DegreeSequence",
+        "DegreeSequence[g] gives the vertex degrees (in-degree + out-degree for "
+        "a directed graph) sorted in non-increasing order.");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

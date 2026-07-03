@@ -220,6 +220,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   ordinary degree for an undirected graph, in-degree + out-degree for a directed
   one. The simplest centrality; one pass over the edges (`O(V+E)`), exact
   integers in vertex order (agrees with `VertexDegree` on undirected graphs).
+- `DegreeSequence[g]` — the vertex degrees (in-degree + out-degree for a directed
+  graph) sorted in non-increasing order; `{3,3,3,3}` for `K₄`, `{4,1,1,1,1}` for a
+  4-leaf star. `O(V+E+V log V)`, exact integers — a sorted permutation of
+  `DegreeCentrality[g]`.
 - `BetweennessCentrality[g]` — for each vertex, the number of shortest paths
   through it, `Σ σ_sv·σ_vt/σ_st` (fractional when paths tie — every C₄ vertex is
   `1/2`). Undirected pairs are counted once; directed keeps the ordered sum.

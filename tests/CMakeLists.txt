@@ -448,6 +448,7 @@ set(COMMON_SRC
     ../src/graph/reciprocity.c
     ../src/graph/chromaticpoly.c
     ../src/graph/chromaticnumber.c
+    ../src/graph/degreesequence.c
 )
 
 # render.c / hershey_font.c need a live Raylib + display; only compiled
