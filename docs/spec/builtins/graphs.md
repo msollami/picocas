@@ -324,6 +324,10 @@ All are unweighted and build an integer-indexed adjacency on demand.
   that are not in `g2` (same edge-equality rules). `K₄ − C₄` leaves the two
   diagonals; `g − g` is edgeless on `g`'s vertices; `g` minus a disjoint graph is
   `g`. Returns a canonical `Graph`.
+- `ReverseGraph[g]` — `g` with every directed edge reversed (`a→b` becomes `b→a`)
+  and undirected edges unchanged; the transpose graph. Swaps in- and out-degree,
+  is an involution (`ReverseGraph[ReverseGraph[g]] === g`), and is the identity on
+  undirected graphs. `O(V+E)`, returns a canonical `Graph`.
 - `GraphComplement[g]` — the graph on the same vertices whose edges are exactly
   the non-edges of `g`; edgeless → complete graph, complete → edgeless, and
   applying it twice restores `g`. Directed graphs stay directed (`O(V²)`).

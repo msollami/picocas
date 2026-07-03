@@ -456,6 +456,12 @@ void graph_init(void) {
         "GraphDifference[g1, g2] gives the graph on g1's vertices with the edges "
         "of g1 that are not in g2.");
 
+    symtab_add_builtin("ReverseGraph", builtin_graph_reverse);
+    symtab_get_def("ReverseGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("ReverseGraph",
+        "ReverseGraph[g] reverses the direction of every edge of g (undirected "
+        "edges are unchanged).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

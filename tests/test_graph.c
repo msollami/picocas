@@ -1031,6 +1031,22 @@ static void test_graph_difference(void) {
     assert_eval_eq("Head[GraphDifference[5, CycleGraph[3]]]", "GraphDifference", 0);
 }
 
+static void test_graph_reverse(void) {
+    assert_eval_eq("EdgeList[ReverseGraph[Graph[{1,2,3},{1->2,2->3}]]]", "{2 -> 1, 3 -> 2}", 0);
+    assert_eval_eq("VertexList[ReverseGraph[Graph[{1,2,3},{1->2,2->3}]]]", "{1, 2, 3}", 0);
+    assert_eval_eq("EdgeCount[ReverseGraph[Graph[{1,2,3},{1->2,2->3,3->1}]]]", "3", 0);
+    /* Undirected edges are unchanged; reversal is an involution on directed graphs. */
+    assert_eval_eq("EdgeList[ReverseGraph[Graph[{1,2},{1<->2}]]]", "{1 <-> 2}", 0);
+    assert_eval_eq("ReverseGraph[ReverseGraph[Graph[{1,2,3},{1->2,2->3}]]] === Graph[{1,2,3},{1->2,2->3}]", "True", 0);
+    /* Swaps in- and out-degree. */
+    assert_eval_eq("VertexOutDegree[ReverseGraph[Graph[{1,2,3},{1->2,1->3}]], 1]", "0", 0);
+    assert_eval_eq("VertexInDegree[ReverseGraph[Graph[{1,2,3},{1->2,1->3}]], 1]", "2", 0);
+    /* A reversed directed cycle is still strongly connected. */
+    assert_eval_eq("StronglyConnectedGraphQ[ReverseGraph[Graph[{1,2,3},{1->2,2->3,3->1}]]]", "True", 0);
+    assert_eval_eq("GraphQ[ReverseGraph[Graph[{1,2},{1->2}]]]", "True", 0);
+    assert_eval_eq("Head[ReverseGraph[5]]", "ReverseGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1094,6 +1110,7 @@ int main(void) {
     TEST(test_graph_union);
     TEST(test_graph_intersection);
     TEST(test_graph_difference);
+    TEST(test_graph_reverse);
 
     printf("All graph tests passed!\n");
     return 0;
