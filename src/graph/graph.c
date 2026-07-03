@@ -556,6 +556,12 @@ void graph_init(void) {
         "GeneralizedPetersenGraph[n, k] gives GP(n,k): an outer n-cycle, an inner "
         "star polygon {n/k}, and spokes joining them (GP(5,2) is the Petersen graph).");
 
+    symtab_add_builtin("FriendshipGraph", builtin_friendship_graph);
+    symtab_get_def("FriendshipGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("FriendshipGraph",
+        "FriendshipGraph[n] gives the windmill graph of n triangles sharing one "
+        "central vertex (F_1 is a triangle, F_2 the bowtie).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

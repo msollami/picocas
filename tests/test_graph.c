@@ -1308,6 +1308,21 @@ static void test_generalized_petersen_graph(void) {
     assert_eval_eq("Head[GeneralizedPetersenGraph[5,5]]", "GeneralizedPetersenGraph", 0);
 }
 
+static void test_friendship_graph(void) {
+    assert_eval_eq("CompleteGraphQ[FriendshipGraph[1]]", "True", 0);   /* K3 */
+    assert_eval_eq("VertexCount[FriendshipGraph[1]]", "3", 0);
+    assert_eval_eq("VertexCount[FriendshipGraph[2]]", "5", 0);         /* bowtie */
+    assert_eval_eq("EdgeCount[FriendshipGraph[2]]", "6", 0);
+    assert_eval_eq("VertexCount[FriendshipGraph[4]]", "9", 0);         /* 2n+1 */
+    assert_eval_eq("EdgeCount[FriendshipGraph[4]]", "12", 0);          /* 3n */
+    assert_eval_eq("First[DegreeCentrality[FriendshipGraph[3]]]", "6", 0);  /* hub = 2n */
+    assert_eval_eq("DegreeCentrality[FriendshipGraph[3]][[2]]", "2", 0);
+    assert_eval_eq("ConnectedGraphQ[FriendshipGraph[3]]", "True", 0);
+    assert_eval_eq("BipartiteGraphQ[FriendshipGraph[2]]", "False", 0);
+    assert_eval_eq("ChromaticNumber[FriendshipGraph[3]]", "3", 0);
+    assert_eval_eq("Head[FriendshipGraph[0]]", "FriendshipGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1387,6 +1402,7 @@ int main(void) {
     TEST(test_cocktail_party_graph);
     TEST(test_kneser_graph);
     TEST(test_generalized_petersen_graph);
+    TEST(test_friendship_graph);
 
     printf("All graph tests passed!\n");
     return 0;

@@ -178,6 +178,9 @@ constructor path:
   vertices, 3-regular. `GP(n,1)` is the `n`-prism (`GP(4,1)` the cube), `GP(5,2)`
   the Petersen graph, `GP(8,3)` the Möbius–Kantor, `GP(10,3)` the Desargues.
   `O(n²)`; needs `n ≥ 3`, `1 ≤ k < n`.
+- `FriendshipGraph[n]` — the windmill graph `Fₙ`: `n` triangles sharing one hub
+  vertex. `2n+1` vertices, `3n` edges; the hub has degree `2n`, every other vertex
+  degree `2`. `F₁` is the triangle, `F₂` the bowtie. `O(n)`.
 
 ```
 EdgeCount[CompleteGraph[5]]      (* 10                        *)

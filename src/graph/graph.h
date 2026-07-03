@@ -175,6 +175,7 @@ Expr* builtin_ladder_graph(Expr* res);                  /* LadderGraph[n]       
 Expr* builtin_cocktail_party_graph(Expr* res);          /* CocktailPartyGraph[n] */
 Expr* builtin_kneser_graph(Expr* res);                  /* KneserGraph[n, k]    */
 Expr* builtin_generalized_petersen_graph(Expr* res);    /* GeneralizedPetersenGraph */
+Expr* builtin_friendship_graph(Expr* res);              /* FriendshipGraph[n]   */
 
 /* ---- Phase 6: visualization ----------------------------------------------- */
 Expr* builtin_graph_plot(Expr* res);        /* GraphPlot[g] -> Graphics[...]   */
