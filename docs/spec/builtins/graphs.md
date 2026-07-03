@@ -148,6 +148,11 @@ constructor path:
   path; grids are bipartite.
 - `HypercubeGraph[k]` — the k-cube `Q_k`: `2^k` vertices adjacent when they
   differ in one bit (`k`-regular, bipartite; `Q_2 = C_4`).
+- `TuranGraph[n, r]` — the Turán graph `T(n, r)`: the balanced complete
+  `r`-partite graph on `n` vertices (vertex `i` in part `i mod r`), the
+  `n`-vertex graph with the most edges and no `(r+1)`-clique. `O(n²)`. `T(n,1)` is
+  edgeless, `T(n,n) = Kₙ`, `T(4,2) = C₄`, `T(6,3)` the octahedron; its chromatic
+  number is `min(n, r)`.
 
 ```
 EdgeCount[CompleteGraph[5]]      (* 10                        *)

@@ -514,6 +514,12 @@ void graph_init(void) {
         "GraphProduct[g1, g2, type] gives a product graph on V1 x V2 for type "
         "\"Cartesian\", \"Tensor\", \"Strong\", or \"Lexicographic\".");
 
+    symtab_add_builtin("TuranGraph", builtin_turan_graph);
+    symtab_get_def("TuranGraph")->attributes |= ATTR_PROTECTED;
+    symtab_set_docstring("TuranGraph",
+        "TuranGraph[n, r] gives the Turan graph: the balanced complete r-partite "
+        "graph on n vertices (the largest (r+1)-clique-free graph).");
+
     /* ---- Phase 6: visualization ------------------------------------------ */
     symtab_add_builtin("GraphPlot", builtin_graph_plot);
     symtab_get_def("GraphPlot")->attributes |= ATTR_PROTECTED;

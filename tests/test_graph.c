@@ -1186,6 +1186,23 @@ static void test_graph_product(void) {
     assert_eval_eq("Head[GraphProduct[5, Graph[{1,2},{1<->2}], \"Cartesian\"]]", "GraphProduct", 0);
 }
 
+static void test_turan_graph(void) {
+    assert_eval_eq("EdgeCount[TuranGraph[4,2]]", "4", 0);    /* C4 */
+    assert_eval_eq("EdgeCount[TuranGraph[5,2]]", "6", 0);    /* K_{2,3} */
+    assert_eval_eq("EdgeCount[TuranGraph[6,3]]", "12", 0);   /* octahedron */
+    assert_eval_eq("VertexCount[TuranGraph[7,3]]", "7", 0);
+    assert_eval_eq("EdgeCount[TuranGraph[5,1]]", "0", 0);    /* edgeless */
+    assert_eval_eq("CompleteGraphQ[TuranGraph[5,5]]", "True", 0);   /* K_n */
+    assert_eval_eq("RegularGraphQ[TuranGraph[6,3]]", "True", 0);
+    /* Cross-checks with other builtins. */
+    assert_eval_eq("BipartiteGraphQ[TuranGraph[4,2]]", "True", 0);
+    assert_eval_eq("ChromaticNumber[TuranGraph[4,2]]", "2", 0);
+    assert_eval_eq("ChromaticNumber[TuranGraph[6,3]]", "3", 0);
+    /* Bad arguments stay unevaluated. */
+    assert_eval_eq("Head[TuranGraph[5,0]]", "TuranGraph", 0);
+    assert_eval_eq("Head[TuranGraph[5,x]]", "TuranGraph", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -1258,6 +1275,7 @@ int main(void) {
     TEST(test_index_graph);
     TEST(test_empty_and_mixed_q);
     TEST(test_graph_product);
+    TEST(test_turan_graph);
 
     printf("All graph tests passed!\n");
     return 0;
