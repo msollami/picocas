@@ -6,6 +6,7 @@
 -->
 <script lang="ts">
   import type { CanvasNotebook } from './canvas';
+  import { NB_PALETTE } from './canvas';
 
   export let notebooks: CanvasNotebook[] = [];
   export let panX: number = 0;
@@ -49,9 +50,6 @@
   function toMapX(wx: number) { return offsetX + (wx - bbox.x) * scale; }
   function toMapY(wy: number) { return offsetY + (wy - bbox.y) * scale; }
 
-  const PALETTE = ['#89b4fa','#a6e3a1','#f38ba8','#fab387','#cba6f7','#94e2d5',
-                   '#89dceb','#f9e2af','#cba6f7','#b4befe'];
-
   $: nbRects = notebooks.map((nb, i) => {
     const h = nb.collapsed ? 52 : (nb.height ?? 400);
     return {
@@ -60,7 +58,7 @@
       y: toMapY(nb.y),
       w: Math.max(6, nb.width * scale),
       h: Math.max(4, h * scale),
-      color: PALETTE[i % PALETTE.length],
+      color: NB_PALETTE[i % NB_PALETTE.length],
       label: nb.title.slice(0, 18),
     };
   });

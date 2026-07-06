@@ -29,6 +29,7 @@
     removeNotebook,
     toggleCollapse,
     renameNotebook,
+    NB_PALETTE,
   } from './canvas';
   import {
     kernelStatus,
@@ -46,9 +47,10 @@
   export let focused: boolean = false;  // true when rendered full-screen
   export let active: boolean = false;   // true when this is the most recently interacted-with card
 
-  // Per-notebook accent colour from the deep-space palette
-  const PALETTE = ['#89b4fa','#a6e3a1','#f38ba8','#fab387','#cba6f7','#94e2d5'];
-  $: accentColor = PALETTE[parseInt(nb.id.replace('nb-', ''), 10) % PALETTE.length] ?? '#89b4fa';
+  // Per-notebook accent colour — indexed by position in canvasState.notebooks,
+  // same as Minimap, so a card's border always matches its minimap swatch.
+  $: nbIndex = $canvasState.notebooks.findIndex(n => n.id === nb.id);
+  $: accentColor = NB_PALETTE[(nbIndex < 0 ? 0 : nbIndex) % NB_PALETTE.length];
 
   // ---- Store subscription ----
   // nb.store is a Svelte store (has .subscribe). Assign it to a local `let`

@@ -20,7 +20,13 @@ export type CanvasNotebook = {
 };
 
 let _nextId = 1;
-const PALETTE = ['#4a90e2','#e67e22','#27ae60','#8e44ad','#e74c3c','#16a085'];
+
+// Single source of truth for per-notebook accent colour, indexed by the
+// notebook's position in canvasState.notebooks. Shared by NotebookCard
+// (card border/title) and Minimap (rect fill/stroke) so a notebook's card
+// always matches its minimap swatch.
+export const NB_PALETTE = ['#89b4fa','#a6e3a1','#f38ba8','#fab387','#cba6f7','#94e2d5',
+                            '#89dceb','#f9e2af','#cba6f7','#b4befe'];
 
 function makeCard(title: string, x: number, y: number): CanvasNotebook {
   // CRITICAL: always capture and increment _nextId so every card gets a unique id.
