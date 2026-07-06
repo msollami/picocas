@@ -1,5 +1,7 @@
 #include "attr.h"
 #include "symtab.h"
+#include "eval.h"
+#include "sym_names.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,26 +13,30 @@ typedef struct {
 } SymbolAttr;
 
 static SymbolAttr builtin_attrs[] = {
-    {"Hold", ATTR_HOLDALL},
-    {"HoldFirst", ATTR_HOLDFIRST},
-    {"HoldRest", ATTR_HOLDREST},
-    {"HoldComplete", ATTR_HOLDALLCOMPLETE},
+    {"Hold", ATTR_HOLDALL | ATTR_PROTECTED},
+    {"HoldFirst", ATTR_HOLDFIRST | ATTR_PROTECTED},
+    {"HoldRest", ATTR_HOLDREST | ATTR_PROTECTED},
+    {"HoldComplete", ATTR_HOLDALLCOMPLETE | ATTR_PROTECTED},
+    {"HoldPattern", ATTR_HOLDALL | ATTR_PROTECTED},
+    {"Unevaluated", ATTR_HOLDALLCOMPLETE | ATTR_PROTECTED},
     {"Set", ATTR_HOLDFIRST | ATTR_PROTECTED},
     {"SetDelayed", ATTR_HOLDALL | ATTR_PROTECTED},
+    {"MessageName", ATTR_HOLDFIRST | ATTR_PROTECTED},
     {"Clear", ATTR_HOLDALL | ATTR_PROTECTED},
-    {"AppendTo", ATTR_HOLDFIRST},
-    {"PrependTo", ATTR_HOLDFIRST},
-    {"Plus", ATTR_FLAT | ATTR_ORDERLESS | ATTR_LISTABLE | ATTR_NUMERICFUNCTION | ATTR_ONEIDENTITY},
-    {"Times", ATTR_FLAT | ATTR_ORDERLESS | ATTR_LISTABLE | ATTR_NUMERICFUNCTION | ATTR_ONEIDENTITY},
-    {"Divide", ATTR_LISTABLE | ATTR_NUMERICFUNCTION},
-    {"Subtract", ATTR_LISTABLE | ATTR_NUMERICFUNCTION},
+    {"AppendTo", ATTR_HOLDFIRST | ATTR_PROTECTED},
+    {"PrependTo", ATTR_HOLDFIRST | ATTR_PROTECTED},
+    {"Plus", ATTR_FLAT | ATTR_ORDERLESS | ATTR_LISTABLE | ATTR_NUMERICFUNCTION | ATTR_ONEIDENTITY | ATTR_PROTECTED},
+    {"Times", ATTR_FLAT | ATTR_ORDERLESS | ATTR_LISTABLE | ATTR_NUMERICFUNCTION | ATTR_ONEIDENTITY | ATTR_PROTECTED},
+    {"Divide", ATTR_LISTABLE | ATTR_NUMERICFUNCTION | ATTR_PROTECTED},
+    {"Subtract", ATTR_LISTABLE | ATTR_NUMERICFUNCTION | ATTR_PROTECTED},
     {"Power", ATTR_LISTABLE | ATTR_NUMERICFUNCTION | ATTR_ONEIDENTITY | ATTR_PROTECTED},
     {"Sqrt", ATTR_LISTABLE | ATTR_NUMERICFUNCTION | ATTR_PROTECTED},
     {"Rational", ATTR_PROTECTED},
-    {"Attributes", ATTR_HOLDALL},
+    {"Attributes", ATTR_HOLDALL | ATTR_PROTECTED},
     {"SetAttributes", ATTR_HOLDFIRST | ATTR_PROTECTED},
-    {"OwnValues", ATTR_HOLDALL},
-    {"DownValues", ATTR_HOLDALL},
+    {"ClearAttributes", ATTR_HOLDFIRST | ATTR_PROTECTED},
+    {"OwnValues", ATTR_HOLDALL | ATTR_PROTECTED},
+    {"DownValues", ATTR_HOLDALL | ATTR_PROTECTED},
     {"Out", ATTR_PROTECTED},
     {"Overflow", ATTR_PROTECTED},
     {"Apply", ATTR_PROTECTED},
@@ -45,8 +51,9 @@ static SymbolAttr builtin_attrs[] = {
     {"Depth", ATTR_PROTECTED},
     {"Function", ATTR_HOLDALL | ATTR_PROTECTED},
     {"MatchQ", ATTR_PROTECTED},
+    {"Pattern", ATTR_HOLDFIRST | ATTR_PROTECTED},
     {"PatternTest", ATTR_HOLDREST | ATTR_PROTECTED},
-    {"Condition", ATTR_HOLDALL | ATTR_PROTECTED},
+    {"Condition", ATTR_HOLDREST | ATTR_PROTECTED},
     {"Rule", ATTR_PROTECTED},
     {"RuleDelayed", ATTR_HOLDREST | ATTR_PROTECTED | ATTR_SEQUENCEHOLD},
     {"Equal", ATTR_PROTECTED},
@@ -60,12 +67,15 @@ static SymbolAttr builtin_attrs[] = {
     {"And", ATTR_FLAT | ATTR_HOLDALL | ATTR_ONEIDENTITY | ATTR_PROTECTED},
     {"Or", ATTR_FLAT | ATTR_HOLDALL | ATTR_ONEIDENTITY | ATTR_PROTECTED},
     {"Not", ATTR_PROTECTED},
+    {"Boole", ATTR_LISTABLE | ATTR_PROTECTED},
+    {"ConditionalExpression", ATTR_PROTECTED},
     {"CompoundExpression", ATTR_HOLDALL | ATTR_PROTECTED},
     {"Table", ATTR_HOLDALL | ATTR_PROTECTED},
     {"Module", ATTR_HOLDALL | ATTR_PROTECTED},
     {"Block", ATTR_HOLDALL | ATTR_PROTECTED},
     {"With", ATTR_HOLDALL | ATTR_PROTECTED},
     {"Range", ATTR_LISTABLE | ATTR_PROTECTED},
+    {"Return", ATTR_PROTECTED},
     {"Array", ATTR_PROTECTED},
     {"Take", ATTR_NHOLDREST | ATTR_PROTECTED},
     {"Drop", ATTR_NHOLDREST | ATTR_PROTECTED},
@@ -81,10 +91,14 @@ static SymbolAttr builtin_attrs[] = {
     {"QuotientRemainder", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
     {"GCD", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE | ATTR_FLAT | ATTR_ORDERLESS | ATTR_ONEIDENTITY},
     {"LCM", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE | ATTR_FLAT | ATTR_ORDERLESS | ATTR_ONEIDENTITY},
+    {"ExtendedGCD", ATTR_PROTECTED | ATTR_LISTABLE},
     {"PrimeQ", ATTR_PROTECTED | ATTR_LISTABLE},
+    {"PossibleZeroQ", ATTR_PROTECTED | ATTR_LISTABLE},
     {"PrimePi", ATTR_PROTECTED | ATTR_LISTABLE},
     {"FactorInteger", ATTR_PROTECTED | ATTR_LISTABLE},
     {"NextPrime", ATTR_LISTABLE | ATTR_PROTECTED | ATTR_READPROTECTED},
+    {"Fibonacci", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
+    {"LucasL", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
     {"Re", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
     {"Im", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
     {"ReIm", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
@@ -106,13 +120,19 @@ static SymbolAttr builtin_attrs[] = {
     {"Log", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
     {"Exp", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
     {"E", ATTR_PROTECTED},
+    {"I", ATTR_PROTECTED},
     {"Floor", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
     {"Ceiling", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
     {"Round", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
     {"IntegerPart", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
+    {"IntegerDigits", ATTR_PROTECTED | ATTR_LISTABLE},
+    {"IntegerLength", ATTR_PROTECTED | ATTR_LISTABLE},
+    {"DigitCount", ATTR_PROTECTED},
+    {"FromDigits", ATTR_PROTECTED},
     {"FractionalPart", ATTR_PROTECTED | ATTR_NUMERICFUNCTION | ATTR_LISTABLE},
     {"Timing", ATTR_HOLDALL | ATTR_PROTECTED | ATTR_SEQUENCEHOLD},
     {"RepeatedTiming", ATTR_HOLDFIRST | ATTR_PROTECTED | ATTR_SEQUENCEHOLD},
+    {"TimeConstrained", ATTR_HOLDALL | ATTR_PROTECTED},
     {"Dot", ATTR_FLAT | ATTR_ONEIDENTITY | ATTR_PROTECTED},
     {"Det", ATTR_PROTECTED},
     {"Cross", ATTR_PROTECTED},
@@ -148,7 +168,14 @@ void set_attributes(const char* symbol_name, uint32_t attrs) {
     if (def) {
         // If the symbol is Locked, we cannot change its attributes
         if (def->attributes & ATTR_LOCKED) return;
-        def->attributes = attrs;
+        if (def->attributes != attrs) {
+            def->attributes = attrs;
+            /* Attribute changes (Hold*, Listable, Flat, Orderless,
+             * NumericFunction, Protected, OneIdentity, ...) all change
+             * how the evaluator handles a head, so a cached evaluation
+             * could be stale. Bump the global eval clock to invalidate. */
+            eval_clock_bump();
+        }
     }
 }
 
@@ -163,23 +190,43 @@ static uint32_t string_to_attribute(const char* name) {
     if (strcmp(name, "NumericFunction") == 0) return ATTR_NUMERICFUNCTION;
     if (strcmp(name, "Protected") == 0) return ATTR_PROTECTED;
     if (strcmp(name, "OneIdentity") == 0) return ATTR_ONEIDENTITY;
+    if (strcmp(name, "NHoldAll") == 0) return ATTR_NHOLDALL;
+    if (strcmp(name, "NHoldFirst") == 0) return ATTR_NHOLDFIRST;
     if (strcmp(name, "NHoldRest") == 0) return ATTR_NHOLDREST;
     if (strcmp(name, "Locked") == 0) return ATTR_LOCKED;
     if (strcmp(name, "ReadProtected") == 0) return ATTR_READPROTECTED;
     if (strcmp(name, "Temporary") == 0) return ATTR_TEMPORARY;
     if (strcmp(name, "SequenceHold") == 0) return ATTR_SEQUENCEHOLD;
+    if (strcmp(name, "Constant") == 0) return ATTR_CONSTANT;
     return ATTR_NONE;
+}
+
+static void remove_single_attribute(SymbolDef* def, Expr* attr_expr) {
+    const char* attr_name = NULL;
+    if (attr_expr->type == EXPR_SYMBOL) attr_name = attr_expr->data.symbol;
+    else if (attr_expr->type == EXPR_STRING) attr_name = attr_expr->data.string;
+
+    if (attr_name) {
+        uint32_t bit = string_to_attribute(attr_name);
+        if (bit != ATTR_NONE && (def->attributes & bit)) {
+            def->attributes &= ~bit;
+            /* Real attribute change -- invalidate cached evaluations. */
+            eval_clock_bump();
+        }
+    }
 }
 
 static void add_single_attribute(SymbolDef* def, Expr* attr_expr) {
     const char* attr_name = NULL;
     if (attr_expr->type == EXPR_SYMBOL) attr_name = attr_expr->data.symbol;
     else if (attr_expr->type == EXPR_STRING) attr_name = attr_expr->data.string;
-    
+
     if (attr_name) {
         uint32_t bit = string_to_attribute(attr_name);
-        if (bit != ATTR_NONE) {
+        if (bit != ATTR_NONE && !(def->attributes & bit)) {
             def->attributes |= bit;
+            /* Real attribute change -- invalidate cached evaluations. */
+            eval_clock_bump();
         }
     }
 }
@@ -199,11 +246,53 @@ static void set_attributes_for_symbol(Expr* sym_expr, Expr* attr_spec) {
         add_single_attribute(def, attr_spec);
     } else if (attr_spec->type == EXPR_FUNCTION && 
                attr_spec->data.function.head->type == EXPR_SYMBOL &&
-               strcmp(attr_spec->data.function.head->data.symbol, "List") == 0) {
+               attr_spec->data.function.head->data.symbol == SYM_List) {
         for (size_t i = 0; i < attr_spec->data.function.arg_count; i++) {
             add_single_attribute(def, attr_spec->data.function.args[i]);
         }
     }
+}
+
+static void clear_attributes_for_symbol(Expr* sym_expr, Expr* attr_spec) {
+    const char* sym_name = NULL;
+    if (sym_expr->type == EXPR_SYMBOL) sym_name = sym_expr->data.symbol;
+    else if (sym_expr->type == EXPR_STRING) sym_name = sym_expr->data.string;
+
+    if (!sym_name) return;
+
+    SymbolDef* def = symtab_get_def(sym_name);
+    if (!def || (def->attributes & ATTR_LOCKED)) return;
+
+    // Attribute spec can be a single attribute or a list of attributes
+    if (attr_spec->type == EXPR_SYMBOL || attr_spec->type == EXPR_STRING) {
+        remove_single_attribute(def, attr_spec);
+    } else if (attr_spec->type == EXPR_FUNCTION &&
+               attr_spec->data.function.head->type == EXPR_SYMBOL &&
+               attr_spec->data.function.head->data.symbol == SYM_List) {
+        for (size_t i = 0; i < attr_spec->data.function.arg_count; i++) {
+            remove_single_attribute(def, attr_spec->data.function.args[i]);
+        }
+    }
+}
+
+Expr* builtin_clear_attributes(Expr* res) {
+    if (res->type != EXPR_FUNCTION || res->data.function.arg_count != 2) return NULL;
+
+    Expr* sym_spec = res->data.function.args[0];
+    Expr* attr_spec = res->data.function.args[1];
+
+    // Symbol spec can be a single symbol/string or a list of them
+    if (sym_spec->type == EXPR_SYMBOL || sym_spec->type == EXPR_STRING) {
+        clear_attributes_for_symbol(sym_spec, attr_spec);
+    } else if (sym_spec->type == EXPR_FUNCTION &&
+               sym_spec->data.function.head->type == EXPR_SYMBOL &&
+               sym_spec->data.function.head->data.symbol == SYM_List) {
+        for (size_t i = 0; i < sym_spec->data.function.arg_count; i++) {
+            clear_attributes_for_symbol(sym_spec->data.function.args[i], attr_spec);
+        }
+    }
+
+    return expr_new_symbol(SYM_Null);
 }
 
 Expr* builtin_set_attributes(Expr* res) {
@@ -217,13 +306,13 @@ Expr* builtin_set_attributes(Expr* res) {
         set_attributes_for_symbol(sym_spec, attr_spec);
     } else if (sym_spec->type == EXPR_FUNCTION && 
                sym_spec->data.function.head->type == EXPR_SYMBOL &&
-               strcmp(sym_spec->data.function.head->data.symbol, "List") == 0) {
+               sym_spec->data.function.head->data.symbol == SYM_List) {
         for (size_t i = 0; i < sym_spec->data.function.arg_count; i++) {
             set_attributes_for_symbol(sym_spec->data.function.args[i], attr_spec);
         }
     }
     
-    return expr_new_symbol("Null");
+    return expr_new_symbol(SYM_Null);
 }
 
 Expr* builtin_attributes(Expr* res) {
@@ -239,6 +328,7 @@ Expr* builtin_attributes(Expr* res) {
     
     // Count attributes
     size_t count = 0;
+    if (attrs & ATTR_CONSTANT) count++;
     if (attrs & ATTR_HOLDFIRST) count++;
     if (attrs & ATTR_HOLDREST) count++;
     if (attrs & ATTR_HOLDALLCOMPLETE) count++;
@@ -248,7 +338,12 @@ Expr* builtin_attributes(Expr* res) {
     if (attrs & ATTR_NUMERICFUNCTION) count++;
     if (attrs & ATTR_PROTECTED) count++;
     if (attrs & ATTR_ONEIDENTITY) count++;
-    if (attrs & ATTR_NHOLDREST) count++;
+    if ((attrs & ATTR_NHOLDALL) == ATTR_NHOLDALL) {
+        count++;
+    } else {
+        if (attrs & ATTR_NHOLDFIRST) count++;
+        if (attrs & ATTR_NHOLDREST) count++;
+    }
     if (attrs & ATTR_LOCKED) count++;
     if (attrs & ATTR_READPROTECTED) count++;
     if (attrs & ATTR_TEMPORARY) count++;
@@ -256,26 +351,32 @@ Expr* builtin_attributes(Expr* res) {
 
     Expr** attr_list = malloc(sizeof(Expr*) * count);
     size_t i = 0;
-    if (attrs & ATTR_FLAT) attr_list[i++] = expr_new_symbol("Flat");
+    if (attrs & ATTR_CONSTANT) attr_list[i++] = expr_new_symbol(SYM_Constant);
+    if (attrs & ATTR_FLAT) attr_list[i++] = expr_new_symbol(SYM_Flat);
     if ((attrs & ATTR_HOLDALL) == ATTR_HOLDALL) {
-        attr_list[i++] = expr_new_symbol("HoldAll");
+        attr_list[i++] = expr_new_symbol(SYM_HoldAll);
     } else {
-        if (attrs & ATTR_HOLDFIRST) attr_list[i++] = expr_new_symbol("HoldFirst");
-        if (attrs & ATTR_HOLDREST) attr_list[i++] = expr_new_symbol("HoldRest");
+        if (attrs & ATTR_HOLDFIRST) attr_list[i++] = expr_new_symbol(SYM_HoldFirst);
+        if (attrs & ATTR_HOLDREST) attr_list[i++] = expr_new_symbol(SYM_HoldRest);
     }
-    if (attrs & ATTR_HOLDALLCOMPLETE) attr_list[i++] = expr_new_symbol("HoldAllComplete");
-    if (attrs & ATTR_LISTABLE) attr_list[i++] = expr_new_symbol("Listable");
-    if (attrs & ATTR_LOCKED) attr_list[i++] = expr_new_symbol("Locked");
-    if (attrs & ATTR_NUMERICFUNCTION) attr_list[i++] = expr_new_symbol("NumericFunction");
-    if (attrs & ATTR_ONEIDENTITY) attr_list[i++] = expr_new_symbol("OneIdentity");
-    if (attrs & ATTR_NHOLDREST) attr_list[i++] = expr_new_symbol("NHoldRest");
-    if (attrs & ATTR_ORDERLESS) attr_list[i++] = expr_new_symbol("Orderless");
-    if (attrs & ATTR_PROTECTED) attr_list[i++] = expr_new_symbol("Protected");
-    if (attrs & ATTR_READPROTECTED) attr_list[i++] = expr_new_symbol("ReadProtected");
-    if (attrs & ATTR_SEQUENCEHOLD) attr_list[i++] = expr_new_symbol("SequenceHold");
-    if (attrs & ATTR_TEMPORARY) attr_list[i++] = expr_new_symbol("Temporary");
+    if (attrs & ATTR_HOLDALLCOMPLETE) attr_list[i++] = expr_new_symbol(SYM_HoldAllComplete);
+    if (attrs & ATTR_LISTABLE) attr_list[i++] = expr_new_symbol(SYM_Listable);
+    if (attrs & ATTR_LOCKED) attr_list[i++] = expr_new_symbol(SYM_Locked);
+    if (attrs & ATTR_NUMERICFUNCTION) attr_list[i++] = expr_new_symbol(SYM_NumericFunction);
+    if (attrs & ATTR_ONEIDENTITY) attr_list[i++] = expr_new_symbol(SYM_OneIdentity);
+    if ((attrs & ATTR_NHOLDALL) == ATTR_NHOLDALL) {
+        attr_list[i++] = expr_new_symbol(SYM_NHoldAll);
+    } else {
+        if (attrs & ATTR_NHOLDFIRST) attr_list[i++] = expr_new_symbol(SYM_NHoldFirst);
+        if (attrs & ATTR_NHOLDREST) attr_list[i++] = expr_new_symbol(SYM_NHoldRest);
+    }
+    if (attrs & ATTR_ORDERLESS) attr_list[i++] = expr_new_symbol(SYM_Orderless);
+    if (attrs & ATTR_PROTECTED) attr_list[i++] = expr_new_symbol(SYM_Protected);
+    if (attrs & ATTR_READPROTECTED) attr_list[i++] = expr_new_symbol(SYM_ReadProtected);
+    if (attrs & ATTR_SEQUENCEHOLD) attr_list[i++] = expr_new_symbol(SYM_SequenceHold);
+    if (attrs & ATTR_TEMPORARY) attr_list[i++] = expr_new_symbol(SYM_Temporary);
     
-    Expr* result = expr_new_function(expr_new_symbol("List"), attr_list, i);
+    Expr* result = expr_new_function(expr_new_symbol(SYM_List), attr_list, i);
     free(attr_list);
     return result;
 }
@@ -283,6 +384,7 @@ Expr* builtin_attributes(Expr* res) {
 void attr_init(void) {
     symtab_add_builtin("Attributes", builtin_attributes);
     symtab_add_builtin("SetAttributes", builtin_set_attributes);
+    symtab_add_builtin("ClearAttributes", builtin_clear_attributes);
     
     // Initialize builtin attributes in symtab
     for (int i = 0; builtin_attrs[i].name != NULL; i++) {

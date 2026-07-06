@@ -40,7 +40,7 @@ void test_numerator() {
     run_test("Numerator[3/7]", "3");
     run_test("Numerator[3/7 + I/11]", "Complex[33, 7]");
     run_test("Numerator[(x-1)^2/((x-2)(x-3))]", "Power[Plus[-1, x], 2]");
-    run_test("Numerator[a x^n y^-m Exp[a - b - 2c + 3d]]", "Times[Power[E, Plus[a, Times[3, d]]], a, Power[x, n]]");
+    run_test("Numerator[a x^n y^-m Exp[a - b - 2c + 3d]]", "Times[a, Power[E, Plus[a, Times[3, d]]], Power[x, n]]");
     run_test("Numerator[a^-b/x]", "1");
     run_test("Numerator[2 x^y b^2]", "Times[2, Power[b, 2], Power[x, y]]");
     run_test("Numerator[{1,2,3,4,5,6}/3]", "List[1, 2, 1, 4, 5, 2]");
@@ -63,17 +63,104 @@ void test_denominator() {
 
 void test_cancel() {
     run_test("Cancel[(x^2 - 1)/(x - 1)]", "Plus[1, x]");
-    run_test("Cancel[(x - y)/(x^2 - y^2) + (x^3 - 27)/(x^2 - 9) + (x^3 + 1)/(x^2 - x + 1)]", "Plus[1, x, Times[Power[Plus[3, x], -1], Plus[9, Times[3, x], Power[x, 2]]], Times[-1, Power[Plus[Times[-1, x], Times[-1, y]], -1]]]");
+    run_test("Cancel[(x - y)/(x^2 - y^2) + (x^3 - 27)/(x^2 - 9) + (x^3 + 1)/(x^2 - x + 1)]", "Plus[1, x, Times[Power[Plus[3, x], -1], Plus[9, Times[3, x], Power[x, 2]]], Power[Plus[x, y], -1]]");
     run_test("Cancel[(x - a)/(x^2 - a^2) == 0 && (x^2 - 2 x + 1)/(x - 1) >= 0]", "And[Equal[Power[Plus[a, x], -1], 0], GreaterEqual[Plus[-1, x], 0]]");
     run_test("Cancel[(x - 1)/(x^2 - 1) + (x - 2)/(x^2 - 4)]", "Plus[Power[Plus[1, x], -1], Power[Plus[2, x], -1]]");
 }
 
+/* Cancel must treat a single symbolic base with fractional rational exponents
+ * as an algebraic generator: substitute y -> g^m where m = lcm(denoms),
+ * cancel polynomially in g, then substitute back. */
+void test_cancel_algebraic_generator() {
+    /* (y - 1) / (Sqrt[y] - 1)  =  1 + Sqrt[y]  via y = g^2: (g^2-1)/(g-1) */
+    run_test("Cancel[(y - 1)/(Sqrt[y] - 1)]",
+             "Plus[1, Power[y, Rational[1, 2]]]");
+
+    /* (y^(2/3) - 1) / (y^(1/3) - 1)  =  1 + y^(1/3)  via y = g^3 */
+    run_test("Cancel[(y^(2/3) - 1)/(y^(1/3) - 1)]",
+             "Plus[1, Power[y, Rational[1, 3]]]");
+
+    /* (y - 1) / (y^(1/3) - 1)  =  1 + y^(1/3) + y^(2/3) */
+    run_test("Cancel[(y - 1)/(y^(1/3) - 1)]",
+             "Plus[1, Power[y, Rational[1, 3]], Power[y, Rational[2, 3]]]");
+
+    /* (y^(2/3) - y^(1/3)) / (y^(1/3) - 1)  =  y^(1/3) */
+    run_test("Cancel[(y^(2/3) - y^(1/3))/(y^(1/3) - 1)]",
+             "Power[y, Rational[1, 3]]");
+
+    /* (Sqrt[y] + 1) / (y - 1)  =  1 / (Sqrt[y] - 1)
+       (numerator factor cancels with one factor of difference of squares) */
+    run_test("Cancel[(Sqrt[y] + 1)/(y - 1)]",
+             "Power[Plus[-1, Power[y, Rational[1, 2]]], -1]");
+
+    /* Sqrt[y] (y - 1) / (Sqrt[y] - 1)  =  y + Sqrt[y]
+       (cancellation interleaved with a non-cancelling Sqrt[y] factor) */
+    run_test("Cancel[Sqrt[y] (y - 1)/(Sqrt[y] - 1)]",
+             "Plus[Power[y, Rational[1, 2]], y]");
+
+    /* (y^(1/2) - y^(1/3)) / (y^(1/6) - 1)  =  y^(1/3)
+       (mixed denominators 2,3,6 -> generator g = y^(1/6)) */
+    run_test("Cancel[(y^(1/2) - y^(1/3))/(y^(1/6) - 1)]",
+             "Power[y, Rational[1, 3]]");
+
+    /* Perfect-square trinomial in algebraic generator:
+       (y^(2/3) + 2 y^(1/3) + 1) / (y^(1/3) + 1)  =  1 + y^(1/3) */
+    run_test("Cancel[(y^(2/3) + 2 y^(1/3) + 1)/(y^(1/3) + 1)]",
+             "Plus[1, Power[y, Rational[1, 3]]]");
+
+    /* Inverted Plus with mixed g-exponents: 1/(y^(2/3) - 1/y^(1/3))
+       substitutes to 1/(g^2 - 1/g), whose denominator is a Plus of terms
+       with different g-denominators. Cancel must run together-style
+       fraction combination on the substituted form (not just GCD on
+       num/den extracted directly) to produce y^(1/3)/(y - 1). */
+    run_test("Cancel[1/(y^(2/3) - 1/y^(1/3))]",
+             "Times[Power[y, Rational[1, 3]], Power[Plus[-1, y], -1]]");
+
+    /* y^(73/24) / (y^(2/3) - 1/y^(1/3)) -- same shape with a non-trivial
+       numerator. Substituting y = g^24 gives g^73 / (g^16 - 1/g^8) =
+       g^81 / (g^24 - 1), and back-substitution yields
+       y^(81/24) / (y - 1) = y^(27/8) / (y - 1). */
+    run_test("Cancel[y^(73/24) / (y^(2/3) - 1/y^(1/3))]",
+             "Times[Power[y, Rational[27, 8]], Power[Plus[-1, y], -1]]");
+}
+
+/* The generator pass also handles non-symbol bases such as Log[r] and
+ * Sqrt[Log[r]] -- any sub-expression with at least one fractional rational
+ * exponent is treated as the algebraic generator (matched via expr_eq). */
+void test_cancel_nonsymbol_base() {
+    run_test("Cancel[(Log[r] - 1)/(Sqrt[Log[r]] - 1)]",
+             "Plus[1, Power[Log[r], Rational[1, 2]]]");
+    run_test("Cancel[(Log[r]^(2/3) - 1)/(Log[r]^(1/3) - 1)]",
+             "Plus[1, Power[Log[r], Rational[1, 3]]]");
+}
+
+/* Together must apply the same algebraic-generator pass.
+ * The headline regression: y^(5/8) (y^(19/8) - y^(73/24)/(y^(2/3) - 1/y^(1/3)))
+ * with denominators {8, 8, 24, 3, 3} yields lcm m = 24, and after substitution
+ * the rational expression in g collapses to -g^72/(g^24 - 1) = -y^3/(y - 1). */
+void test_together_algebraic_generator() {
+    run_test("Together[y^(5/8) (y^(19/8) - y^(73/24)/(y^(2/3) - 1/y^(1/3)))]",
+             "Times[-1, Power[y, 3], Power[Plus[-1, y], -1]]");
+
+    /* y^(2/3) - 1/y^(1/3)  =  (y - 1)/y^(1/3) */
+    run_test("Together[y^(2/3) - 1/y^(1/3)]",
+             "Times[Plus[-1, y], Power[y, Rational[-1, 3]]]");
+
+    /* 1/y^(1/2) + 1/y^(1/3)  =  (1 + y^(1/6))/y^(1/2) */
+    run_test("Together[1/y^(1/2) + 1/y^(1/3)]",
+             "Times[Power[y, Rational[-1, 2]], Plus[1, Power[y, Rational[1, 6]]]]");
+
+    /* Non-symbol base: Log[r]^(p/q) is treated identically. */
+    run_test("Together[1/Log[r]^(1/2) + 1/Log[r]^(1/3)]",
+             "Times[Power[Log[r], Rational[-1, 2]], Plus[1, Power[Log[r], Rational[1, 6]]]]");
+}
+
 void test_together() {
-    run_test("Together[a/b + c/d]", "Times[Power[b, -1], Power[d, -1], Plus[Times[a, d], Times[b, c]]]");
+    run_test("Together[a/b + c/d]", "Times[Power[b, -1], Power[d, -1], Plus[Times[b, c], Times[a, d]]]");
     run_test("Together[x^2/(x^2 - 1) + x/(x^2 - 1)]", "Times[x, Power[Plus[-1, x], -1]]");
     run_test("Together[1/x + 1/(x + 1) + 1/(x + 2) + 1/(x + 3)]", "Times[Plus[6, Times[22, x], Times[18, Power[x, 2]], Times[4, Power[x, 3]]], Power[Plus[Times[6, x], Times[11, Power[x, 2]], Times[6, Power[x, 3]], Power[x, 4]], -1]]");
     run_test("Together[x^2/(x - y) - x y/(x - y)]", "x");
-    run_test("Together[{1/x + 1/(x + 1), 1/(x + 2) + 1/(x + 3)}]", "List[Times[Plus[1, Times[2, x]], Power[Plus[x, Power[x, 2]], -1]], Times[Plus[5, Times[2, x]], Power[Plus[6, Times[5, x], Power[x, 2]], -1]]]");
+    run_test("Together[{1/x + 1/(x + 1), 1/(x + 2) + 1/(x + 3)}]", "List[Times[Power[Plus[x, Power[x, 2]], -1], Plus[1, Times[2, x]]], Times[Plus[5, Times[2, x]], Power[Plus[6, Times[5, x], Power[x, 2]], -1]]]");
     run_test("Together[(x - 1)/(x^2 - 1) + (x - 2)/(x^2 - 4)]", "Times[Plus[3, Times[2, x]], Power[Plus[2, Times[3, x], Power[x, 2]], -1]]");
 }
 
@@ -86,7 +173,10 @@ int main() {
     TEST(test_numerator);
     TEST(test_denominator);
     TEST(test_cancel);
+    TEST(test_cancel_algebraic_generator);
+    TEST(test_cancel_nonsymbol_base);
     TEST(test_together);
+    TEST(test_together_algebraic_generator);
     printf("All rat tests passed!\n");
 
     return 0;

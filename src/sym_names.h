@@ -1,0 +1,692 @@
+/*
+ * sym_names.h
+ *
+ * Cached, interned pointers for well-known symbol names. After
+ * sym_names_init() runs, every `SYM_*` is the canonical pointer that
+ * `expr_new_symbol("Foo")` and `intern_symbol("Foo")` return for that
+ * name. This lets hot evaluator paths replace
+ *
+ *     strcmp(head->data.symbol, "List") == 0
+ *
+ * with the much cheaper
+ *
+ *     head->data.symbol == SYM_List
+ *
+ * Every name compared via strcmp on a symbol field anywhere in src/
+ * lives here; ad-hoc pointer comparisons elsewhere remain possible by
+ * calling intern_symbol() directly.
+ */
+
+#ifndef SYM_NAMES_H
+#define SYM_NAMES_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern const char* SYM_Abort;
+extern const char* SYM_Abs;
+extern const char* SYM_AbsRules;
+extern const char* SYM_AbsoluteTime;
+extern const char* SYM_Accumulate;
+extern const char* SYM_AccuracyGoal;
+extern const char* SYM_Algebraics;
+extern const char* SYM_All;
+extern const char* SYM_Alternatives;
+extern const char* SYM_And;
+extern const char* SYM_Apart;
+extern const char* SYM_ArcCos;
+extern const char* SYM_ArcCosh;
+extern const char* SYM_ArcCot;
+extern const char* SYM_ArcCoth;
+extern const char* SYM_ArcCsc;
+extern const char* SYM_ArcCsch;
+extern const char* SYM_ArcSec;
+extern const char* SYM_ArcSech;
+extern const char* SYM_ArcSin;
+extern const char* SYM_ArcSinh;
+extern const char* SYM_ArcTan;
+extern const char* SYM_ArcTanh;
+extern const char* SYM_Arg;
+extern const char* SYM_Arnoldi;
+extern const char* SYM_Array;
+extern const char* SYM_AssumptionRules;
+extern const char* SYM_Assumptions;
+extern const char* SYM_Automatic;
+extern const char* SYM_Banded;
+extern const char* SYM_Base;
+extern const char* SYM_BasisSize;
+extern const char* SYM_BlakeRationalBaseDescent;
+extern const char* SYM_Blank;
+extern const char* SYM_BlankNullSequence;
+extern const char* SYM_BlankSequence;
+extern const char* SYM_Block;
+extern const char* SYM_Boole;
+extern const char* SYM_Booleans;
+extern const char* SYM_Break;
+extern const char* SYM_Buchberger;
+extern const char* SYM_CFRAC;
+extern const char* SYM_Catalan;
+extern const char* SYM_Ceiling;
+extern const char* SYM_Chop;
+extern const char* SYM_ClearAll;
+extern const char* SYM_Clip;
+extern const char* SYM_CoefficientDomain;
+extern const char* SYM_CollectPerVariable;
+extern const char* SYM_Commonest;
+extern const char* SYM_CompensatedSummation;
+extern const char* SYM_Complex;
+extern const char* SYM_ComplexInfinity;
+extern const char* SYM_Complexes;
+extern const char* SYM_Composites;
+extern const char* SYM_Composition;
+extern const char* SYM_CompoundExpression;
+extern const char* SYM_MessageName;
+extern const char* SYM_Condition;
+extern const char* SYM_ConditionalExpression;
+extern const char* SYM_Conjugate;
+extern const char* SYM_ConjugateTranspose;
+extern const char* SYM_Continue;
+extern const char* SYM_ContinuedFraction;
+extern const char* SYM_ContourPoints;
+extern const char* SYM_CoprimeQ;
+extern const char* SYM_Cos;
+extern const char* SYM_Cosh;
+extern const char* SYM_Cot;
+extern const char* SYM_Coth;
+extern const char* SYM_Csc;
+extern const char* SYM_Csch;
+extern const char* SYM_Cubics;
+extern const char* SYM_DampingFactor;
+extern const char* SYM_Degree;
+extern const char* SYM_DesignMatrix;
+extern const char* SYM_DegreeLexicographic;
+extern const char* SYM_DegreeReverseLexicographic;
+extern const char* SYM_DeleteCases;
+extern const char* SYM_DeleteDuplicates;
+extern const char* SYM_Derivative;
+extern const char* SYM_DiagonalMatrixQ;
+extern const char* SYM_Differences;
+extern const char* SYM_Direct;
+extern const char* SYM_DirectedInfinity;
+extern const char* SYM_Direction;
+extern const char* SYM_DiscreteDelta;
+extern const char* SYM_Divide;
+extern const char* SYM_Divisible;
+extern const char* SYM_Divisors;
+extern const char* SYM_DivisorSigma;
+extern const char* SYM_Dixon;
+extern const char* SYM_Do;
+extern const char* SYM_DollarMachineEpsilon;
+extern const char* SYM_DollarMachinePrecision;
+extern const char* SYM_DollarMaxMachineNumber;
+extern const char* SYM_DollarMaxNumber;
+extern const char* SYM_DollarMinMachineNumber;
+extern const char* SYM_DollarMinNumber;
+extern const char* SYM_Drop;
+extern const char* SYM_AiryAi;
+extern const char* SYM_AiryAiPrime;
+extern const char* SYM_BesselJ;
+extern const char* SYM_BesselK;
+extern const char* SYM_BesselI;
+extern const char* SYM_BesselY;
+extern const char* SYM_E;
+extern const char* SYM_Eigenvalues;
+extern const char* SYM_Erf;
+extern const char* SYM_Erfc;
+extern const char* SYM_Erfi;
+extern const char* SYM_ExpIntegralEi;
+extern const char* SYM_LogIntegral;
+extern const char* SYM_InverseErf;
+extern const char* SYM_InverseErfc;
+extern const char* SYM_Eigenvectors;
+extern const char* SYM_ECM;
+extern const char* SYM_Element;
+extern const char* SYM_Eliminate;
+extern const char* SYM_EliminationOrder;
+extern const char* SYM_Equal;
+extern const char* SYM_EulerGamma;
+extern const char* SYM_EulerSum;
+extern const char* SYM_Evaluate;
+extern const char* SYM_EvaluationMonitor;
+extern const char* SYM_Except;
+extern const char* SYM_Exclusions;
+extern const char* SYM_Exp;
+extern const char* SYM_ExtendedGCD;
+extern const char* SYM_Extension;
+extern const char* SYM_FEAST;
+extern const char* SYM_Factor;
+extern const char* SYM_Fit;
+extern const char* SYM_FitRegularization;
+extern const char* SYM_FactorSquareFree;
+extern const char* SYM_FactorTerms;
+extern const char* SYM_False;
+extern const char* SYM_FileBaseName;
+extern const char* SYM_FileExistsQ;
+extern const char* SYM_FileExtension;
+extern const char* SYM_FilePrint;
+extern const char* SYM_Fermat;
+extern const char* SYM_Fibonacci;
+extern const char* SYM_LucasL;
+extern const char* SYM_LegendreP;
+extern const char* SYM_FindIntegerNullVector;
+extern const char* SYM_FindMaximum;
+extern const char* SYM_FindMinimum;
+extern const char* SYM_FindRoot;
+extern const char* SYM_Flat;
+extern const char* SYM_Flatten;
+extern const char* SYM_Floor;
+extern const char* SYM_For;
+extern const char* SYM_FractionalPart;
+extern const char* SYM_Frobenius;
+extern const char* SYM_FromAbove;
+extern const char* SYM_FromBelow;
+extern const char* SYM_FromContinuedFraction;
+extern const char* SYM_FromDigits;
+extern const char* SYM_Full;
+extern const char* SYM_FullForm;
+extern const char* SYM_Function;
+extern const char* SYM_Beta;
+extern const char* SYM_Gamma;
+extern const char* SYM_InterpolatingFunction;
+extern const char* SYM_Interpolation;
+extern const char* SYM_InterpolationOrder;
+extern const char* SYM_PeriodicInterpolation;
+extern const char* SYM_GaussianIntegers;
+extern const char* SYM_GeneratedParameters;
+extern const char* SYM_Glaisher;
+extern const char* SYM_GoldenAngle;
+extern const char* SYM_GoldenRatio;
+extern const char* SYM_Gradient;
+extern const char* SYM_Greater;
+extern const char* SYM_GreaterEqual;
+extern const char* SYM_GroebnerBasis;
+extern const char* SYM_GroebnerWalk;
+extern const char* SYM_HankelMatrix;
+extern const char* SYM_HarmonicNumber;
+extern const char* SYM_Heads;
+extern const char* SYM_Hypergeometric0F1;
+extern const char* SYM_Hypergeometric1F1;
+extern const char* SYM_Hypergeometric2F1;
+extern const char* SYM_HypergeometricPFQ;
+extern const char* SYM_HypergeometricPFQRegularized;
+extern const char* SYM_HeavisideTheta;
+extern const char* SYM_HermitianMatrixQ;
+extern const char* SYM_Hessian;
+extern const char* SYM_HilbertMatrix;
+extern const char* SYM_Hold;
+extern const char* SYM_HoldAll;
+extern const char* SYM_HoldAllComplete;
+extern const char* SYM_HoldComplete;
+extern const char* SYM_HoldFirst;
+extern const char* SYM_HoldForm;
+extern const char* SYM_HoldPattern;
+extern const char* SYM_HoldRest;
+extern const char* SYM_I;
+extern const char* SYM_Identity;
+extern const char* SYM_If;
+extern const char* SYM_Im;
+extern const char* SYM_Implies;
+extern const char* SYM_Indeterminate;
+extern const char* SYM_InexactNumbers;
+extern const char* SYM_Inequality;
+extern const char* SYM_Infinity;
+extern const char* SYM_InputForm;
+extern const char* SYM_Integer;
+extern const char* SYM_IntegerDigits;
+extern const char* SYM_IntegerLength;
+extern const char* SYM_IntegerExponent;
+extern const char* SYM_DigitCount;
+extern const char* SYM_DigitSum;
+extern const char* SYM_IntegerString;
+extern const char* SYM_IntegerPart;
+extern const char* SYM_IntegerPartitions;
+extern const char* SYM_Integers;
+extern const char* SYM_Integrate;
+extern const char* SYM_Interval;
+extern const char* SYM_Inverse;
+extern const char* SYM_InverseFunction;
+extern const char* SYM_InverseFunctions;
+extern const char* SYM_IrreduciblePolynomialQ;
+extern const char* SYM_Jacobian;
+extern const char* SYM_JacobiSymbol;
+extern const char* SYM_Join;
+extern const char* SYM_Khinchin;
+extern const char* SYM_KroneckerDelta;
+extern const char* SYM_Less;
+extern const char* SYM_LeastSquares;
+extern const char* SYM_LessEqual;
+extern const char* SYM_Level;
+extern const char* SYM_Lexicographic;
+extern const char* SYM_LatticeReduce;
+extern const char* SYM_LinearSolve;
+extern const char* SYM_LiouvilleLambda;
+extern const char* SYM_PrimeOmega;
+extern const char* SYM_PrimeNu;
+extern const char* SYM_List;
+extern const char* SYM_Listable;
+extern const char* SYM_ListQ;
+extern const char* SYM_LUDecomposition;
+extern const char* SYM_Locked;
+extern const char* SYM_Log;
+extern const char* SYM_LogGamma;
+extern const char* SYM_Log1p;
+extern const char* SYM_LogExpRules;
+extern const char* SYM_Longest;
+extern const char* SYM_MachineEpsilon;
+extern const char* SYM_MachineNumberQ;
+extern const char* SYM_MachinePrecision;
+extern const char* SYM_MantissaExponent;
+extern const char* SYM_Max;
+extern const char* SYM_MaxIterations;
+extern const char* SYM_MaxPoints;
+extern const char* SYM_MaxRecursion;
+extern const char* SYM_MaxRoots;
+extern const char* SYM_MatrixQ;
+extern const char* SYM_MatrixRank;
+extern const char* SYM_Method;
+extern const char* SYM_Min;
+extern const char* SYM_MinimalPolynomial;
+extern const char* SYM_MinRecursion;
+extern const char* SYM_Mod;
+extern const char* SYM_Module;
+extern const char* SYM_Modulus;
+extern const char* SYM_MoebiusMu;
+extern const char* SYM_MonomialOrder;
+extern const char* SYM_MultiplicativeOrder;
+extern const char* SYM_ND;
+extern const char* SYM_NHoldAll;
+extern const char* SYM_NHoldFirst;
+extern const char* SYM_NHoldRest;
+extern const char* SYM_NIntegrate;
+extern const char* SYM_NLimit;
+extern const char* SYM_NResidue;
+extern const char* SYM_NRoots;
+extern const char* SYM_NSolve;
+extern const char* SYM_NSeries;
+extern const char* SYM_NSum;
+extern const char* SYM_NSumTerms;
+extern const char* SYM_NSumExtraTerms;
+extern const char* SYM_NProduct;
+extern const char* SYM_NProductFactors;
+extern const char* SYM_NProductExtraFactors;
+extern const char* SYM_VerifyConvergence;
+extern const char* SYM_EulerMaclaurin;
+extern const char* SYM_AlternatingSigns;
+extern const char* SYM_WynnEpsilon;
+extern const char* SYM_Compiled;
+extern const char* SYM_RealExponent;
+extern const char* SYM_Negative;
+extern const char* SYM_NonNegative;
+extern const char* SYM_NonPositive;
+extern const char* SYM_NegativeDefiniteMatrixQ;
+extern const char* SYM_NonConstants;
+extern const char* SYM_None;
+extern const char* SYM_Normalize;
+extern const char* SYM_NormFunction;
+extern const char* SYM_Not;
+extern const char* SYM_Null;
+extern const char* SYM_NullSpace;
+extern const char* SYM_NumericFunction;
+extern const char* SYM_OneIdentity;
+extern const char* SYM_Optional;
+extern const char* SYM_OptionsPattern;
+extern const char* SYM_Options;
+extern const char* SYM_OptionValue;
+extern const char* SYM_SetOptions;
+extern const char* SYM_ZeroTest;
+extern const char* SYM_Or;
+extern const char* SYM_Orderless;
+extern const char* SYM_Overflow;
+extern const char* SYM_ParameterVariables;
+extern const char* SYM_Part;
+extern const char* SYM_Partition;
+extern const char* SYM_PartitionsP;
+extern const char* SYM_PartitionsQ;
+extern const char* SYM_PadRight;
+extern const char* SYM_PadLeft;
+extern const char* SYM_Pattern;
+extern const char* SYM_PatternTest;
+extern const char* SYM_Pi;
+extern const char* SYM_Piecewise;
+extern const char* SYM_Pivoting;
+extern const char* SYM_Plus;
+extern const char* SYM_Pochhammer;
+extern const char* SYM_PolyGamma;
+extern const char* SYM_PollardRho;
+extern const char* SYM_PolynomialGCD;
+extern const char* SYM_Polynomials;
+extern const char* SYM_Positive;
+extern const char* SYM_PositiveDefiniteMatrixQ;
+extern const char* SYM_PossibleZeroQ;
+extern const char* SYM_Power;
+extern const char* SYM_PowerExpand;
+extern const char* SYM_PrecisionGoal;
+extern const char* SYM_Prime;
+extern const char* SYM_Primes;
+extern const char* SYM_Product;
+extern const char* SYM_ProductLog;
+extern const char* SYM_PrimitiveRoot;
+extern const char* SYM_PrimitiveRootList;
+extern const char* SYM_Protect;
+extern const char* SYM_Protected;
+extern const char* SYM_PseudoInverse;
+extern const char* SYM_Put;
+extern const char* SYM_PutAppend;
+extern const char* SYM_QRDecomposition;
+extern const char* SYM_Quartics;
+extern const char* SYM_Quit;
+extern const char* SYM_Quotient;
+extern const char* SYM_Radius;
+extern const char* SYM_Range;
+extern const char* SYM_Rational;
+extern const char* SYM_RationalFunctions;
+extern const char* SYM_Rationals;
+extern const char* SYM_Ratios;
+extern const char* SYM_Re;
+extern const char* SYM_ReadProtected;
+extern const char* SYM_Remove;
+extern const char* SYM_Real;
+extern const char* SYM_RealDigits;
+extern const char* SYM_Reals;
+extern const char* SYM_Repeated;
+extern const char* SYM_RepeatedNull;
+extern const char* SYM_Rescale;
+extern const char* SYM_Return;
+extern const char* SYM_Reverse;
+extern const char* SYM_Root;
+extern const char* SYM_RootSum;
+extern const char* SYM_RotateLeft;
+extern const char* SYM_RotateRight;
+extern const char* SYM_Round;
+extern const char* SYM_Rule;
+extern const char* SYM_RuleDelayed;
+extern const char* SYM_SameQ;
+extern const char* SYM_SameTest;
+extern const char* SYM_Scale;
+extern const char* SYM_Sec;
+extern const char* SYM_Sech;
+extern const char* SYM_Sequence;
+extern const char* SYM_SequenceHold;
+extern const char* SYM_SequenceLimit;
+extern const char* SYM_SeriesData;
+extern const char* SYM_Set;
+extern const char* SYM_SetDelayed;
+extern const char* SYM_ShanksSquareForms;
+extern const char* SYM_Shortest;
+extern const char* SYM_Sign;
+extern const char* SYM_Sin;
+extern const char* SYM_SingularValueDecomposition;
+extern const char* SYM_Sinh;
+extern const char* SYM_Slot;
+extern const char* SYM_SlotSequence;
+extern const char* SYM_Solve;
+extern const char* SYM_SolveAlways;
+extern const char* SYM_SolvePolynomialEquality;
+extern const char* SYM_Sort;
+extern const char* SYM_Span;
+extern const char* SYM_Split;
+extern const char* SYM_Sqrt;
+extern const char* SYM_SquareFreeQ;
+extern const char* SYM_SquareMatrixQ;
+extern const char* SYM_StepMonitor;
+extern const char* SYM_String;
+extern const char* SYM_SubresultantPolynomials;
+extern const char* SYM_Subresultants;
+extern const char* SYM_SubspaceSize;
+extern const char* SYM_Switch;
+extern const char* SYM_Symbol;
+extern const char* SYM_SymmetricMatrixQ;
+extern const char* SYM_Table;
+extern const char* SYM_Take;
+extern const char* SYM_Tally;
+extern const char* SYM_Tan;
+extern const char* SYM_Tanh;
+extern const char* SYM_TargetStructure;
+extern const char* SYM_TeXForm;
+extern const char* SYM_Temporary;
+extern const char* SYM_Terms;
+extern const char* SYM_Thread;
+extern const char* SYM_Throw;
+extern const char* SYM_TimeConstrained;
+extern const char* SYM_Times;
+extern const char* SYM_ToeplitzMatrix;
+extern const char* SYM_Tolerance;
+extern const char* SYM_Transpose;
+extern const char* SYM_ToExpression;
+extern const char* SYM_ToRadicals;
+extern const char* SYM_ToString;
+extern const char* SYM_Total;
+extern const char* SYM_TrialDivision;
+extern const char* SYM_TrigExpand;
+extern const char* SYM_TrigFactor;
+extern const char* SYM_TrigReduce;
+extern const char* SYM_TrigRoundtrip;
+extern const char* SYM_TrigToExp;
+extern const char* SYM_True;
+extern const char* SYM_TwoSided;
+extern const char* SYM_Undefined;
+extern const char* SYM_Unequal;
+extern const char* SYM_Unevaluated;
+extern const char* SYM_Union;
+extern const char* SYM_Unprotect;
+extern const char* SYM_UnitStep;
+extern const char* SYM_UnsameQ;
+extern const char* SYM_Unset;
+extern const char* SYM_UpTo;
+extern const char* SYM_UpperTriangularMatrixQ;
+extern const char* SYM_VandermondeMatrix;
+extern const char* SYM_VectorQ;
+extern const char* SYM_Verbatim;
+extern const char* SYM_VerifySolutions;
+extern const char* SYM_Which;
+extern const char* SYM_While;
+extern const char* SYM_With;
+extern const char* SYM_WorkingPrecision;
+extern const char* SYM_WynnDegree;
+extern const char* SYM_Xor;
+extern const char* SYM_StieltjesGamma;
+extern const char* SYM_Zeta;
+extern const char* SYM_HurwitzZeta;
+extern const char* SYM_BernoulliB;
+extern const char* SYM_EulerE;
+extern const char* SYM_PolyLog;
+extern const char* SYM_LerchPhi;
+extern const char* SYM_DoublyInfinite;
+extern const char* SYM_IncludeSingularTerm;
+
+/* Legitimate uncached builtins and system variables migrated to cached
+ * SYM_* pointers (2026-06-16). Excludes context-qualified/private and
+ * dummy symbols, which must never be cached. */
+extern const char* SYM_Apply;
+extern const char* SYM_Cancel;
+extern const char* SYM_Cases;
+extern const char* SYM_Coefficient;
+extern const char* SYM_CoefficientList;
+extern const char* SYM_Collect;
+extern const char* SYM_Constant;
+extern const char* SYM_Count;
+extern const char* SYM_D;
+extern const char* SYM_Decrement;
+extern const char* SYM_Default;
+extern const char* SYM_Denominator;
+extern const char* SYM_Det;
+extern const char* SYM_DiagonalMatrix;
+extern const char* SYM_Dot;
+extern const char* SYM_Expand;
+extern const char* SYM_Extract;
+extern const char* SYM_Factorial;
+extern const char* SYM_Factorial2;
+extern const char* SYM_FreeQ;
+extern const char* SYM_IdentityMatrix;
+extern const char* SYM_In;
+extern const char* SYM_Increment;
+extern const char* SYM_Information;
+extern const char* SYM_Map;
+extern const char* SYM_MapAll;
+extern const char* SYM_Mean;
+extern const char* SYM_Median;
+extern const char* SYM_MemberQ;
+extern const char* SYM_N;
+extern const char* SYM_Norm;
+extern const char* SYM_Numerator;
+extern const char* SYM_NumericQ;
+extern const char* SYM_O;
+extern const char* SYM_Out;
+extern const char* SYM_PolynomialExtendedGCD;
+extern const char* SYM_PolynomialLCM;
+extern const char* SYM_PolynomialQ;
+extern const char* SYM_PolynomialQuotient;
+extern const char* SYM_PolynomialQuotientRemainder;
+extern const char* SYM_PolynomialRemainder;
+extern const char* SYM_Position;
+extern const char* SYM_PreDecrement;
+extern const char* SYM_PreIncrement;
+extern const char* SYM_Quartiles;
+extern const char* SYM_RandomInteger;
+extern const char* SYM_RandomSeeding;
+extern const char* SYM_ReplaceAll;
+extern const char* SYM_ReplaceRepeated;
+extern const char* SYM_Resultant;
+extern const char* SYM_RowReduce;
+extern const char* SYM_Simplify;
+extern const char* SYM_StringPart;
+extern const char* SYM_StringTake;
+extern const char* SYM_SubresultantPolynomialRemainders;
+extern const char* SYM_Subtract;
+extern const char* SYM_Sum;
+extern const char* SYM_Together;
+extern const char* SYM_Variables;
+extern const char* SYM_Variance;
+extern const char* SYM_DollarAborted;
+extern const char* SYM_DollarAssumptions;
+extern const char* SYM_DollarEpilog;
+extern const char* SYM_DollarFailed;
+extern const char* SYM_DollarLine;
+extern const char* SYM_DollarMaxExtraPrecision;
+extern const char* SYM_DollarModuleNumber;
+extern const char* SYM_DollarRecursionLimit;
+extern const char* SYM_DollarSimplifyDebug;
+extern const char* SYM_DollarruSimplify;
+
+/* Graphics engine (src/graphics/): primitives, style directives, and
+ * Graphics[]/Show[]/Plot[] plus Plot's option names. MaxRecursion is
+ * shared with the existing NIntegrate/ND option of the same name above. */
+extern const char* SYM_Graphics;
+extern const char* SYM_Point;
+extern const char* SYM_Line;
+extern const char* SYM_Rectangle;
+extern const char* SYM_Circle;
+extern const char* SYM_Disk;
+extern const char* SYM_Polygon;
+extern const char* SYM_Text;
+extern const char* SYM_Show;
+extern const char* SYM_Plot;
+extern const char* SYM_RGBColor;
+extern const char* SYM_GrayLevel;
+extern const char* SYM_CMYKColor;
+extern const char* SYM_Opacity;
+extern const char* SYM_Thickness;
+extern const char* SYM_PointSize;
+extern const char* SYM_PlotPoints;
+extern const char* SYM_MaxPlotPoints;
+extern const char* SYM_Mesh;
+extern const char* SYM_PlotRange;
+extern const char* SYM_PlotStyle;
+extern const char* SYM_Axes;
+extern const char* SYM_AxesLabel;
+extern const char* SYM_Frame;
+extern const char* SYM_FrameStyle;
+extern const char* SYM_FrameTicks;
+extern const char* SYM_PlotLabel;
+extern const char* SYM_AspectRatio;
+extern const char* SYM_Background;
+extern const char* SYM_ImageSize;
+extern const char* SYM_AxesOrigin;
+extern const char* SYM_AxesStyle;
+extern const char* SYM_TicksStyle;
+extern const char* SYM_FrameLabel;
+extern const char* SYM_RotateLabel;
+extern const char* SYM_PlotRangePadding;
+extern const char* SYM_GridLines;
+extern const char* SYM_GridLinesStyle;
+extern const char* SYM_Prolog;
+extern const char* SYM_Epilog;
+/* Named color constants (RGBColor[...] equivalents), recognized anywhere a
+ * graphics style directive is read. */
+extern const char* SYM_Black;
+extern const char* SYM_White;
+extern const char* SYM_Gray;
+extern const char* SYM_LightGray;
+extern const char* SYM_Red;
+extern const char* SYM_Green;
+extern const char* SYM_Blue;
+extern const char* SYM_Cyan;
+extern const char* SYM_Magenta;
+extern const char* SYM_Yellow;
+extern const char* SYM_Orange;
+extern const char* SYM_Pink;
+extern const char* SYM_Purple;
+extern const char* SYM_Brown;
+extern const char* SYM_LightRed;
+extern const char* SYM_LightGreen;
+extern const char* SYM_LightBlue;
+extern const char* SYM_LightCyan;
+extern const char* SYM_LightMagenta;
+extern const char* SYM_LightYellow;
+extern const char* SYM_LightBrown;
+extern const char* SYM_LightOrange;
+extern const char* SYM_LightPink;
+extern const char* SYM_LightPurple;
+extern const char* SYM_Hue;
+extern const char* SYM_ColorFunction;
+extern const char* SYM_ColorFunctionScaling;
+extern const char* SYM_Filling;
+extern const char* SYM_FillingStyle;
+extern const char* SYM_Axis;
+extern const char* SYM_Bottom;
+extern const char* SYM_Top;
+extern const char* SYM_PlotLegends;
+extern const char* SYM_RegionFunction;
+extern const char* SYM_LabelStyle;
+/* Internal: carries Plot's per-curve legend swatch colors and labels
+ * inside the returned Graphics[...] for draw_legend() to read. */
+extern const char* SYM_PlotLegendData;
+/* Internal: carries Plot's function/var/options inside the returned
+ * Graphics[...] so the renderer can re-sample adaptively on zoom. */
+extern const char* SYM_PlotResample;
+extern const char* SYM_ListPlot;     /* ListPlot[data, opts...] */
+extern const char* SYM_Joined;       /* ListPlot option: connect points */
+extern const char* SYM_DataRange;    /* ListPlot option: x-range for heights */
+extern const char* SYM_PlotMarkers;  /* ListPlot option: point glyphs */
+
+/* FLINT` context: direct REPL access to the FLINT-backed kernels that also
+ * accelerate the corresponding System` builtins transparently. Each is a thin
+ * wrapper over src/poly/flint_bridge.c (and, later, the matrix / numeric
+ * bridges). Registered in the owning subsystem's *_init(); return NULL (input
+ * out of scope) or when built without FLINT, so callers see an unevaluated
+ * FLINT`f[...]. */
+extern const char* SYM_FLINT_PolynomialGCD;   /* FLINT`PolynomialGCD[a,b] */
+extern const char* SYM_FLINT_Resultant;       /* FLINT`Resultant[a,b,x]   */
+extern const char* SYM_FLINT_Factor;          /* FLINT`Factor[p]          */
+extern const char* SYM_FLINT_FactorSquareFree;/* FLINT`FactorSquareFree[p]*/
+extern const char* SYM_FLINT_Det;             /* FLINT`Det[m]             */
+extern const char* SYM_FLINT_Inverse;         /* FLINT`Inverse[m]         */
+extern const char* SYM_FLINT_LinearSolve;     /* FLINT`LinearSolve[m,b]   */
+extern const char* SYM_FLINT_RowReduce;       /* FLINT`RowReduce[m]       */
+extern const char* SYM_FLINT_MatrixRank;      /* FLINT`MatrixRank[m]      */
+extern const char* SYM_FLINT_Zeta;            /* FLINT`Zeta[s]            */
+extern const char* SYM_FLINT_HurwitzZeta;     /* FLINT`HurwitzZeta[s,a]   */
+extern const char* SYM_FLINT_PolyGamma;       /* FLINT`PolyGamma[n,z]     */
+extern const char* SYM_FLINT_StieltjesGamma;  /* FLINT`StieltjesGamma[n]  */
+
+/* Populate every SYM_* by interning its name string. Idempotent: safe
+ * to call repeatedly. Must run before any consumer reads a SYM_*
+ * pointer; in practice it is called from core_init(). */
+void sym_names_init(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* SYM_NAMES_H */

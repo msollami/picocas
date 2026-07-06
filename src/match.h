@@ -6,11 +6,13 @@
 #include <stddef.h>
 
 // Environment to store pattern bindings (e.g., x -> 4)
-typedef struct {
+typedef struct MatchEnv {
     char** symbols;
     Expr** values;
     size_t count;
     size_t capacity;
+    bool (*callback)(struct MatchEnv*, void*);
+    void* callback_data;
 } MatchEnv;
 
 // Create a new empty match environment

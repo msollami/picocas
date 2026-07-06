@@ -7,8 +7,24 @@
 Expr* builtin_apply(Expr* res);
 Expr* builtin_map(Expr* res);
 Expr* builtin_map_all(Expr* res);
+Expr* builtin_map_at(Expr* res);
+Expr* builtin_nest(Expr* res);
+Expr* builtin_nestlist(Expr* res);
+Expr* builtin_nestwhile(Expr* res);
+Expr* builtin_nestwhilelist(Expr* res);
+Expr* builtin_fixedpointlist(Expr* res);
+Expr* builtin_fixedpoint(Expr* res);
+Expr* builtin_fold(Expr* res);
+Expr* builtin_foldlist(Expr* res);
 Expr* builtin_select(Expr* res);
 Expr* builtin_through(Expr* res);
+Expr* builtin_thread(Expr* res);
 Expr* builtin_freeq(Expr* res);
+Expr* builtin_distribute(Expr* res);
 
 #endif
+
+Expr* builtin_inner(Expr* res);
+Expr* builtin_outer(Expr* res);
+Expr* builtin_tuples(Expr* res);
+Expr* builtin_permutations(Expr* res);

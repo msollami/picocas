@@ -1,6 +1,7 @@
 #include "internal.h"
 #include "eval.h"
 #include "symtab.h"
+#include "sym_names.h"
 #include <string.h>
 #include <stdlib.h>
 extern Expr* builtin_table(Expr* res);
@@ -19,6 +20,7 @@ extern Expr* builtin_union(Expr* res);
 extern Expr* builtin_deleteduplicates(Expr* res);
 extern Expr* builtin_split(Expr* res);
 extern Expr* builtin_total(Expr* res);
+extern Expr* builtin_commonest(Expr* res);
 extern Expr* builtin_min(Expr* res);
 extern Expr* builtin_max(Expr* res);
 extern Expr* builtin_listq(Expr* res);
@@ -74,6 +76,7 @@ extern Expr* builtin_arcsech(Expr* res);
 extern Expr* builtin_arccsch(Expr* res);
 extern Expr* builtin_primeq(Expr* res);
 extern Expr* builtin_primepi(Expr* res);
+extern Expr* builtin_memberq(Expr* res);
 extern Expr* builtin_factorinteger(Expr* res);
 extern Expr* builtin_nextprime(Expr* res);
 extern Expr* builtin_eulerphi(Expr* res);
@@ -84,6 +87,7 @@ extern Expr* builtin_abs(Expr* res);
 extern Expr* builtin_conjugate(Expr* res);
 extern Expr* builtin_arg(Expr* res);
 extern Expr* builtin_mean(Expr* res);
+extern Expr* builtin_rootmeansquare(Expr* res);
 extern Expr* builtin_variance(Expr* res);
 extern Expr* builtin_standard_deviation(Expr* res);
 extern Expr* builtin_slot(Expr* res);
@@ -129,6 +133,7 @@ extern Expr* builtin_through(Expr* res);
 extern Expr* builtin_select(Expr* res);
 extern Expr* builtin_freeq(Expr* res);
 extern Expr* builtin_sort(Expr* res);
+extern Expr* builtin_orderedq(Expr* res);
 extern Expr* builtin_level(Expr* res);
 extern Expr* builtin_depth(Expr* res);
 extern Expr* builtin_leafcount(Expr* res);
@@ -157,6 +162,7 @@ extern Expr* builtin_replace_part(Expr* res);
 extern Expr* builtin_replace(Expr* res);
 extern Expr* builtin_replace_all(Expr* res);
 extern Expr* builtin_replace_repeated(Expr* res);
+extern Expr* builtin_replacelist(Expr* res);
 extern Expr* builtin_module(Expr* res);
 extern Expr* builtin_block(Expr* res);
 extern Expr* builtin_with(Expr* res);
@@ -177,6 +183,7 @@ extern Expr* builtin_log(Expr* res);
 extern Expr* builtin_exp(Expr* res);
 extern Expr* builtin_timing(Expr* res);
 extern Expr* builtin_repeated_timing(Expr* res);
+extern Expr* builtin_possible_zero_q(Expr* res);
 
 Expr* internal_call_impl(const char* name, Expr* (*builtin_func)(Expr*), Expr** args, size_t count) {
     Expr* res = expr_new_function(expr_new_symbol(name), args, count);
@@ -192,26 +199,27 @@ Expr* internal_call_impl(const char* name, Expr* (*builtin_func)(Expr*), Expr** 
     return res;
 }
 Expr* internal_table(Expr** args, size_t count) { return internal_call_impl("Table", builtin_table, args, count); }
-Expr* internal_range(Expr** args, size_t count) { return internal_call_impl("Range", builtin_range, args, count); }
-Expr* internal_array(Expr** args, size_t count) { return internal_call_impl("Array", builtin_array, args, count); }
+Expr* internal_range(Expr** args, size_t count) { return internal_call_impl(SYM_Range, builtin_range, args, count); }
+Expr* internal_array(Expr** args, size_t count) { return internal_call_impl(SYM_Array, builtin_array, args, count); }
 Expr* internal_take(Expr** args, size_t count) { return internal_call_impl("Take", builtin_take, args, count); }
 Expr* internal_drop(Expr** args, size_t count) { return internal_call_impl("Drop", builtin_drop, args, count); }
-Expr* internal_flatten(Expr** args, size_t count) { return internal_call_impl("Flatten", builtin_flatten, args, count); }
-Expr* internal_partition(Expr** args, size_t count) { return internal_call_impl("Partition", builtin_partition, args, count); }
-Expr* internal_rotateleft(Expr** args, size_t count) { return internal_call_impl("RotateLeft", builtin_rotateleft, args, count); }
-Expr* internal_rotateright(Expr** args, size_t count) { return internal_call_impl("RotateRight", builtin_rotateright, args, count); }
-Expr* internal_reverse(Expr** args, size_t count) { return internal_call_impl("Reverse", builtin_reverse, args, count); }
+Expr* internal_flatten(Expr** args, size_t count) { return internal_call_impl(SYM_Flatten, builtin_flatten, args, count); }
+Expr* internal_partition(Expr** args, size_t count) { return internal_call_impl(SYM_Partition, builtin_partition, args, count); }
+Expr* internal_rotateleft(Expr** args, size_t count) { return internal_call_impl(SYM_RotateLeft, builtin_rotateleft, args, count); }
+Expr* internal_rotateright(Expr** args, size_t count) { return internal_call_impl(SYM_RotateRight, builtin_rotateright, args, count); }
+Expr* internal_reverse(Expr** args, size_t count) { return internal_call_impl(SYM_Reverse, builtin_reverse, args, count); }
 Expr* internal_transpose(Expr** args, size_t count) { return internal_call_impl("Transpose", builtin_transpose, args, count); }
-Expr* internal_tally(Expr** args, size_t count) { return internal_call_impl("Tally", builtin_tally, args, count); }
-Expr* internal_union(Expr** args, size_t count) { return internal_call_impl("Union", builtin_union, args, count); }
-Expr* internal_deleteduplicates(Expr** args, size_t count) { return internal_call_impl("DeleteDuplicates", builtin_deleteduplicates, args, count); }
-Expr* internal_split(Expr** args, size_t count) { return internal_call_impl("Split", builtin_split, args, count); }
-Expr* internal_total(Expr** args, size_t count) { return internal_call_impl("Total", builtin_total, args, count); }
-Expr* internal_min(Expr** args, size_t count) { return internal_call_impl("Min", builtin_min, args, count); }
-Expr* internal_max(Expr** args, size_t count) { return internal_call_impl("Max", builtin_max, args, count); }
-Expr* internal_listq(Expr** args, size_t count) { return internal_call_impl("ListQ", builtin_listq, args, count); }
-Expr* internal_vectorq(Expr** args, size_t count) { return internal_call_impl("VectorQ", builtin_vectorq, args, count); }
-Expr* internal_matrixq(Expr** args, size_t count) { return internal_call_impl("MatrixQ", builtin_matrixq, args, count); }
+Expr* internal_tally(Expr** args, size_t count) { return internal_call_impl(SYM_Tally, builtin_tally, args, count); }
+Expr* internal_union(Expr** args, size_t count) { return internal_call_impl(SYM_Union, builtin_union, args, count); }
+Expr* internal_deleteduplicates(Expr** args, size_t count) { return internal_call_impl(SYM_DeleteDuplicates, builtin_deleteduplicates, args, count); }
+Expr* internal_split(Expr** args, size_t count) { return internal_call_impl(SYM_Split, builtin_split, args, count); }
+Expr* internal_total(Expr** args, size_t count) { return internal_call_impl(SYM_Total, builtin_total, args, count); }
+Expr* internal_commonest(Expr** args, size_t count) { return internal_call_impl(SYM_Commonest, builtin_commonest, args, count); }
+Expr* internal_min(Expr** args, size_t count) { return internal_call_impl(SYM_Min, builtin_min, args, count); }
+Expr* internal_max(Expr** args, size_t count) { return internal_call_impl(SYM_Max, builtin_max, args, count); }
+Expr* internal_listq(Expr** args, size_t count) { return internal_call_impl(SYM_ListQ, builtin_listq, args, count); }
+Expr* internal_vectorq(Expr** args, size_t count) { return internal_call_impl(SYM_VectorQ, builtin_vectorq, args, count); }
+Expr* internal_matrixq(Expr** args, size_t count) { return internal_call_impl(SYM_MatrixQ, builtin_matrixq, args, count); }
 Expr* internal_and(Expr** args, size_t count) { return internal_call_impl("And", builtin_and, args, count); }
 Expr* internal_or(Expr** args, size_t count) { return internal_call_impl("Or", builtin_or, args, count); }
 Expr* internal_not(Expr** args, size_t count) { return internal_call_impl("Not", builtin_not, args, count); }
@@ -262,6 +270,7 @@ Expr* internal_arcsech(Expr** args, size_t count) { return internal_call_impl("A
 Expr* internal_arccsch(Expr** args, size_t count) { return internal_call_impl("ArcCsch", builtin_arccsch, args, count); }
 Expr* internal_primeq(Expr** args, size_t count) { return internal_call_impl("PrimeQ", builtin_primeq, args, count); }
 Expr* internal_primepi(Expr** args, size_t count) { return internal_call_impl("PrimePi", builtin_primepi, args, count); }
+Expr* internal_memberq(Expr** args, size_t count) { return internal_call_impl("MemberQ", builtin_memberq, args, count); }
 Expr* internal_factorinteger(Expr** args, size_t count) { return internal_call_impl("FactorInteger", builtin_factorinteger, args, count); }
 Expr* internal_nextprime(Expr** args, size_t count) { return internal_call_impl("NextPrime", builtin_nextprime, args, count); }
 Expr* internal_eulerphi(Expr** args, size_t count) { return internal_call_impl("EulerPhi", builtin_eulerphi, args, count); }
@@ -272,6 +281,7 @@ Expr* internal_abs(Expr** args, size_t count) { return internal_call_impl("Abs",
 Expr* internal_conjugate(Expr** args, size_t count) { return internal_call_impl("Conjugate", builtin_conjugate, args, count); }
 Expr* internal_arg(Expr** args, size_t count) { return internal_call_impl("Arg", builtin_arg, args, count); }
 Expr* internal_mean(Expr** args, size_t count) { return internal_call_impl("Mean", builtin_mean, args, count); }
+Expr* internal_rootmeansquare(Expr** args, size_t count) { return internal_call_impl("RootMeanSquare", builtin_rootmeansquare, args, count); }
 Expr* internal_variance(Expr** args, size_t count) { return internal_call_impl("Variance", builtin_variance, args, count); }
 Expr* internal_standard_deviation(Expr** args, size_t count) { return internal_call_impl("StandardDeviation", builtin_standard_deviation, args, count); }
 Expr* internal_slot(Expr** args, size_t count) { return internal_call_impl("Slot", builtin_slot, args, count); }
@@ -317,6 +327,7 @@ Expr* internal_through(Expr** args, size_t count) { return internal_call_impl("T
 Expr* internal_select(Expr** args, size_t count) { return internal_call_impl("Select", builtin_select, args, count); }
 Expr* internal_freeq(Expr** args, size_t count) { return internal_call_impl("FreeQ", builtin_freeq, args, count); }
 Expr* internal_sort(Expr** args, size_t count) { return internal_call_impl("Sort", builtin_sort, args, count); }
+Expr* internal_orderedq(Expr** args, size_t count) { return internal_call_impl("OrderedQ", builtin_orderedq, args, count); }
 Expr* internal_level(Expr** args, size_t count) { return internal_call_impl("Level", builtin_level, args, count); }
 Expr* internal_depth(Expr** args, size_t count) { return internal_call_impl("Depth", builtin_depth, args, count); }
 Expr* internal_leafcount(Expr** args, size_t count) { return internal_call_impl("LeafCount", builtin_leafcount, args, count); }
@@ -345,6 +356,7 @@ Expr* internal_replace_part(Expr** args, size_t count) { return internal_call_im
 Expr* internal_replace(Expr** args, size_t count) { return internal_call_impl("Replace", builtin_replace, args, count); }
 Expr* internal_replace_all(Expr** args, size_t count) { return internal_call_impl("ReplaceAll", builtin_replace_all, args, count); }
 Expr* internal_replace_repeated(Expr** args, size_t count) { return internal_call_impl("ReplaceRepeated", builtin_replace_repeated, args, count); }
+Expr* internal_replacelist(Expr** args, size_t count) { return internal_call_impl("ReplaceList", builtin_replacelist, args, count); }
 Expr* internal_module(Expr** args, size_t count) { return internal_call_impl("Module", builtin_module, args, count); }
 Expr* internal_block(Expr** args, size_t count) { return internal_call_impl("Block", builtin_block, args, count); }
 Expr* internal_with(Expr** args, size_t count) { return internal_call_impl("With", builtin_with, args, count); }
@@ -365,3 +377,4 @@ Expr* internal_log(Expr** args, size_t count) { return internal_call_impl("Log",
 Expr* internal_exp(Expr** args, size_t count) { return internal_call_impl("Exp", builtin_exp, args, count); }
 Expr* internal_timing(Expr** args, size_t count) { return internal_call_impl("Timing", builtin_timing, args, count); }
 Expr* internal_repeated_timing(Expr** args, size_t count) { return internal_call_impl("RepeatedTiming", builtin_repeated_timing, args, count); }
+Expr* internal_possible_zero_q(Expr** args, size_t count) { return internal_call_impl("PossibleZeroQ", builtin_possible_zero_q, args, count); }

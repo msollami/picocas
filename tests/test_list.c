@@ -17,11 +17,15 @@ void test_min() {
         {"Min[{4, 1, 7, 2}]", "1"},
         {"Min[{{-1, 0, 1, 2}, {0, 2, 4, 6}, {-3, -2, -1, 0}}]", "-3"},
         {"Min[Infinity, 5]", "5"},
-        {"Min[-1 * Infinity, 5]", "-1 Infinity"},
+        {"Min[-1 * Infinity, 5]", "-Infinity"},
         {"Min[{a, b}, {c, d}]", "Min[a, b, c, d]"},
         {"Min[]", "Infinity"},
         {"Min[x, 3, 5]", "Min[3, x]"},
-        {"Min[x, x]", "x"}
+        {"Min[x, x]", "x"},
+        /* BigInt and MPFR must compare alongside Integer / Real. */
+        {"Min[10^50, 3]", "3"},
+        {"Min[10^50, 10^60, 10^40, 5]", "5"},
+        {"Min[10^50, 10^60, 10^40]", "10000000000000000000000000000000000000000"},
     };
 
     for (int i = 0; i < (int)(sizeof(tests) / sizeof(tests[0])); i++) {
@@ -47,9 +51,12 @@ void test_max() {
         {"Max[{4, 1, 7, 2}]", "7"},
         {"Max[Infinity, 5]", "Infinity"},
         {"Max[-1 * Infinity, 5]", "5"},
-        {"Max[]", "-1 Infinity"},
+        {"Max[]", "-Infinity"},
         {"Max[x, 3, 5]", "Max[5, x]"},
-        {"Max[x, x]", "x"}
+        {"Max[x, x]", "x"},
+        /* BigInt and MPFR must compare alongside Integer / Real. */
+        {"Max[10^50, 1.5]", "100000000000000000000000000000000000000000000000000"},
+        {"Max[10^50, 10^60, 10^40, 5]", "1000000000000000000000000000000000000000000000000000000000000"},
     };
 
     for (int i = 0; i < (int)(sizeof(tests) / sizeof(tests[0])); i++) {
@@ -463,9 +470,87 @@ void test_total() {
     }
 }
 
+void test_commonest() {
+    struct {
+        const char* input;
+        const char* expected;
+    } tests[] = {
+        {"Commonest[{b, a, c, 2, a, b, 1, 2}]", "{b, a, 2}"},
+        {"Commonest[{b, a, c, 2, a, b, 1, 2}, 4]", "{b, a, c, 2}"},
+        {"Commonest[{b, a, c, 2, a, b, 1, 2}, UpTo[6]]", "{b, a, c, 2, 1}"},
+        {"Commonest[{1, 2, 2, 3, 3, 3, 4}]", "{3}"},
+        {"Commonest[{a, E, Sin[y], E, a, 7}]", "{a, E}"},
+        {"Commonest[{1., 2., 2., 3., 3., 3., 4.}]", "{3.0}"},
+        {"Commonest[{a, E, Sin[y], E, a, 1.5, 3}, 10]", "{a, E, Sin[y], 1.5, 3}"}
+    };
+
+    for (int i = 0; i < (int)(sizeof(tests) / sizeof(tests[0])); i++) {
+        Expr* e = parse_expression(tests[i].input);
+        Expr* res = evaluate(e);
+        char* res_str = expr_to_string(res);
+        if (strcmp(res_str, tests[i].expected) != 0) {
+            printf("Commonest test failed: %s expected %s, got %s\n", tests[i].input, tests[i].expected, res_str);
+            ASSERT(0);
+        }
+        free(res_str);
+        expr_free(e);
+        expr_free(res);
+    }
+}
+
+void test_join_basic() {
+    /* Basic concatenation of lists */
+    assert_eval_eq("Join[{a, b, c}, {x, y}, {u, v, w}]",
+                   "{a, b, c, x, y, u, v, w}", 0);
+}
+
+void test_join_two_lists() {
+    assert_eval_eq("Join[{1, 2}, {3, 4}]", "{1, 2, 3, 4}", 0);
+}
+
+void test_join_single_list() {
+    assert_eval_eq("Join[{a, b}]", "{a, b}", 0);
+}
+
+void test_join_empty_lists() {
+    assert_eval_eq("Join[{}, {a, b}]", "{a, b}", 0);
+    assert_eval_eq("Join[{a, b}, {}]", "{a, b}", 0);
+    assert_eval_eq("Join[{}, {}]", "{}", 0);
+}
+
+void test_join_non_list_head() {
+    /* Join works on any head, not just List */
+    assert_eval_eq("Join[f[a, b], f[c, d]]", "f[a, b, c, d]", 0);
+}
+
+void test_join_mismatched_heads() {
+    /* Mismatched heads: should remain unevaluated */
+    assert_eval_eq("Join[{a, b}, f[c, d]]", "Join[{a, b}, f[c, d]]", 0);
+}
+
+void test_join_level2_matrices() {
+    /* Join columns of two matrices */
+    assert_eval_eq("Join[{{a, b}, {c, d}}, {{1, 2}, {3, 4}}, 2]",
+                   "{{a, b, 1, 2}, {c, d, 3, 4}}", 0);
+}
+
+void test_join_level2_ragged() {
+    /* Ragged arrays: successive elements at level 2 are concatenated */
+    assert_eval_eq("Join[{{1}, {5, 6}}, {{2, 3}, {7}}, {{4}, {8}}, 2]",
+                   "{{1, 2, 3, 4}, {5, 6, 7, 8}}", 0);
+}
+
+void test_join_level2_ragged_unequal_lengths() {
+    /* When one list has fewer rows, extra rows pass through */
+    assert_eval_eq("Join[{{x}}, {{1, 2}, {3, 4}}, 2]",
+                   "{{x, 1, 2}, {3, 4}}", 0);
+}
+
 int main() {
     symtab_init();
     core_init();
+    extern void trig_init(void);
+    trig_init();
     
     TEST(test_min);
     TEST(test_max);
@@ -496,7 +581,18 @@ int main() {
     TEST(test_reverse);
     TEST(test_transpose);
     TEST(test_total);
-    
+    TEST(test_commonest);
+
+    TEST(test_join_basic);
+    TEST(test_join_two_lists);
+    TEST(test_join_single_list);
+    TEST(test_join_empty_lists);
+    TEST(test_join_non_list_head);
+    TEST(test_join_mismatched_heads);
+    TEST(test_join_level2_matrices);
+    TEST(test_join_level2_ragged);
+    TEST(test_join_level2_ragged_unequal_lengths);
+
     printf("All list tests passed!\n");
     return 0;
 }

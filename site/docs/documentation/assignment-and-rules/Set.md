@@ -1,0 +1,51 @@
+# Set
+
+!!! success "Status: Stable"
+    documented, exercised by the test suite and/or worked examples, with no known limitations recorded.
+
+## Description
+
+```text
+lhs = rhs or Set[lhs, rhs]
+    evaluates rhs once and assigns the result to lhs.  When lhs is a
+    symbol, the assignment is stored as an OwnValue; when lhs has the
+    form f[args...] it is stored as a DownValue on f.  Set has attribute
+    HoldFirst so lhs is not evaluated before the assignment.
+```
+
+## Examples
+
+_No verified examples yet for this function._
+
+## Implementation notes
+
+**Algorithm.** `Set` (`=`) is not a registered builtin; it is a special primitive handled directly inside `evaluate_step` in `src/eval.c` (step 6, guarded by `head_name == SYM_Set`). The head carries `ATTR_HOLDFIRST` (`src/attr.c`), so the RHS is evaluated by the generic evaluator before the primitive runs but the LHS is held. The primitive then partially evaluates the LHS to find the assignment *target*: for `f[args] = rhs` it evaluates only the arguments (not the head `f`), so `f[x] = 1` with `x = c` installs a rule keyed on the evaluated `f[c]`. Arguments are held when they are pattern-bearing (`lhs_arg_contains_pattern` — to stop existing DownValues from rewriting the pattern being defined), when the LHS head has Hold attributes, for the first arg of `Part`, and for symbol/nested-`List` elements of a `List` LHS (destructuring targets must not be value-substituted). The shaped target is passed to `apply_assignment(lhs, rhs, is_delayed=false)`, and `Set` returns the (already-evaluated) RHS.
+
+**Data structures.** `apply_assignment` dispatches on the LHS shape: a bare `EXPR_SYMBOL` installs an **OwnValue** via `symtab_add_own_value`; a function head installs a **DownValue** via `symtab_add_down_value` keyed on the head symbol (the whole LHS becomes the stored pattern); a `List` LHS recurses element-wise for destructuring (`{x,y} = {1,2}`); a `Part` LHS routes to `expr_part_assign`. Writes to `ATTR_PROTECTED` targets (resolved through `Condition`/`HoldPattern`/`Part` wrappers by `assignment_target_symbol`) are refused with a `Set::wrsym` message but still return the RHS. `$RecursionLimit` assignments additionally mirror the value into the C-side limit.
+
+**Attributes:** `HoldFirst`, `Protected`.
+
+## Implementation status
+
+**Stable** — documented, exercised by the test suite and/or worked examples, with no known limitations recorded.
+
+## References
+
+- Source: [`src/eval.c`](https://github.com/stblake/mathilda/blob/main/src/eval.c)
+- Specification: [`docs/spec/builtins/assignment-and-rules.md`](https://github.com/stblake/mathilda/blob/main/docs/spec/builtins/assignment-and-rules.md)
+
+## Notes & additional examples
+
+### Worked examples
+
+```mathematica
+In[1]:= x = 5
+Out[1]= 5
+
+In[2]:= x + 1
+Out[2]= 6
+```
+
+### Notes
+
+`=` (`Set`) evaluates the right-hand side once and stores the result. For a bare symbol the assignment is an OwnValue, so later uses of `x` substitute the stored value.

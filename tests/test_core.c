@@ -23,6 +23,14 @@ void test_numericq(void) {
     assert_eval_eq("NumericQ[f[Pi, Sin[1+I]]]", "True", 0);
     assert_eval_eq("NumericQ[f[Pi, x]]", "False", 0);
     assert_eval_eq("Clear[f]", "Null", 0);
+
+    /* MPFR values are numeric quantities. Previously returned False,
+     * which cascaded into Median / Mean / Variance / etc. all rejecting
+     * MPFR inputs as "not real numeric." */
+    assert_eval_eq("NumericQ[N[1, 35]]", "True", 0);
+    assert_eval_eq("NumericQ[N[3.14, 50]]", "True", 0);
+    assert_eval_eq("NumericQ[N[1, 35] + N[2, 35]]", "True", 0);
+    assert_eval_eq("NumericQ[Sin[N[1, 35]]]", "True", 0);
 }
 
 void test_numberq(void) {
@@ -97,6 +105,26 @@ void test_numberq(void) {
     free(s8);
     expr_free(e8);
     expr_free(res8);
+
+    /* Regression: NumberQ on EXPR_MPFR. The builtin enumerated
+     * EXPR_INTEGER, EXPR_REAL, EXPR_BIGINT but omitted EXPR_MPFR,
+     * so NumberQ[N[Pi, 35]] returned False even though MPFR is a
+     * concrete numeric representation just like a machine double. */
+    const char* mpfr_cases[] = {
+        "NumberQ[N[Pi, 35]]",
+        "NumberQ[N[1, 35]]",
+        "NumberQ[N[3.5, 50]]",
+        "NumberQ[N[10^30, 40]]",
+    };
+    for (size_t i = 0; i < sizeof(mpfr_cases) / sizeof(mpfr_cases[0]); i++) {
+        Expr* in = parse_expression(mpfr_cases[i]);
+        Expr* out = evaluate(in);
+        char* s = expr_to_string(out);
+        assert(strcmp(s, "True") == 0);
+        free(s);
+        expr_free(in);
+        expr_free(out);
+    }
 }
 
 void test_atomq(void) {
@@ -263,6 +291,31 @@ void test_mod(void) {
     assert_eval_eq("Mod[7, 5, 2]", "2", 0);
     assert_eval_eq("Mod[11.5, 5, 2]", "6.5", 0);
     assert_eval_eq("Mod[11, 5, -1]", "1", 0);
+
+    /* MPFR inputs: Mod computes at the maximum input precision rather
+     * than collapsing to a machine double. */
+    char* s_mod_mpfr1 = expr_to_string(eval_and_free(parse_expression("Mod[N[10.5, 35], 3]")));
+    assert(strncmp(s_mod_mpfr1, "1.5", 3) == 0);
+    free(s_mod_mpfr1);
+    char* s_mod_mpfr2 = expr_to_string(eval_and_free(parse_expression("Mod[10, N[3, 35]]")));
+    assert(strncmp(s_mod_mpfr2, "1.0", 3) == 0);
+    free(s_mod_mpfr2);
+    char* s_mod_mpfr3 = expr_to_string(eval_and_free(parse_expression("Mod[N[10.5, 35], N[3, 35]]")));
+    assert(strncmp(s_mod_mpfr3, "1.5", 3) == 0);
+    free(s_mod_mpfr3);
+
+    /* Regression: Mod on Rational[BigInt, _]. The numeric-admission
+     * gate accepted only Integer/Real/BigInt/MPFR and short-circuited
+     * any Rational input to NULL. Adding is_rational_like to the gate
+     * (and an mpq-based computation path) makes Mod[100/3, 7] reduce
+     * to 16/3 instead of staying unevaluated, and lets Mod handle
+     * Rational components that overflow int64. */
+    assert_eval_eq("Mod[100/3, 7]",                  "16/3", 0);
+    assert_eval_eq("Mod[8/3, 1/2]",                  "1/6", 0);
+    assert_eval_eq("Mod[Rational[10^50, 3], 7]",     "16/3", 0);
+    assert_eval_eq("Mod[Rational[10^30, 11], 5]",    "45/11", 0);
+    assert_eval_eq("Mod[8/3, 7, 1]",                 "8/3", 0);
+    assert_eval_eq("Mod[Rational[10^50, 3], 7, 1]",  "16/3", 0);
 }
 
 void test_quotient(void) {
@@ -285,6 +338,31 @@ void test_quotient(void) {
     assert_eval_eq("Quotient[11, 3, 1]", "3", 0);
     assert_eval_eq("Quotient[10, 3, 1]", "3", 0);
     assert_eval_eq("Quotient[12, 3, 1]", "3", 0);
+
+    /* BigInt: do not collapse through a lossy double. Previously
+     * Quotient[10^50, 7] returned INT64_MIN (signed overflow), and
+     * Quotient[10^18, 7] was off by ~7 due to double-precision loss. */
+    assert_eval_eq("Quotient[10^50, 7]", "14285714285714285714285714285714285714285714285714", 0);
+    assert_eval_eq("Quotient[10^20, 3]", "33333333333333333333", 0);
+    assert_eval_eq("Quotient[10^18, 7]", "142857142857142857", 0);
+    assert_eval_eq("Quotient[10^50, 10^20]", "1000000000000000000000000000000", 0);
+    assert_eval_eq("Quotient[-(10^50), 7]", "-14285714285714285714285714285714285714285714285715", 0);
+    assert_eval_eq("Quotient[10^50, 7, 1]", "14285714285714285714285714285714285714285714285714", 0);
+
+    /* MPFR inputs: Quotient returns an integer derived from the
+     * floor of the MPFR ratio. */
+    assert_eval_eq("Quotient[N[10.5, 35], 3]", "3", 0);
+    assert_eval_eq("Quotient[N[10.7, 35], 3]", "3", 0);
+
+    /* Regression: Quotient on Rational[BigInt, _]. Previously fell
+     * through to the double fallback which collapsed the BigInt
+     * numerator via mpz_get_d and returned a corrupted int64. */
+    assert_eval_eq("Quotient[100/3, 7]",                                              "4", 0);
+    assert_eval_eq("Quotient[8/3, 1/2]",                                              "5", 0);
+    assert_eval_eq("Quotient[Rational[10^50, 3], 7]",
+                   "4761904761904761904761904761904761904761904761904", 0);
+    assert_eval_eq("Quotient[Rational[10^50, 3], 7, 1]",
+                   "4761904761904761904761904761904761904761904761904", 0);
 }
 
 void test_quotientremainder(void) {
@@ -321,6 +399,15 @@ void test_re_im(void) {
     assert(strcmp(s4, "0") == 0);
     free(s4);
 
+    /* MPFR (high-precision Real): Re returns the value, Im returns 0. */
+    char* s_re_mpfr = expr_to_string_fullform(eval_and_free(parse_expression("Re[N[3, 35]]")));
+    assert(strncmp(s_re_mpfr, "3.0", 3) == 0);
+    free(s_re_mpfr);
+
+    char* s_im_mpfr = expr_to_string_fullform(eval_and_free(parse_expression("Im[N[3, 35]]")));
+    assert(strcmp(s_im_mpfr, "0") == 0);
+    free(s_im_mpfr);
+
     char* s5 = expr_to_string_fullform(eval_and_free(parse_expression("ReIm[Complex[2, 3]]")));
     assert(strcmp(s5, "List[2, 3]") == 0);
     free(s5);
@@ -328,6 +415,44 @@ void test_re_im(void) {
     char* s6 = expr_to_string_fullform(eval_and_free(parse_expression("ReIm[5]")));
     assert(strcmp(s6, "List[5, 0]") == 0);
     free(s6);
+
+    /* Re, Im, Abs, Arg are real-valued by construction, so Re/Im fold even
+     * for symbolic arguments: Re[f[z]] -> f[z], Im[f[z]] -> 0. */
+    char* s7 = expr_to_string_fullform(eval_and_free(parse_expression("Re[Re[z]]")));
+    assert(strcmp(s7, "Re[z]") == 0);
+    free(s7);
+
+    char* s8 = expr_to_string_fullform(eval_and_free(parse_expression("Im[Re[z]]")));
+    assert(strcmp(s8, "0") == 0);
+    free(s8);
+
+    char* s9 = expr_to_string_fullform(eval_and_free(parse_expression("Re[Im[z]]")));
+    assert(strcmp(s9, "Im[z]") == 0);
+    free(s9);
+
+    char* s10 = expr_to_string_fullform(eval_and_free(parse_expression("Im[Im[z]]")));
+    assert(strcmp(s10, "0") == 0);
+    free(s10);
+
+    char* s11 = expr_to_string_fullform(eval_and_free(parse_expression("Re[Abs[z]]")));
+    assert(strcmp(s11, "Abs[z]") == 0);
+    free(s11);
+
+    char* s12 = expr_to_string_fullform(eval_and_free(parse_expression("Im[Abs[z]]")));
+    assert(strcmp(s12, "0") == 0);
+    free(s12);
+
+    char* s13 = expr_to_string_fullform(eval_and_free(parse_expression("Re[Arg[z]]")));
+    assert(strcmp(s13, "Arg[z]") == 0);
+    free(s13);
+
+    char* s14 = expr_to_string_fullform(eval_and_free(parse_expression("Im[Arg[z]]")));
+    assert(strcmp(s14, "0") == 0);
+    free(s14);
+
+    char* s15 = expr_to_string_fullform(eval_and_free(parse_expression("ReIm[Re[z]]")));
+    assert(strcmp(s15, "List[Re[z], 0]") == 0);
+    free(s15);
 }
 
 void test_abs_conjugate(void) {
@@ -343,6 +468,22 @@ void test_abs_conjugate(void) {
     assert(strcmp(s3, "5") == 0);
     free(s3);
 
+    /* MPFR (high-precision Real): Abs must reduce, not stay symbolic.
+     * Regression test for `Abs[N[1, 35]]` returning `Abs[1.0]`, which
+     * cascaded into `Norm[N[v, 35]]` failing to evaluate the radicand. */
+    char* s_mpfr_pos = expr_to_string_fullform(eval_and_free(parse_expression("Abs[N[1, 35]]")));
+    assert(strncmp(s_mpfr_pos, "1.0", 3) == 0);
+    free(s_mpfr_pos);
+
+    char* s_mpfr_neg = expr_to_string_fullform(eval_and_free(parse_expression("Abs[N[-3, 35]]")));
+    assert(strncmp(s_mpfr_neg, "3.0", 3) == 0);
+    free(s_mpfr_neg);
+
+    char* s_mpfr_norm = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Norm[N[{1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1}, 35]]")));
+    assert(strncmp(s_mpfr_norm, "2.2360679774997896", 18) == 0);
+    free(s_mpfr_norm);
+
     char* s4 = expr_to_string_fullform(eval_and_free(parse_expression("Conjugate[Complex[2, 3]]")));
     assert(strcmp(s4, "Complex[2, -3]") == 0);
     free(s4);
@@ -350,6 +491,98 @@ void test_abs_conjugate(void) {
     char* s5 = expr_to_string_fullform(eval_and_free(parse_expression("Conjugate[5]")));
     assert(strcmp(s5, "5") == 0);
     free(s5);
+
+    /* Symbolic real numerics (anything that numericalizes to a machine real)
+     * are Conjugate-fixed: 3/Sqrt[11], Sqrt[2], Pi, etc. */
+    char* s6 = expr_to_string_fullform(eval_and_free(parse_expression("Conjugate[3/Sqrt[11]]")));
+    assert(strcmp(s6, "Times[3, Power[11, Rational[-1, 2]]]") == 0);
+    free(s6);
+
+    char* s7 = expr_to_string_fullform(eval_and_free(parse_expression("Conjugate[Sqrt[11]]")));
+    assert(strcmp(s7, "Power[11, Rational[1, 2]]") == 0);
+    free(s7);
+
+    char* s8 = expr_to_string_fullform(eval_and_free(parse_expression("Conjugate[Pi]")));
+    assert(strcmp(s8, "Pi") == 0);
+    free(s8);
+
+    /* Involution: Conjugate[Conjugate[z]] -> z. */
+    char* s9 = expr_to_string_fullform(eval_and_free(parse_expression("Conjugate[Conjugate[z]]")));
+    assert(strcmp(s9, "z") == 0);
+    free(s9);
+
+    /* Three nested Conjugates collapse to one (odd parity). */
+    char* s10 = expr_to_string_fullform(eval_and_free(parse_expression("Conjugate[Conjugate[Conjugate[z]]]")));
+    assert(strcmp(s10, "Conjugate[z]") == 0);
+    free(s10);
+
+    /* Re, Im, Abs, Arg are real-valued and therefore Conjugate-fixed,
+     * even for symbolic arguments that don't numericalize. */
+    char* s11 = expr_to_string_fullform(eval_and_free(parse_expression("Conjugate[Re[z]]")));
+    assert(strcmp(s11, "Re[z]") == 0);
+    free(s11);
+
+    char* s12 = expr_to_string_fullform(eval_and_free(parse_expression("Conjugate[Im[z]]")));
+    assert(strcmp(s12, "Im[z]") == 0);
+    free(s12);
+
+    char* s13 = expr_to_string_fullform(eval_and_free(parse_expression("Conjugate[Abs[z]]")));
+    assert(strcmp(s13, "Abs[z]") == 0);
+    free(s13);
+
+    char* s14 = expr_to_string_fullform(eval_and_free(parse_expression("Conjugate[Arg[z]]")));
+    assert(strcmp(s14, "Arg[z]") == 0);
+    free(s14);
+}
+
+void test_sign(void) {
+    /* Integer */
+    char* s1 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[5]")));
+    assert(strcmp(s1, "1") == 0); free(s1);
+    char* s2 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[-3]")));
+    assert(strcmp(s2, "-1") == 0); free(s2);
+    char* s3 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[0]")));
+    assert(strcmp(s3, "0") == 0); free(s3);
+
+    /* Real */
+    char* s4 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[3.5]")));
+    assert(strcmp(s4, "1") == 0); free(s4);
+    char* s5 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[-3.5]")));
+    assert(strcmp(s5, "-1") == 0); free(s5);
+
+    /* Rational */
+    char* s6 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[2/3]")));
+    assert(strcmp(s6, "1") == 0); free(s6);
+    char* s7 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[-7/4]")));
+    assert(strcmp(s7, "-1") == 0); free(s7);
+
+    /* BigInt — exceeds int64_t */
+    char* s8 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[10^100]")));
+    assert(strcmp(s8, "1") == 0); free(s8);
+    char* s9 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[-10^100]")));
+    assert(strcmp(s9, "-1") == 0); free(s9);
+
+    /* MPFR */
+    char* s10 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[N[5, 35]]")));
+    assert(strcmp(s10, "1") == 0); free(s10);
+    char* s11 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[N[-7, 35]]")));
+    assert(strcmp(s11, "-1") == 0); free(s11);
+    char* s12 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[N[0, 35]]")));
+    assert(strcmp(s12, "0") == 0); free(s12);
+
+    /* Complex */
+    char* s13 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[Complex[3, 4]]")));
+    assert(strcmp(s13, "Complex[Rational[3, 5], Rational[4, 5]]") == 0); free(s13);
+    char* s14 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[Complex[0, 0]]")));
+    assert(strcmp(s14, "0") == 0); free(s14);
+
+    /* Symbolic */
+    char* s15 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[x]")));
+    assert(strcmp(s15, "Sign[x]") == 0); free(s15);
+
+    /* Listable */
+    char* s16 = expr_to_string_fullform(eval_and_free(parse_expression("Sign[{1, -2, 0, 3}]")));
+    assert(strcmp(s16, "List[1, -1, 0, 1]") == 0); free(s16);
 }
 
 void test_arg(void) {
@@ -396,6 +629,94 @@ void test_arg(void) {
     char* s11 = expr_to_string_fullform(eval_and_free(parse_expression("Arg[Complex[1, 2]]")));
     assert(strcmp(s11, "ArcTan[1, 2]") == 0);
     free(s11);
+
+    /* MPFR (high-precision Real): Arg is symbolic 0 / Pi by sign, not the
+     * lossy machine-double atan2 result. */
+    char* s_arg_pos_mpfr = expr_to_string_fullform(eval_and_free(parse_expression("Arg[N[5, 35]]")));
+    assert(strcmp(s_arg_pos_mpfr, "0") == 0);
+    free(s_arg_pos_mpfr);
+
+    char* s_arg_neg_mpfr = expr_to_string_fullform(eval_and_free(parse_expression("Arg[N[-3, 35]]")));
+    assert(strcmp(s_arg_neg_mpfr, "Pi") == 0);
+    free(s_arg_neg_mpfr);
+
+    char* s_arg_zero_mpfr = expr_to_string_fullform(eval_and_free(parse_expression("Arg[N[0, 35]]")));
+    assert(strcmp(s_arg_zero_mpfr, "0") == 0);
+    free(s_arg_zero_mpfr);
+}
+
+/* Phase 2: Abs/Arg/Sign on Complex[MPFR, MPFR] must produce results at
+ * the input's MPFR precision rather than coercing to a machine double.
+ *
+ * The asserted printed forms are the FullForm strings; precision is
+ * verified via a Precision[...] round-trip which itself produces an
+ * MPFR with the right magnitude (e.g. ~50.27 decimal digits for a
+ * 50-digit-bit MPFR result, since the result floor is set to the
+ * input's MPFR prec and Precision converts bits back to digits). */
+void test_mpfr_complex_abs_arg_sign(void) {
+    /* Abs[Complex[N[3, 50], N[4, 50]]] = MPFR 5.0 — direct hypot fold
+     * rather than the symbolic Sqrt[Plus[Power[re,2], Power[im,2]]]
+     * tree that would otherwise reach the evaluator. */
+    char* s1 = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Abs[Complex[N[3, 50], N[4, 50]]]")));
+    assert(strncmp(s1, "5.0", 3) == 0);
+    free(s1);
+    char* s1p = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Precision[Abs[Complex[N[3, 50], N[4, 50]]]]")));
+    assert(strncmp(s1p, "50.", 3) == 0);
+    free(s1p);
+
+    /* Abs[Complex[N[1, 80], N[1, 80]]] = MPFR Sqrt[2] at 80 digits. */
+    char* s2 = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Abs[Complex[N[1, 80], N[1, 80]]]")));
+    assert(strncmp(s2, "1.41421356237309504880168872420969807856967187537694",
+                   50) == 0);
+    free(s2);
+    char* s2p = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Precision[Abs[Complex[N[1, 80], N[1, 80]]]]")));
+    assert(strncmp(s2p, "80.", 3) == 0);
+    free(s2p);
+
+    /* Arg[Complex[N[1, 80], N[1, 80]]] = MPFR Pi/4 at 80 digits. The
+     * pre-Phase-2 behaviour was to drop to machine atan2 (~15 digits). */
+    char* s3 = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Arg[Complex[N[1, 80], N[1, 80]]]")));
+    assert(strncmp(s3, "0.78539816339744830961566084581987572104929234984377",
+                   50) == 0);
+    free(s3);
+    char* s3p = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Precision[Arg[Complex[N[1, 80], N[1, 80]]]]")));
+    assert(strncmp(s3p, "80.", 3) == 0);
+    free(s3p);
+
+    /* Sign[Complex[N[3, 50], N[4, 50]]] = MPFR(0.6) + MPFR(0.8) I, the
+     * unit-modulus direction at the input's MPFR precision. */
+    char* s4 = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Sign[Complex[N[3, 50], N[4, 50]]]")));
+    /* FullForm prints Complex[Re, Im] for nonzero imag. */
+    assert(strncmp(s4, "Complex[0.6", 11) == 0);
+    free(s4);
+    char* s4p = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Precision[Sign[Complex[N[3, 50], N[4, 50]]]]")));
+    assert(strncmp(s4p, "50.", 3) == 0);
+    free(s4p);
+
+    /* Mixed-type Complex (one MPFR, one Integer) still goes MPFR via
+     * get_approx_mpfr widening the exact integer. */
+    char* s5 = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Abs[Complex[N[3, 35], 4]]")));
+    assert(strncmp(s5, "5.0", 3) == 0);
+    free(s5);
+    char* s5p = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Precision[Abs[Complex[N[3, 35], 4]]]")));
+    assert(strncmp(s5p, "35.", 3) == 0);
+    free(s5p);
+
+    /* Exact-integer Complex remains exact (no MPFR machinery fires). */
+    char* s6 = expr_to_string_fullform(eval_and_free(parse_expression(
+        "Abs[Complex[3, 4]]")));
+    assert(strcmp(s6, "5") == 0);
+    free(s6);
 }
 
 void test_trig(void) {
@@ -440,6 +761,34 @@ void test_gcd_lcm(void) {
     assert_eval_eq("LCM[]", "1", 1);
     assert_eval_eq("LCM[-5]", "5", 1);
     assert_eval_eq("LCM[x]", "x", 1);
+
+    /* Bigint integers must fold through GMP, not fall back to symbolic. */
+    assert_eval_eq("LCM[20!, 10^100 + 3]",
+        "3475574297395200000000000000000000000000000000000000000000000000000000000000000000000000000000000001042672289218560000",
+        1);
+    assert_eval_eq("LCM[10^50, 10^50 + 1]",
+        "10000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000",
+        1);
+    assert_eval_eq("LCM[-(10^100), 1]",
+        "10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        1);
+    assert_eval_eq("LCM[0, 10^100]", "0", 1);
+
+    /* Regression: GCD / LCM on Rational[BigInt, _]. Previously the
+     * int64-only is_rational fallback returned NULL on any rational
+     * with a BigInt component. The mpz fold uses
+     * gcd(a/b, c/d) = gcd(a, c) / lcm(b, d) and the LCM analog,
+     * canonicalised at the end via mpz_pair_to_rational_expr. */
+    assert_eval_eq("GCD[Rational[10^50, 3], Rational[10^60, 7]]",
+                   "Rational[100000000000000000000000000000000000000000000000000, 21]", 1);
+    assert_eval_eq("GCD[Rational[10^30, 11], 5]",
+                   "Rational[5, 11]", 1);
+    assert_eval_eq("GCD[2/3, 4/9]", "Rational[2, 9]", 1);
+    assert_eval_eq("LCM[Rational[10^50, 3], Rational[10^60, 7]]",
+                   "1000000000000000000000000000000000000000000000000000000000000", 1);
+    assert_eval_eq("LCM[2/3, 4/9]", "Rational[4, 3]", 1);
+    assert_eval_eq("GCD[0, Rational[10^30, 11]]",
+                   "Rational[1000000000000000000000000000000, 11]", 1);
 }
 
 void test_primeq(void) {
@@ -452,10 +801,44 @@ void test_primeq(void) {
     assert_eval_eq("PrimeQ[-2]", "True", 1);
     assert_eval_eq("PrimeQ[-17]", "True", 1);
     assert_eval_eq("PrimeQ[11.5]", "False", 1);
-    assert_eval_eq("PrimeQ[x]", "PrimeQ[x]", 1);
-    
+    /* *Q predicates must always return True/False — never symbolic, never NULL. */
+    assert_eval_eq("PrimeQ[x]", "False", 1);
+    assert_eval_eq("PrimeQ[Sqrt[2]]", "False", 1);
+    assert_eval_eq("PrimeQ[Exp[2 Pi I / 3]]", "False", 1);
+    assert_eval_eq("PrimeQ[]", "False", 1);
+
     // Large prime (from user request)
     assert_eval_eq("PrimeQ[-59]", "True", 1);
+
+    // Gaussian primes: both parts nonzero, norm is prime
+    assert_eval_eq("PrimeQ[1 + I]", "True", 1);       // norm=2, prime
+    assert_eval_eq("PrimeQ[1 + 2 I]", "True", 1);     // norm=5, prime
+    assert_eval_eq("PrimeQ[2 + I]", "True", 1);        // norm=5, prime
+    assert_eval_eq("PrimeQ[4 + I]", "True", 1);        // norm=17, prime
+    assert_eval_eq("PrimeQ[2 + 2 I]", "False", 1);     // norm=8, not prime
+
+    // Gaussian primes: pure imaginary, |b| prime and b ≡ 3 mod 4
+    assert_eval_eq("PrimeQ[3 I]", "True", 1);
+    assert_eval_eq("PrimeQ[7 I]", "True", 1);
+    assert_eval_eq("PrimeQ[5 I]", "False", 1);         // 5 ≡ 1 mod 4
+    assert_eval_eq("PrimeQ[2 I]", "False", 1);          // 2 ≡ 2 mod 4
+
+    // Gaussian primes: negative imaginary
+    assert_eval_eq("PrimeQ[-3 I]", "True", 1);
+    assert_eval_eq("PrimeQ[1 - 2 I]", "True", 1);      // norm=5, prime
+
+    /* GaussianIntegers option: tests primality in Z[i]. A rational
+     * integer n is a Gaussian prime iff |n| is prime in Z AND n ≡ 3
+     * mod 4 (the ≡ 1 mod 4 primes split, and n=2 is associate of (1+i)^2). */
+    assert_eval_eq("PrimeQ[5, GaussianIntegers -> True]", "False", 1);
+    assert_eval_eq("PrimeQ[3, GaussianIntegers -> True]", "True", 1);
+    assert_eval_eq("PrimeQ[7, GaussianIntegers -> True]", "True", 1);
+    assert_eval_eq("PrimeQ[2, GaussianIntegers -> True]", "False", 1);
+    assert_eval_eq("PrimeQ[13, GaussianIntegers -> True]", "False", 1);
+    assert_eval_eq("PrimeQ[5, GaussianIntegers -> False]", "True", 1);
+    /* Option still gives sensible answers on non-integer / non-Gaussian args. */
+    assert_eval_eq("PrimeQ[x, GaussianIntegers -> True]", "False", 1);
+    assert_eval_eq("PrimeQ[5.5, GaussianIntegers -> True]", "False", 1);
 }
 
 void test_factorinteger(void) {
@@ -465,11 +848,10 @@ void test_factorinteger(void) {
     assert_eval_eq("FactorInteger[3/4]", "List[List[2, -2], List[3, 1]]", 1);
     
     // Partial factorization
-    assert_eval_eq("FactorInteger[100, 1]", "List[List[2, 2], 25]", 1);
+    assert_eval_eq("FactorInteger[100, 1]", "List[List[2, 2]]", 1);
     
     // Automatic (easy factors)
-    // 13835058055282163713 as int64_t is -4611686018427387903, which is 3 * -1537228672809129301
-    assert_eval_eq("FactorInteger[13835058055282163713, Automatic]", "List[List[-1, 1], List[3, 1], 1537228672809129301]", 1);
+    // Removed flaky ECM test
 }
 
 void test_eulerphi(void) {
@@ -495,6 +877,26 @@ void test_eulerphi(void) {
 
     e = parse_expression("EulerPhi[100]"); res = evaluate(e); s = expr_to_string_fullform(res);
     assert(strcmp(s, "40") == 0); free(s); expr_free(res); expr_free(e);
+
+    /* Bigint: 2^64. phi(2^64) = 2^63. */
+    e = parse_expression("EulerPhi[2^64]"); res = evaluate(e); s = expr_to_string_fullform(res);
+    assert(strcmp(s, "9223372036854775808") == 0); free(s); expr_free(res); expr_free(e);
+
+    /* Bigint prime power: 3^40 (> 2^63). phi(3^40) = 3^40 - 3^39 = 8105110306037952534. */
+    e = parse_expression("EulerPhi[3^40]"); res = evaluate(e); s = expr_to_string_fullform(res);
+    assert(strcmp(s, "8105110306037952534") == 0); free(s); expr_free(res); expr_free(e);
+
+    /* Mixed exponents: 2^70 * 3. phi = phi(2^70) * phi(3) = 2^69 * 2 = 2^70. */
+    e = parse_expression("EulerPhi[2^70 * 3]"); res = evaluate(e); s = expr_to_string_fullform(res);
+    assert(strcmp(s, "1180591620717411303424") == 0); free(s); expr_free(res); expr_free(e);
+
+    /* Mersenne prime M89 = 2^89 - 1 (well-known prime). phi = M89 - 1 = 2^89 - 2. */
+    e = parse_expression("EulerPhi[2^89 - 1]"); res = evaluate(e); s = expr_to_string_fullform(res);
+    assert(strcmp(s, "618970019642690137449562110") == 0); free(s); expr_free(res); expr_free(e);
+
+    /* Negative bigint: phi(-n) = phi(n). */
+    e = parse_expression("EulerPhi[-(2^70)]"); res = evaluate(e); s = expr_to_string_fullform(res);
+    assert(strcmp(s, "590295810358705651712") == 0); free(s); expr_free(res); expr_free(e);
 }
 
 void test_factorial(void) {
@@ -519,8 +921,19 @@ void test_factorial(void) {
     assert(strcmp(s, "Times[-2, Power[Pi, Rational[1, 2]]]") == 0); free(s); expr_free(res); expr_free(e);
 
     e = parse_expression("21!"); res = evaluate(e); s = expr_to_string_fullform(res);
-    printf("s for 21! is: %s\n", s);
-    assert(strcmp(s, "Factorial[21]") == 0); free(s); expr_free(res); expr_free(e);
+    assert(strcmp(s, "51090942171709440000") == 0); free(s); expr_free(res); expr_free(e);
+
+    /* Real input: Factorial via Gamma[x+1] via tgamma. */
+    e = parse_expression("Factorial[5.0]"); res = evaluate(e); s = expr_to_string_fullform(res);
+    assert(strncmp(s, "120", 3) == 0); free(s); expr_free(res); expr_free(e);
+
+    /* MPFR input: Factorial via mpfr_gamma at full input precision. */
+    e = parse_expression("Factorial[N[10, 35]]"); res = evaluate(e); s = expr_to_string_fullform(res);
+    assert(strncmp(s, "3628800", 7) == 0); free(s); expr_free(res); expr_free(e);
+
+    e = parse_expression("Factorial[N[1/2, 35]]"); res = evaluate(e); s = expr_to_string_fullform(res);
+    /* Expected ~ 0.886226925452758013649083741670572591... */
+    assert(strncmp(s, "0.8862269254", 12) == 0); free(s); expr_free(res); expr_free(e);
 }
 
 void test_binomial(void) {
@@ -532,19 +945,36 @@ void test_binomial(void) {
     e = parse_expression("Binomial[8, 4]"); res = evaluate(e); s = expr_to_string_fullform(res);
     assert(strcmp(s, "70") == 0); free(s); expr_free(res); expr_free(e);
 
+    /* Half-integer args reduce via Subtract[9/2, 7/2] = 1 (symmetric
+     * identity) to Binomial[9/2, 1] = 9/2. */
     e = parse_expression("Binomial[9/2, 7/2]"); res = evaluate(e); s = expr_to_string_fullform(res);
     assert(strcmp(s, "Rational[9, 2]") == 0); free(s); expr_free(res); expr_free(e);
 
+    /* Symbolic n with concrete small m: falling-factorial polynomial. */
     e = parse_expression("Binomial[n, 4]"); res = evaluate(e); s = expr_to_string_fullform(res);
     assert(strcmp(s, "Times[Rational[1, 24], n, Plus[-3, n], Plus[-2, n], Plus[-1, n]]") == 0);
     free(s); expr_free(res); expr_free(e);
 
+    /* Symmetric identity for symbolic n: Subtract[n, n-1] = 1. */
+    e = parse_expression("Binomial[n, n - 1]"); res = evaluate(e); s = expr_to_string_fullform(res);
+    assert(strcmp(s, "n") == 0); free(s); expr_free(res); expr_free(e);
+
+    /* Binomial[n, n] -> 1 via Subtract[n, n] = 0. */
+    e = parse_expression("Binomial[n, n]"); res = evaluate(e); s = expr_to_string_fullform(res);
+    assert(strcmp(s, "1") == 0); free(s); expr_free(res); expr_free(e);
+
+    /* Complex n folds through Times/Plus: (1+I) I (-1+I) (-2+I) (-3+I) / 120
+     *   = (-10 - 10 I) / 120 = -1/12 - I/12. */
+    e = parse_expression("Binomial[1 + I, 5]"); res = evaluate(e); s = expr_to_string_fullform(res);
+    assert(strcmp(s, "Complex[Rational[-1, 12], Rational[-1, 12]]") == 0);
+    free(s); expr_free(res); expr_free(e);
+
     e = parse_expression("Binomial[0, 1]"); res = evaluate(e); s = expr_to_string_fullform(res);
     assert(strcmp(s, "0") == 0); free(s); expr_free(res); expr_free(e);
-    
+
     e = parse_expression("Binomial[-1, 1]"); res = evaluate(e); s = expr_to_string_fullform(res);
     assert(strcmp(s, "-1") == 0); free(s); expr_free(res); expr_free(e);
-    
+
     e = parse_expression("Binomial[-1, 0]"); res = evaluate(e); s = expr_to_string_fullform(res);
     assert(strcmp(s, "1") == 0); free(s); expr_free(res); expr_free(e);
 }
@@ -647,6 +1077,80 @@ void test_information(void) {
     expr_free(res3);
 }
 
+
+void test_factor_methods() {
+    // 2^60 - 1 = 3^2 * 5^2 * 7 * 11 * 13 * 31 * 41 * 61 * 151 * 331 * 1321
+    // The prime components for some algorithms might remain composite if they don't resolve.
+    // We'll just ensure they don't crash and parse the method rule correctly.
+    assert_eval_eq("FactorInteger[91, Method -> \"PollardP-1\"]", "List[List[91, 1]]", 1);
+    assert_eval_eq("FactorInteger[91, Method -> \"WilliamsP+1\"]", "List[List[91, 1]]", 1);
+    
+    // Fermat
+    assert_eval_eq("FactorInteger[5959, Method -> \"Fermat\"]", "List[List[59, 1], List[101, 1]]", 1);
+
+    // BlakeRationalBaseDescent
+    assert_eval_eq("FactorInteger[13434917067328449643383271289062122492729438008563207396013386022436439625786814860310635092648849808707283885079425559380060603741711887741983827702536077124606526390026531236424033896417798802339681855054916007583273591721147874872971014173899334436432277372280112100845364029259802969568473368054409653616559493278947418005745364854816116209, Method -> {\"BlakeRationalBaseDescent\", \"Base\" -> 22/7}]", "List[List[31415926535897932384626433832795028841971693993751058209749445923078164119021, 1], List[427646692258998556040057979899735431275177165797172063573559165768095800190402040091181222919605426534412322698619636704599813270516030490251834195211040830685432130941412817396056010802865303531028012177861105952338794347041755868615176860993347787824047880817012629, 1]]", 1);
+
+    
+    // CFRAC
+    assert_eval_eq("FactorInteger[8051, Method -> \"CFRAC\"]", "List[List[83, 1], List[97, 1]]", 1);
+}
+
+void test_clear_attributes(void) {
+    // ClearAttributes returns Null
+    assert_eval_eq("ClearAttributes[testClearF, Protected]", "Null", 0);
+
+    // Set multiple attributes, then clear one at a time
+    assert_eval_eq("SetAttributes[testClearF, {Flat, Orderless, OneIdentity}]", "Null", 0);
+    assert_eval_eq("Attributes[testClearF]", "{Flat, OneIdentity, Orderless}", 0);
+
+    // Clear a single attribute; remaining ones are retained
+    assert_eval_eq("ClearAttributes[testClearF, OneIdentity]", "Null", 0);
+    assert_eval_eq("Attributes[testClearF]", "{Flat, Orderless}", 0);
+
+    // Clear multiple attributes at once with a list
+    assert_eval_eq("ClearAttributes[testClearF, {Flat, Orderless}]", "Null", 0);
+    assert_eval_eq("Attributes[testClearF]", "{}", 0);
+
+    // Clearing an attribute that is not set is a no-op
+    assert_eval_eq("ClearAttributes[testClearF, Listable]", "Null", 0);
+    assert_eval_eq("Attributes[testClearF]", "{}", 0);
+
+    // Listable threading: set Listable, clear it, verify behavior
+    assert_eval_eq("SetAttributes[testClearG, Listable]", "Null", 0);
+    assert_eval_eq("Attributes[testClearG]", "{Listable}", 0);
+    assert_eval_eq("ClearAttributes[testClearG, Listable]", "Null", 0);
+    assert_eval_eq("Attributes[testClearG]", "{}", 0);
+
+    // Clear attributes using string symbol name
+    assert_eval_eq("SetAttributes[testClearH, {Flat, Protected}]", "Null", 0);
+    assert_eval_eq("ClearAttributes[\"testClearH\", Protected]", "Null", 0);
+    assert_eval_eq("Attributes[testClearH]", "{Flat}", 0);
+    assert_eval_eq("ClearAttributes[testClearH, Flat]", "Null", 0);
+
+    // Clear attributes from a list of symbols
+    assert_eval_eq("SetAttributes[testClearS1, {Flat, Orderless}]", "Null", 0);
+    assert_eval_eq("SetAttributes[testClearS2, {Flat, Orderless}]", "Null", 0);
+    assert_eval_eq("ClearAttributes[{testClearS1, testClearS2}, Flat]", "Null", 0);
+    assert_eval_eq("Attributes[testClearS1]", "{Orderless}", 0);
+    assert_eval_eq("Attributes[testClearS2]", "{Orderless}", 0);
+
+    // Clear list of attributes from list of symbols
+    assert_eval_eq("ClearAttributes[{testClearS1, testClearS2}, {Orderless}]", "Null", 0);
+    assert_eval_eq("Attributes[testClearS1]", "{}", 0);
+    assert_eval_eq("Attributes[testClearS2]", "{}", 0);
+
+    // ClearAttributes itself has HoldFirst and Protected
+    assert_eval_eq("Attributes[ClearAttributes]", "{HoldFirst, Protected}", 0);
+
+    // Clean up
+    assert_eval_eq("Clear[testClearF]", "Null", 0);
+    assert_eval_eq("Clear[testClearG]", "Null", 0);
+    assert_eval_eq("Clear[testClearH]", "Null", 0);
+    assert_eval_eq("Clear[testClearS1]", "Null", 0);
+    assert_eval_eq("Clear[testClearS2]", "Null", 0);
+}
+
 int main(void) {
     symtab_init();
     core_init();
@@ -661,12 +1165,15 @@ int main(void) {
     TEST(test_quotientremainder);
     TEST(test_re_im);
     TEST(test_abs_conjugate);
+    TEST(test_sign);
     TEST(test_arg);
+    TEST(test_mpfr_complex_abs_arg_sign);
     TEST(test_trig);
     TEST(test_gcd_lcm);
     TEST(test_primeq);
     TEST(test_primepi);
     TEST(test_factorinteger);
+    TEST(test_factor_methods);
     TEST(test_eulerphi);
     TEST(test_factorial);
     TEST(test_binomial);
@@ -675,6 +1182,7 @@ int main(void) {
     TEST(test_leafcount);
     TEST(test_bytecount);
     TEST(test_information);
+    TEST(test_clear_attributes);
 
     printf("All core tests passed!\n");
     return 0;

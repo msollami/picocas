@@ -1,0 +1,113 @@
+# FixedPointList
+
+!!! success "Status: Stable"
+    documented, exercised by the test suite and/or worked examples, with no known limitations recorded.
+
+## Description
+
+```text
+FixedPointList[f, expr]
+    generates the list {expr, f[expr], f[f[expr]], ...} of successive
+    applications of f, stopping when two consecutive results are SameQ.
+    The last two elements of the result are always the same.
+FixedPointList[f, expr, n]
+    stops after at most n applications of f. If n is reached before
+    convergence, the last two elements may not be equal.
+FixedPointList[f, expr, SameTest -> s]
+FixedPointList[f, expr, n, SameTest -> s]
+    uses the binary predicate s instead of SameQ to test successive pairs.
+
+FixedPointList[f, expr] is equivalent to
+NestWhileList[f, expr, UnsameQ, 2].
+```
+
+## Examples
+
+All examples below are verified against the current Mathilda build.
+
+```mathematica
+In[1]:= FixedPointList[1 + Floor[#/2] &, 1000]
+Out[1]= {1000, 501, 251, 126, 64, 33, 17, 9, 5, 3, 2, 2}
+
+In[2]:= 1 + Floor[Last[%]/2]
+Out[2]= 0
+
+In[3]:= FixedPointList[# /. {a_, b_} /; b != 0 -> {b, Mod[a, b]} &, {28, 21}]
+Out[3]= {{28, 21}, {21, 7}, {7, 0}, {7, 0}}
+
+In[4]:= GCD[28, 21]
+Out[4]= 7
+
+In[5]:= FixedPointList[1 + Floor[#/2] &, 1000, 5]
+Out[5]= {1000, 501, 251, 126, 64, 33}
+
+In[6]:= FixedPointList[(# + 2/#)/2 &, 1.0]
+Out[6]= {1.0, 1.5, 1.41667, 1.41422, 1.41421, 1.41421, 1.41421}
+
+In[7]:= FixedPointList[(# + 2/#)/2 &, 1.0, SameTest -> (Abs[#1 - #2] < 0.01 &)]
+Out[7]= {1.0, 1.5, 1.41667, 1.41422}
+```
+
+## Implementation notes
+
+**Algorithm.** `builtin_fixedpointlist` (`fixedpoint_impl(res, true)`) iterates
+`f` from `expr` until two successive results coincide, returning the entire
+history `{expr, f[expr], ..., fixedPoint, fixedPoint}`. Comparison defaults to
+`SameQ` (`expr_eq`); a `SameTest -> s` option swaps in `apply_binary(s, last,
+next)`. An optional integer `n` bounds the number of applications; `parse_fp_opts`
+parses both, rejecting duplicates or malformed specs (returns `NULL`).
+
+It seeds an `ExprBuf` and runs the shared `iter_run` driver with
+`fixedpoint_step`: each step computes `next = apply_unary(f, last)` and, if `next`
+equals `last` under the chosen same-test, returns `ITER_STEP_HALT_ADD` (push the
+final value and stop) — so the fixed point appears as the last two list elements.
+Unbounded runs use `ITER_SAFETY_CAP` (1,000,000). Unlike the scalar `FixedPoint`,
+the *List* form does **not** intercept `Throw`/`Abort`/`Quit`/`Return` from `f`
+(`propagate_throw=false`); such heads are recorded as ordinary history values.
+
+**Data structures.** Growable `ExprBuf` of owned `Expr*`; `ebuf_finalize` wraps
+the kept history under a `List` head.
+
+- `Protected`.
+- `FixedPointList[f, expr]` is equivalent to `NestWhileList[f, expr, UnsameQ, 2]`.
+- `n` (when given) must be a non-negative integer or `Infinity`. Malformed argument specs leave `FixedPointList` unevaluated.
+
+**Attributes:** `Protected`.
+
+## Implementation status
+
+**Stable** — documented, exercised by the test suite and/or worked examples, with no known limitations recorded.
+
+## References
+
+- Source: [`src/funcprog.c`](https://github.com/stblake/mathilda/blob/main/src/funcprog.c)
+- Specification: [`docs/spec/builtins/functional-programming.md`](https://github.com/stblake/mathilda/blob/main/docs/spec/builtins/functional-programming.md)
+
+## Notes & additional examples
+
+### Worked examples
+
+```mathematica
+In[1]:= FixedPointList[Floor[#/2] &, 100]
+Out[1]= {100, 50, 25, 12, 6, 3, 1, 0, 0}
+```
+
+```mathematica
+In[1]:= FixedPointList[(# + 2/#)/2 &, 1.0]
+Out[1]= {1.0, 1.5, 1.41667, 1.41422, 1.41421, 1.41421, 1.41421}
+```
+
+```mathematica
+In[1]:= Length[FixedPointList[If[EvenQ[#], #/2, 3 # + 1] &, 27, SameTest -> (#2 == 1 &)]]
+Out[1]= 112
+```
+
+### Notes
+
+`FixedPointList[f, expr]` records the whole orbit `{expr, f[expr], ...}`
+until two consecutive entries are `SameQ`, so the last two elements always
+coincide. The second example shows Newton/Heron iteration converging
+quadratically to `Sqrt[2]` (note the doubling of correct digits each step).
+The third counts the Collatz `3n+1` trajectory length for the seed 27 by
+supplying a custom `SameTest` that halts when the value reaches 1 — the
+famous 111-step descent (112 entries including the seed).
