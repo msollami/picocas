@@ -97,9 +97,15 @@
         const zf = newZoom / s.zoom;
         return { ...s, zoom: newZoom, panX: cx - zf * (cx - s.panX), panY: cy - zf * (cy - s.panY) };
       });
+    } else if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) {
+      // Horizontal two-finger pan always moves the canvas, even over a
+      // focused cell — no notebook content scrolls horizontally, so there's
+      // nothing for the browser to do with this gesture natively.
+      e.preventDefault();
+      canvasState.update(s => ({ ...s, panX: s.panX - e.deltaX, panY: s.panY - e.deltaY }));
     } else {
-      // Two-finger scroll: scroll the notebook if a cell inside has focus;
-      // pan the canvas otherwise (including after pressing Escape).
+      // Vertical two-finger scroll: scroll the notebook if a cell inside has
+      // focus; pan the canvas otherwise (including after pressing Escape).
       const overCard = (e.target as HTMLElement).closest('.nb-card');
       const cellFocused = overCard && document.activeElement && overCard.contains(document.activeElement);
       if (cellFocused) return; // browser scrolls the card natively
