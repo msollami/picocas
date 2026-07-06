@@ -293,6 +293,7 @@
           <NotebookCard
             {nb}
             currentZoom={zoom}
+            active={activeNbId === nb.id}
             on:focusNotebook={(e) => setFocused(e.detail.id)}
           />
         </div>

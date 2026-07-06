@@ -44,6 +44,7 @@
   export let nb: CanvasNotebook;
   export let currentZoom: number = 1.0;
   export let focused: boolean = false;  // true when rendered full-screen
+  export let active: boolean = false;   // true when this is the most recently interacted-with card
 
   // Per-notebook accent colour from the deep-space palette
   const PALETTE = ['#89b4fa','#a6e3a1','#f38ba8','#fab387','#cba6f7','#94e2d5'];
@@ -499,6 +500,7 @@
   class:mounted
   class:collapsed={nb.collapsed}
   class:focused-card={focused}
+  class:active-card={active && !focused}
   style="--accent: {accentColor}; --accent-glow: {accentColor}1a;"
   bind:this={cardEl}
   tabindex="-1"
@@ -713,6 +715,19 @@
   .nb-card.mounted {
     opacity: 1;
     transform: scale(1);
+  }
+
+  /* ---- Active card — the notebook currently being edited on the canvas ---- */
+  .nb-card.active-card {
+    border-color: var(--accent, #89b4fa);
+    box-shadow:
+      0 0 0 1.5px var(--accent, #89b4fa),
+      0 0 24px var(--accent-glow, rgba(137,180,250,0.35)),
+      0 24px 64px rgba(0,0,0,0.65),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .nb-card.active-card .card-titlebar {
+    background: var(--accent-glow, rgba(137,180,250,0.12));
   }
 
   /* Full-screen focused mode — edge to edge, no card chrome */
