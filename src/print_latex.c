@@ -416,6 +416,14 @@ static void to_latex_prec(LBuf* b, const Expr* e, int ctx_prec) {
         return;
     }
 
+    /* ---- Rule[a, b] → a \to b, RuleDelayed[a, b] → a \Rightarrow b ---- */
+    if ((hname == SYM_Rule || hname == SYM_RuleDelayed) && argc == 2) {
+        to_latex_prec(b, args[0], PREC_ADD);
+        lb_cat(b, hname == SYM_Rule ? " \\to " : " \\Rightarrow ");
+        to_latex_prec(b, args[1], PREC_ADD);
+        return;
+    }
+
     /* ---- Factorial[n] → n! ---- */
     if (hname == SYM_Factorial && argc == 1) {
         to_latex_maybe_paren(b, args[0], PREC_POW);
