@@ -12,6 +12,8 @@
 #include "arithmetic.h"
 #include "context.h"
 #include "sym_names.h"
+#include "matrix.h"
+#include "graph.h"   /* graph_is_list, for the Graph[...] summary form */
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -67,6 +69,7 @@ static int get_expr_prec(Expr* e) {
     if (head == SYM_Set || head == SYM_SetDelayed) return 40;
     if (head == SYM_MessageName) return 780;
     if (head == SYM_Rule || head == SYM_RuleDelayed) return 120;
+    if (head == SYM_DirectedEdge || head == SYM_UndirectedEdge) return 120;
     if (head == SYM_Condition) return 130;
     if (head == SYM_Alternatives) return 160;
     if (head == SYM_Repeated || head == SYM_RepeatedNull) return 170;
@@ -135,6 +138,18 @@ void expr_print_fullform(Expr* e) {
         case EXPR_SYMBOL: printf("%s", context_display_name(e->data.symbol)); break;
         case EXPR_STRING: printf("\"%s\"", e->data.string); break;
         case EXPR_FUNCTION: print_function_fullform(e); break;
+        case EXPR_MATRIX: {
+            /* Always wrapped in Matrix[...] so it can never be mistaken
+             * for a bare nested List, even in FullForm/InputForm. The
+             * inner braces use the standard {..} rendering (not a further
+             * List[...] FullForm expansion) so the payload stays readable. */
+            printf("Matrix[");
+            Expr* nested = matrix_to_nested_list(e);
+            print_standard(nested, 0);
+            expr_free(nested);
+            printf("]");
+            break;
+        }
         case EXPR_BIGINT: {
             char* str = mpz_get_str(NULL, 10, e->data.bigint);
             printf("%s", str);
@@ -204,6 +219,29 @@ static void print_standard(Expr* e, int parent_prec) {
         }
         else if (head == SYM_Graphics && e->data.function.arg_count >= 1 && g_inputform_depth == 0) {
             printf("-Graphics-");
+        }
+        else if (head == SYM_Graphics3D && e->data.function.arg_count >= 1 && g_inputform_depth == 0) {
+            printf("-Graphics3D-");
+        }
+        else if ((head == SYM_DirectedEdge || head == SYM_UndirectedEdge)
+                 && e->data.function.arg_count == 2) {
+            /* u -> v (directed) / u <-> v (undirected). Infix in both Standard
+             * and Input forms so the literal round-trips through the parser. */
+            print_standard(e->data.function.args[0], my_prec);
+            printf("%s", head == SYM_DirectedEdge ? " -> " : " <-> ");
+            print_standard(e->data.function.args[1], my_prec);
+        }
+        else if (head == SYM_Graph && e->data.function.arg_count == 2
+                 && g_inputform_depth == 0
+                 && graph_is_list(e->data.function.args[0])
+                 && graph_is_list(e->data.function.args[1])) {
+            /* Terse summary in standard output; InputForm/FullForm fall through
+             * to the literal Graph[{...}, {...}] constructor (round-trippable). */
+            unsigned long nv = (unsigned long)e->data.function.args[0]->data.function.arg_count;
+            unsigned long ne = (unsigned long)e->data.function.args[1]->data.function.arg_count;
+            printf("Graph[<%lu %s, %lu %s>]",
+                   nv, nv == 1 ? "vertex" : "vertices",
+                   ne, ne == 1 ? "edge" : "edges");
         }
         else if (head == SYM_Rational && e->data.function.arg_count == 2) {
             print_standard(e->data.function.args[0], 470);
@@ -1179,6 +1217,14 @@ static void print_tex(Expr* e, int parent_prec) {
     }
     if (e->type == EXPR_SYMBOL) { print_tex_symbol(e->data.symbol); return; }
     if (e->type == EXPR_STRING) { printf("\\text{\"%s\"}", e->data.string); return; }
+    if (e->type == EXPR_MATRIX) {
+        printf("\\text{Matrix}\\left[");
+        Expr* nested = matrix_to_nested_list(e);
+        print_tex(nested, 0);
+        expr_free(nested);
+        printf("\\right]");
+        return;
+    }
     if (e->type != EXPR_FUNCTION) return;
 
     int my_prec = get_expr_prec(e);

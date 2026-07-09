@@ -45,6 +45,7 @@
 #include "boolean.h"
 #include "list.h"
 #include "assoc.h"
+#include "matrix.h"
 #include "replace.h"
 #include "patterns.h"
 #include "cond.h"
@@ -118,6 +119,7 @@
 #include "sym_intern.h"
 #include "sym_names.h"
 #include "repl_hooks.h"
+#include "version.h"
 
 /*
  * register_system_constant:
@@ -181,6 +183,18 @@ static void system_constants_init(void) {
     register_system_constant("$MaxNumber", expr_new_real(DBL_MAX));
     register_system_constant("$MinNumber", expr_new_real(DBL_MIN));
 #endif
+
+    /* Release identity. $VersionNumber is the single source of truth (a Real);
+     * $Version is the descriptive string assembled at compile time in
+     * version.c, listing Mathilda's version and every library it links. Both
+     * are read-only (Protected via register_system_constant). */
+    register_system_constant("$Version", expr_new_string(mathilda_version()));
+    register_system_constant("$VersionNumber", expr_new_real(MATHILDA_VERSION_NUMBER));
+    symtab_set_docstring("$Version",
+        "$Version\n\tgives a string describing the version of Mathilda, "
+        "including the versions of the libraries it was built against.");
+    symtab_set_docstring("$VersionNumber",
+        "$VersionNumber\n\tgives the Mathilda version number as a real number.");
 }
 
 void core_init(void) {
@@ -635,6 +649,7 @@ void core_init(void) {
     boolean_init();
     list_init();
     assoc_init();
+    matrix_init();
     replace_init();
     patterns_init();
     cond_init();
@@ -723,9 +738,12 @@ void core_init(void) {
     files_init();
     random_init();
     strings_init();
+    regex_init();
     series_init();
     deriv_init();
     limit_init();
+    void residue_init(void);
+    residue_init();
     numeric_init();
     precision_init();
     rationalize_init();
@@ -751,6 +769,8 @@ void core_init(void) {
     zero_test_init();
     void graphics_init(void);
     graphics_init();
+    void graph_init(void);
+    graph_init();
 
     /* Options/SetOptions/OptionValue + the default-options registry. Runs last
      * so every option-name symbol used by the registry is already interned. */
@@ -1093,7 +1113,12 @@ Expr* builtin_dimensions(Expr* res) {
     Expr* arg = res->data.function.args[0];
     int depth = 0;
     int64_t dims[DIMENSIONS_MAX_DEPTH];
-    if (max_depth > 0 && arg->type == EXPR_FUNCTION &&
+    if (arg->type == EXPR_MATRIX) {
+        /* O(1): rank/dims are already stored directly, no probing needed. */
+        depth = arg->data.matrix.rank;
+        if (depth > max_depth) depth = max_depth;
+        for (int i = 0; i < depth; i++) dims[i] = arg->data.matrix.dims[i];
+    } else if (max_depth > 0 && arg->type == EXPR_FUNCTION &&
         arg->data.function.head->type == EXPR_SYMBOL) {
         depth = get_dimensions(arg, dims, max_depth, arg->data.function.head->data.symbol);
     }
