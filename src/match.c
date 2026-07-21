@@ -1,10 +1,12 @@
 #include "match.h"
+#include <gmp.h>
 #include "part.h"
 #include "eval.h"
 #include "print.h"
 #include "symtab.h"
 #include "attr.h"
 #include "default_helper.h"
+#include "sym_names.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,18 +15,36 @@ static bool is_atom(const Expr* e) {
     if (!e) return true;
     if (e->type != EXPR_FUNCTION) return true;
     if (e->data.function.head->type == EXPR_SYMBOL) {
-        const char* head_name = e->data.function.head->data.symbol;
-        if (strcmp(head_name, "Complex") == 0 || strcmp(head_name, "Rational") == 0) {
+        const char* head_name = e->data.function.head->data.symbol.name;
+        if (head_name == SYM_Complex || head_name == SYM_Rational) {
             return true;
         }
     }
     return false;
 }
 
+/* An option argument: Rule[name,val] / RuleDelayed[name,val] with a
+ * symbol/string name. Used by OptionsPattern matching. */
+static bool mo_is_option_rule(const Expr* e) {
+    if (!e || e->type != EXPR_FUNCTION) return false;
+    const Expr* h = e->data.function.head;
+    if (!h || h->type != EXPR_SYMBOL) return false;
+    if (h->data.symbol.name != SYM_Rule && h->data.symbol.name != SYM_RuleDelayed) return false;
+    if (e->data.function.arg_count != 2) return false;
+    const Expr* lhs = e->data.function.args[0];
+    return lhs && (lhs->type == EXPR_SYMBOL || lhs->type == EXPR_STRING);
+}
+static bool mo_is_list(const Expr* e) {
+    return e && e->type == EXPR_FUNCTION && e->data.function.head->type == EXPR_SYMBOL
+        && e->data.function.head->data.symbol.name == SYM_List;
+}
+
 MatchEnv* env_new(void) {
     MatchEnv* env = malloc(sizeof(MatchEnv));
     env->count = 0;
     env->capacity = 8;
+    env->callback = NULL;
+    env->callback_data = NULL;
     env->symbols = malloc(sizeof(char*) * env->capacity);
     env->values = malloc(sizeof(Expr*) * env->capacity);
     return env;
@@ -54,7 +74,7 @@ void env_set(MatchEnv* env, const char* symbol, Expr* value) {
         env->symbols = realloc(env->symbols, sizeof(char*) * env->capacity);
         env->values = realloc(env->values, sizeof(Expr*) * env->capacity);
     }
-    env->symbols[env->count] = strdup(symbol);
+    env->symbols[env->count] = mathilda_strdup(symbol);
     env->values[env->count] = expr_copy(value);
     env->count++;
 }
@@ -78,7 +98,7 @@ Expr* env_get(MatchEnv* env, const char* symbol) {
 
 static bool is_pattern(Expr* e, Expr** sym_out, Expr** pat_out) {
     if (e->type == EXPR_FUNCTION && e->data.function.head->type == EXPR_SYMBOL) {
-        if (strcmp(e->data.function.head->data.symbol, "Pattern") == 0) {
+        if (e->data.function.head->data.symbol.name == SYM_Pattern) {
             if (e->data.function.arg_count == 2) {
                 if (sym_out) *sym_out = e->data.function.args[0];
                 if (pat_out) *pat_out = e->data.function.args[1];
@@ -91,7 +111,7 @@ static bool is_pattern(Expr* e, Expr** sym_out, Expr** pat_out) {
 
 static bool is_blank(Expr* e, Expr** head_out) {
     if (e->type == EXPR_FUNCTION && e->data.function.head->type == EXPR_SYMBOL) {
-        if (strcmp(e->data.function.head->data.symbol, "Blank") == 0) {
+        if (e->data.function.head->data.symbol.name == SYM_Blank) {
             if (e->data.function.arg_count == 0) {
                 if (head_out) *head_out = NULL;
                 return true;
@@ -106,13 +126,13 @@ static bool is_blank(Expr* e, Expr** head_out) {
 
 static bool is_sequence_blank(Expr* e, Expr** head_out, int* min_len) {
     if (e->type == EXPR_FUNCTION && e->data.function.head->type == EXPR_SYMBOL) {
-        const char* head = e->data.function.head->data.symbol;
-        if (strcmp(head, "BlankSequence") == 0) {
+        const char* head = e->data.function.head->data.symbol.name;
+        if (head == SYM_BlankSequence) {
             if (min_len) *min_len = 1;
             if (head_out) *head_out = (e->data.function.arg_count == 1) ? e->data.function.args[0] : NULL;
             return true;
         }
-        if (strcmp(head, "BlankNullSequence") == 0) {
+        if (head == SYM_BlankNullSequence) {
             if (min_len) *min_len = 0;
             if (head_out) *head_out = (e->data.function.arg_count == 1) ? e->data.function.args[0] : NULL;
             return true;
@@ -123,9 +143,9 @@ static bool is_sequence_blank(Expr* e, Expr** head_out, int* min_len) {
 
 static bool is_repeated(Expr* e, Expr** rep_pat, int* min_len, int* max_len) {
     if (e->type != EXPR_FUNCTION || e->data.function.head->type != EXPR_SYMBOL) return false;
-    const char* head = e->data.function.head->data.symbol;
-    bool is_rep = (strcmp(head, "Repeated") == 0);
-    bool is_rep_null = (strcmp(head, "RepeatedNull") == 0);
+    const char* head = e->data.function.head->data.symbol.name;
+    bool is_rep = (head == SYM_Repeated);
+    bool is_rep_null = (head == SYM_RepeatedNull);
     if (!is_rep && !is_rep_null) return false;
 
     *min_len = is_rep ? 1 : 0;
@@ -141,7 +161,7 @@ static bool is_repeated(Expr* e, Expr** rep_pat, int* min_len, int* max_len) {
         Expr* spec = e->data.function.args[1];
         if (spec->type == EXPR_INTEGER) {
             *max_len = (int)spec->data.integer;
-        } else if (spec->type == EXPR_FUNCTION && spec->data.function.head->type == EXPR_SYMBOL && strcmp(spec->data.function.head->data.symbol, "List") == 0) {
+        } else if (spec->type == EXPR_FUNCTION && spec->data.function.head->type == EXPR_SYMBOL && spec->data.function.head->data.symbol.name == SYM_List) {
             if (spec->data.function.arg_count == 1 && spec->data.function.args[0]->type == EXPR_INTEGER) {
                 *min_len = (int)spec->data.function.args[0]->data.integer;
                 *max_len = *min_len;
@@ -151,7 +171,7 @@ static bool is_repeated(Expr* e, Expr** rep_pat, int* min_len, int* max_len) {
                 }
                 if (spec->data.function.args[1]->type == EXPR_INTEGER) {
                     *max_len = (int)spec->data.function.args[1]->data.integer;
-                } else if (spec->data.function.args[1]->type == EXPR_SYMBOL && strcmp(spec->data.function.args[1]->data.symbol, "Infinity") == 0) {
+                } else if (spec->data.function.args[1]->type == EXPR_SYMBOL && spec->data.function.args[1]->data.symbol.name == SYM_Infinity) {
                     *max_len = -1;
                 }
             }
@@ -159,6 +179,49 @@ static bool is_repeated(Expr* e, Expr** rep_pat, int* min_len, int* max_len) {
     }
     return true;
 }
+
+/* True when pattern element `p` matches a *variable* number of subject
+ * elements -- a BlankSequence (__) or BlankNullSequence (___), optionally
+ * wrapped in Pattern[name, ...]. These are the elements whose Orderless
+ * subset enumeration is exponential, so for an Orderless head they must be
+ * matched only after the fixed-arity elements have pruned. */
+static bool pat_is_variable_seq(Expr* p) {
+    Expr* sym = NULL;
+    Expr* inner = NULL;
+    if (!is_pattern(p, &sym, &inner)) inner = p;
+    Expr* h = NULL;
+    int ml = 0;
+    return is_sequence_blank(inner, &h, &ml);
+}
+
+/* True when pattern element `p` is (or wraps) an Optional -- x_. or
+ * Optional[...]. Optional carries a *positional* default resolved via
+ * get_default_value(pat_head, original_index, ...), so a pattern list that
+ * contains one must NOT be reordered: the index would shift. */
+static bool pat_has_optional(Expr* p) {
+    Expr* cur = p;
+    while (cur && cur->type == EXPR_FUNCTION
+           && cur->data.function.head
+           && cur->data.function.head->type == EXPR_SYMBOL
+           && cur->data.function.arg_count >= 1) {
+        const char* h = cur->data.function.head->data.symbol.name;
+        if (h == SYM_Optional) return true;
+        if (h == SYM_Pattern && cur->data.function.arg_count == 2) {
+            cur = cur->data.function.args[1];
+        } else if (h == SYM_Shortest || h == SYM_Longest) {
+            cur = cur->data.function.args[0];
+        } else {
+            break;
+        }
+    }
+    return false;
+}
+
+/* Cap on the top-level pattern-element count for which the Orderless
+ * constraint-reordering buffer is stack-allocated. Real patterns have a
+ * handful of top-level elements; above this we skip the (purely
+ * performance) reordering and match in source order. */
+#define MATCH_REORDER_CAP 64
 
 typedef struct ParentMatch {
     Expr** exprs;
@@ -173,6 +236,47 @@ typedef struct ParentMatch {
 
 static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch* parent);
 static bool match_args_internal(Expr** exprs, size_t n_exprs, Expr** pats, size_t n_pats, MatchEnv* env, Expr* condition, Expr* pat_head, size_t total_pats, ParentMatch* parent);
+
+/* Evaluate a Condition guard with the current bindings substituted.
+ *
+ * Mathematica parses nested `/;` right-associatively, so
+ *   f[a, b] /; c1 /; c2
+ * becomes
+ *   Condition[f[a, b], Condition[c1, c2]]
+ * with the guard being `Condition[c1, c2]`.  Mathilda's `Condition`
+ * head has no evaluator rule that collapses `Condition[True, True]`
+ * to `True` (it's primarily a pattern wrapper), so a naive "evaluate
+ * and check `result == True`" gives False here.  We treat any chain
+ * of Condition[...] guards as conjunction: every leaf must evaluate
+ * to True.  Equivalent to substituting `And` for `Condition` at the
+ * guard level, without changing the global Condition semantics. */
+static bool eval_guard_true(Expr* guard, MatchEnv* env) {
+    Expr* expanded = replace_bindings(guard, env);
+    Expr* result = evaluate(expanded);
+    expr_free(expanded);
+    if (!result) return false;
+    /* Peel any number of nested Condition wrappers, ANDing the leaves. */
+    bool ok = true;
+    Expr* stack[64];
+    int top = 0;
+    stack[top++] = result;
+    while (top > 0 && ok) {
+        Expr* cur = stack[--top];
+        if (cur->type == EXPR_SYMBOL && cur->data.symbol.name == SYM_True) continue;
+        if (cur->type == EXPR_FUNCTION && cur->data.function.head
+            && cur->data.function.head->type == EXPR_SYMBOL
+            && cur->data.function.head->data.symbol.name == SYM_Condition
+            && cur->data.function.arg_count == 2
+            && top + 2 <= (int)(sizeof(stack)/sizeof(stack[0]))) {
+            stack[top++] = cur->data.function.args[0];
+            stack[top++] = cur->data.function.args[1];
+            continue;
+        }
+        ok = false;
+    }
+    expr_free(result);
+    return ok;
+}
 
 #include "part.h" // for expr_head
 
@@ -210,20 +314,106 @@ static void extract_subset(Expr** exprs, size_t n_exprs, int* comb, int k, Expr*
 }
 
 // Call parent if exists, otherwise return true (or check top condition)
+
+static ParentMatch top_level_sentinel = {0};
+
 static bool call_parent(MatchEnv* env, ParentMatch* parent) {
+    if (parent == &top_level_sentinel) {
+        if (env->callback) {
+            return env->callback(env, env->callback_data);
+        }
+        return true;
+    }
     if (parent) {
         return match_args_internal(parent->exprs, parent->n_exprs, parent->pats, parent->n_pats, env, parent->condition, parent->pat_head, parent->total_pats, parent->parent);
     }
     return true;
 }
 
+/* True iff `e` is a two-argument Rule/RuleDelayed. */
+static bool kvp_is_rule2(Expr* e) {
+    return e->type == EXPR_FUNCTION && e->data.function.head->type == EXPR_SYMBOL &&
+           (e->data.function.head->data.symbol.name == SYM_Rule ||
+            e->data.function.head->data.symbol.name == SYM_RuleDelayed) &&
+           e->data.function.arg_count == 2;
+}
+
+/* Backtracking matcher for KeyValuePattern requirements: assign requirement
+ * `ri` to some entry of `subj` whose key matches ki and value matches pi, then
+ * recurse to the next requirement; on failure, undo the bindings and try
+ * another entry. When all requirements are satisfied (ri == nreq), call_parent
+ * finalizes — and if that fails, the search backtracks to try other
+ * assignments. This makes e.g. KeyValuePattern[{k_ -> _, _ -> k_}] solvable. */
+static bool kvp_match_reqs(Expr** reqs, size_t nreq, size_t ri, Expr* subj,
+                           MatchEnv* env, ParentMatch* parent) {
+    if (ri == nreq) return call_parent(env, parent);
+    Expr* rule = reqs[ri];
+    if (!kvp_is_rule2(rule)) return false;
+    Expr* kpat = rule->data.function.args[0];
+    Expr* vpat = rule->data.function.args[1];
+    for (size_t i = 0; i < subj->data.function.arg_count; i++) {
+        Expr* entry = subj->data.function.args[i];
+        if (!kvp_is_rule2(entry)) continue;
+        size_t es = env->count;
+        if (match_internal(entry->data.function.args[0], kpat, env, NULL) &&
+            match_internal(entry->data.function.args[1], vpat, env, NULL) &&
+            kvp_match_reqs(reqs, nreq, ri + 1, subj, env, parent)) {
+            return true;
+        }
+        env_rollback(env, es);
+    }
+    return false;
+}
+
+
 static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch* parent) {
     if (!pattern) return false;
     if (!expr) return false;
 
+    /* HoldPattern[p] is equivalent to p for matching purposes. The
+     * HoldAll attribute on HoldPattern prevents the inner expression from
+     * being evaluated when the rule LHS is formed, so patterns that would
+     * otherwise simplify (e.g. _+_ becoming 2 Blank[]) are preserved. */
+    if (pattern->type == EXPR_FUNCTION && pattern->data.function.head->type == EXPR_SYMBOL &&
+        pattern->data.function.head->data.symbol.name == SYM_HoldPattern &&
+        pattern->data.function.arg_count == 1) {
+        return match_internal(expr, pattern->data.function.args[0], env, parent);
+    }
+
+    /* KeyValuePattern[{k1 -> p1, ...}] (or a single k -> p) matches an
+     * association — or a list of rules — that contains, for each required
+     * ki -> pi, an entry whose key matches ki and whose value matches pi.
+     * Requirements are matched with backtracking (kvp_match_reqs), so a
+     * consistent assignment is found whenever one exists even when requirements
+     * share bound variables. An empty spec matches any association. This is a
+     * new pattern head, so it cannot affect existing matching. */
+    if (pattern->type == EXPR_FUNCTION && pattern->data.function.head->type == EXPR_SYMBOL &&
+        pattern->data.function.head->data.symbol.name == SYM_KeyValuePattern &&
+        pattern->data.function.arg_count == 1) {
+        Expr* subj = expr;
+        bool subj_ok = subj->type == EXPR_FUNCTION && subj->data.function.head->type == EXPR_SYMBOL &&
+            (subj->data.function.head->data.symbol.name == SYM_Association ||
+             subj->data.function.head->data.symbol.name == SYM_List);
+        if (!subj_ok) return false;
+
+        Expr* spec = pattern->data.function.args[0];
+        Expr** reqs; size_t nreq;
+        if (spec->type == EXPR_FUNCTION && spec->data.function.head->type == EXPR_SYMBOL &&
+            spec->data.function.head->data.symbol.name == SYM_List) {
+            reqs = spec->data.function.args; nreq = spec->data.function.arg_count;
+        } else {
+            reqs = &spec; nreq = 1;   /* a single rule */
+        }
+
+        size_t saved = env->count;
+        if (kvp_match_reqs(reqs, nreq, 0, subj, env, parent)) return true;
+        env_rollback(env, saved);
+        return false;
+    }
+
     // Handle Except
     if (pattern->type == EXPR_FUNCTION && pattern->data.function.head->type == EXPR_SYMBOL &&
-        strcmp(pattern->data.function.head->data.symbol, "Except") == 0) {
+        pattern->data.function.head->data.symbol.name == SYM_Except) {
         if (pattern->data.function.arg_count == 1) {
             size_t saved_env_count = env->count;
             if (match_internal(expr, pattern->data.function.args[0], env, NULL)) {
@@ -250,13 +440,42 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
 
     // Handle Condition
     if (pattern->type == EXPR_FUNCTION && pattern->data.function.head->type == EXPR_SYMBOL &&
-        strcmp(pattern->data.function.head->data.symbol, "Condition") == 0) {
+        pattern->data.function.head->data.symbol.name == SYM_Condition) {
         if (pattern->data.function.arg_count != 2) return false;
-        
+
         Expr* inner_pat = pattern->data.function.args[0];
         Expr* cond = pattern->data.function.args[1];
-        
-        if (inner_pat->type == EXPR_FUNCTION && expr->type == EXPR_FUNCTION) {
+
+        /* The "structured" branch threads cond through match_args_internal
+         * so the guard runs once all bindings are established. It only
+         * applies when inner_pat is a literal-headed function call (so we
+         * can route argument matching). When inner_pat is itself a
+         * pattern wrapper -- a nested Condition/PatternTest/HoldPattern/
+         * Verbatim guard OR a pattern object whose head only *looks* like
+         * a function call (Pattern[x, Blank[]] for `x_`, Blank[], etc.) --
+         * we MUST fall through to the simpler recursive path below, which
+         * re-enters this handler for the inner wrapper. Without this gate,
+         * e.g. `f[a_,b_] /; c1 /; c2` would try to structurally match
+         * input's head against `Condition`, and `e_ /; cond` would match
+         * input's head against `Pattern`, both wrong dispatches. */
+        bool inner_is_wrapper = false;
+        if (inner_pat->type == EXPR_FUNCTION && inner_pat->data.function.head
+            && inner_pat->data.function.head->type == EXPR_SYMBOL) {
+            const char* ih = inner_pat->data.function.head->data.symbol.name;
+            if (ih == SYM_Condition || ih == SYM_PatternTest
+                || ih == SYM_HoldPattern || ih == SYM_Verbatim
+                || ih == SYM_Pattern || ih == SYM_Blank
+                || ih == SYM_BlankSequence || ih == SYM_BlankNullSequence
+                || ih == SYM_Alternatives || ih == SYM_Optional
+                || ih == SYM_Repeated || ih == SYM_RepeatedNull
+                || ih == SYM_Shortest || ih == SYM_Longest
+                || ih == SYM_Except || ih == SYM_KeyValuePattern) {
+                inner_is_wrapper = true;
+            }
+        }
+
+        if (!inner_is_wrapper
+            && inner_pat->type == EXPR_FUNCTION && expr->type == EXPR_FUNCTION) {
             size_t saved_env_count = env->count;
             if (!match_internal(expr->data.function.head, inner_pat->data.function.head, env, NULL)) {
                 env_rollback(env, saved_env_count);
@@ -273,12 +492,7 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
             env_rollback(env, saved_env_count);
             return false;
         }
-        Expr* expanded_test = replace_bindings(cond, env);
-        Expr* result = evaluate(expanded_test);
-        expr_free(expanded_test);
-        bool success = (result->type == EXPR_SYMBOL && strcmp(result->data.symbol, "True") == 0);
-        expr_free(result);
-        if (!success) {
+        if (!eval_guard_true(cond, env)) {
             env_rollback(env, saved_env_count);
             return false;
         }
@@ -293,11 +507,11 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
             Expr* h = get_expr_head_borrowed(expr);
             if (h) head_ok = expr_eq(h, b_head);
             else if (b_head->type == EXPR_SYMBOL) {
-                const char* hn = b_head->data.symbol;
-                if (expr->type == EXPR_INTEGER && strcmp(hn, "Integer") == 0) head_ok = true;
-                else if (expr->type == EXPR_REAL && strcmp(hn, "Real") == 0) head_ok = true;
-                else if (expr->type == EXPR_SYMBOL && strcmp(hn, "Symbol") == 0) head_ok = true;
-                else if (expr->type == EXPR_STRING && strcmp(hn, "String") == 0) head_ok = true;
+                const char* hn = b_head->data.symbol.name;
+                if (expr->type == EXPR_INTEGER && hn == SYM_Integer) head_ok = true;
+                else if (expr->type == EXPR_REAL && hn == SYM_Real) head_ok = true;
+                else if (expr->type == EXPR_SYMBOL && hn == SYM_Symbol) head_ok = true;
+                else if (expr->type == EXPR_STRING && hn == SYM_String) head_ok = true;
             }
         }
         if (head_ok) return call_parent(env, parent);
@@ -313,11 +527,11 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
             Expr* h = get_expr_head_borrowed(expr);
             if (h) head_ok = expr_eq(h, b_head);
             else if (b_head->type == EXPR_SYMBOL) {
-                const char* hn = b_head->data.symbol;
-                if (expr->type == EXPR_INTEGER && strcmp(hn, "Integer") == 0) head_ok = true;
-                else if (expr->type == EXPR_REAL && strcmp(hn, "Real") == 0) head_ok = true;
-                else if (expr->type == EXPR_SYMBOL && strcmp(hn, "Symbol") == 0) head_ok = true;
-                else if (expr->type == EXPR_STRING && strcmp(hn, "String") == 0) head_ok = true;
+                const char* hn = b_head->data.symbol.name;
+                if (expr->type == EXPR_INTEGER && hn == SYM_Integer) head_ok = true;
+                else if (expr->type == EXPR_REAL && hn == SYM_Real) head_ok = true;
+                else if (expr->type == EXPR_SYMBOL && hn == SYM_Symbol) head_ok = true;
+                else if (expr->type == EXPR_STRING && hn == SYM_String) head_ok = true;
             }
         }
         if (head_ok) return call_parent(env, parent);
@@ -334,7 +548,7 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
                 return false;
             }
             // Then handle binding and parent
-            Expr* existing = env_get(env, p_sym->data.symbol);
+            Expr* existing = env_get(env, p_sym->data.symbol.name);
             if (existing) {
                 if (!expr_eq(expr, existing)) {
                     env_rollback(env, saved_env_count);
@@ -345,7 +559,7 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
                 env_rollback(env, saved_env_count);
                 return false;
             } else {
-                env_set(env, p_sym->data.symbol, expr);
+                env_set(env, p_sym->data.symbol.name, expr);
                 if (call_parent(env, parent)) return true;
                 env_rollback(env, saved_env_count);
                 return false;
@@ -355,7 +569,7 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
 
     // Handle Alternatives
     if (pattern->type == EXPR_FUNCTION && pattern->data.function.head->type == EXPR_SYMBOL &&
-        strcmp(pattern->data.function.head->data.symbol, "Alternatives") == 0) {
+        pattern->data.function.head->data.symbol.name == SYM_Alternatives) {
         size_t saved_env_count = env->count;
         for (size_t i = 0; i < pattern->data.function.arg_count; i++) {
             if (match_internal(expr, pattern->data.function.args[i], env, parent)) return true;
@@ -366,7 +580,7 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
 
     // Handle PatternTest
     if (pattern->type == EXPR_FUNCTION && pattern->data.function.head->type == EXPR_SYMBOL &&
-        strcmp(pattern->data.function.head->data.symbol, "PatternTest") == 0) {
+        pattern->data.function.head->data.symbol.name == SYM_PatternTest) {
         if (pattern->data.function.arg_count != 2) return false;
         size_t saved_env_count = env->count;
         if (!match_internal(expr, pattern->data.function.args[0], env, NULL)) {
@@ -379,7 +593,7 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
         Expr* result = evaluate(test_call);
         expr_free(test_call);
         
-        bool success = (result->type == EXPR_SYMBOL && strcmp(result->data.symbol, "True") == 0);
+        bool success = (result->type == EXPR_SYMBOL && result->data.symbol.name == SYM_True);
         expr_free(result);
         if (!success) {
             env_rollback(env, saved_env_count);
@@ -398,11 +612,33 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
             case EXPR_REAL:
                 if (expr->data.real == pattern->data.real) return call_parent(env, parent);
                 return false;
-            case EXPR_SYMBOL:
-                if (strcmp(expr->data.symbol, pattern->data.symbol) == 0) return call_parent(env, parent);
+            case EXPR_SYMBOL: {
+                Expr* bound = env_get(env, pattern->data.symbol.name);
+                if (bound) {
+                    if (expr_eq(expr, bound)) return call_parent(env, parent);
+                    return false;
+                }
+                if (strcmp(expr->data.symbol.name, pattern->data.symbol.name) == 0) return call_parent(env, parent);
                 return false;
+            }
             case EXPR_STRING:
                 if (strcmp(expr->data.string, pattern->data.string) == 0) return call_parent(env, parent);
+                return false;
+            case EXPR_BIGINT:
+                if (mpz_cmp(expr->data.bigint, pattern->data.bigint) == 0) return call_parent(env, parent);
+                return false;
+#ifdef USE_MPFR
+            case EXPR_MPFR:
+                /* Match identical-precision MPFR values bit-for-bit. */
+                if (mpfr_get_prec(expr->data.mpfr) == mpfr_get_prec(pattern->data.mpfr)
+                    && mpfr_equal_p(expr->data.mpfr, pattern->data.mpfr)) {
+                    return call_parent(env, parent);
+                }
+                return false;
+#endif
+            case EXPR_NDARRAY:
+                /* A literal NDArray pattern matches an identical dense array. */
+                if (expr_eq(expr, pattern)) return call_parent(env, parent);
                 return false;
             case EXPR_FUNCTION: {
                 size_t saved_env_count = env->count;
@@ -420,7 +656,7 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
 
     // Try OneIdentity if pattern is a function
     if (pattern->type == EXPR_FUNCTION && pattern->data.function.head->type == EXPR_SYMBOL) {
-        SymbolDef* def = symtab_get_def(pattern->data.function.head->data.symbol);
+        SymbolDef* def = symtab_get_def(pattern->data.function.head->data.symbol.name);
         if (def && (def->attributes & ATTR_ONEIDENTITY)) {
             size_t saved_env_count = env->count;
             Expr* args[1] = { expr };
@@ -435,75 +671,148 @@ static bool match_internal(Expr* expr, Expr* pattern, MatchEnv* env, ParentMatch
 }
 
 bool match(Expr* expr, Expr* pattern, MatchEnv* env) {
-    return match_internal(expr, pattern, env, NULL);
+    return match_internal(expr, pattern, env, &top_level_sentinel);
 }
 
 static bool match_args_internal(Expr** exprs, size_t n_exprs, Expr** pats, size_t n_pats, MatchEnv* env, Expr* condition, Expr* pat_head, size_t total_pats, ParentMatch* parent) {
     
     if (n_pats == 0) {
         if (n_exprs != 0) return false;
-        
-        if (condition) {
-            Expr* expanded_test = replace_bindings(condition, env);
-            Expr* result = evaluate(expanded_test);
-            expr_free(expanded_test);
-            bool success = (result->type == EXPR_SYMBOL && strcmp(result->data.symbol, "True") == 0);
-            expr_free(result);
-            if (!success) return false;
-        }
-        
+
+        if (condition && !eval_guard_true(condition, env)) return false;
+
         return call_parent(env, parent);
     }
 
-    Expr* p = pats[0];
-    
-    // Handle Optional, Longest, Shortest
-    bool is_optional = false;
-    bool is_shortest = false; // For Optional, default is Longest
-    bool is_longest = false;  // For Sequence/Repeated, default is Shortest
-    Expr* opt_pat = p;
-    Expr* opt_container = p;
-
-    if (p->type == EXPR_FUNCTION && p->data.function.head->type == EXPR_SYMBOL) {
-        const char* head = p->data.function.head->data.symbol;
-        if (strcmp(head, "Shortest") == 0) {
-            is_shortest = true;
-            if (p->data.function.arg_count >= 1) {
-                Expr* inner = p->data.function.args[0];
-                if (inner->type == EXPR_FUNCTION && inner->data.function.head->type == EXPR_SYMBOL &&
-                    strcmp(inner->data.function.head->data.symbol, "Optional") == 0) {
-                    is_optional = true;
-                    is_shortest = true;
-                    opt_container = inner;
-                    if (inner->data.function.arg_count >= 1) {
-                        opt_pat = inner->data.function.args[0];
-                    }
-                } else {
-                    opt_pat = inner;
-                }
+    /* Constraint ordering for Orderless AC-matching.  In an Orderless head a
+     * leading variable-length sequence blank (__/___) forces the matcher to
+     * enumerate every subset of the subject for that blank *before* a later,
+     * highly-selective fixed element gets a chance to fail-fast -- making the
+     * match exponential on large sums/products.  (Concretely, the trig
+     * Pythagorean simplification rules `Cosh[x_]^2 - Sinh[x_]^2 + r___`
+     * applied to a ~20-term expansion cost ~2 s per rule, and the enclosing
+     * Simplify hung.)  Pattern-element order is semantically irrelevant for an
+     * Orderless head, so stably move the variable-length sequence blanks to
+     * the end; the fixed elements then prune first (O(n) instead of O(2^n)).
+     * Skipped when any element carries an Optional positional default, whose
+     * index would shift under reordering. */
+    Expr* reorder_storage[MATCH_REORDER_CAP];
+    if (n_pats >= 2 && n_pats <= MATCH_REORDER_CAP
+        && pat_head && pat_head->type == EXPR_SYMBOL) {
+        SymbolDef* hd = symtab_get_def(pat_head->data.symbol.name);
+        if (hd && (hd->attributes & ATTR_ORDERLESS)) {
+            bool any_opt = false, need = false, seen_seq = false;
+            for (size_t i = 0; i < n_pats; i++) {
+                if (pat_has_optional(pats[i])) { any_opt = true; break; }
+                if (pat_is_variable_seq(pats[i])) seen_seq = true;
+                else if (seen_seq) need = true;  /* fixed element after a blank */
             }
-        } else if (strcmp(head, "Longest") == 0) {
-            is_longest = true;
-            if (p->data.function.arg_count >= 1) {
-                Expr* inner = p->data.function.args[0];
-                if (inner->type == EXPR_FUNCTION && inner->data.function.head->type == EXPR_SYMBOL &&
-                    strcmp(inner->data.function.head->data.symbol, "Optional") == 0) {
-                    is_optional = true;
-                    is_shortest = false; // Optional defaults to Longest, Longest wrapper enforces it
-                    opt_container = inner;
-                    if (inner->data.function.arg_count >= 1) {
-                        opt_pat = inner->data.function.args[0];
-                    }
-                } else {
-                    opt_pat = inner;
-                }
-            }
-        } else if (strcmp(head, "Optional") == 0) {
-            is_optional = true;
-            if (p->data.function.arg_count >= 1) {
-                opt_pat = p->data.function.args[0];
+            if (!any_opt && need) {
+                size_t w = 0;
+                for (size_t i = 0; i < n_pats; i++)
+                    if (!pat_is_variable_seq(pats[i])) reorder_storage[w++] = pats[i];
+                for (size_t i = 0; i < n_pats; i++)
+                    if (pat_is_variable_seq(pats[i])) reorder_storage[w++] = pats[i];
+                pats = reorder_storage;
             }
         }
+    }
+
+    Expr* p = pats[0];
+
+    bool is_optional = false;
+    bool is_shortest = false;
+    bool is_longest = false;
+    Expr* opt_container = p;
+    Expr* bind_sym = NULL;
+    Expr* current_p = p;
+
+    while (current_p->type == EXPR_FUNCTION && current_p->data.function.head->type == EXPR_SYMBOL && current_p->data.function.arg_count >= 1) {
+        const char* head = current_p->data.function.head->data.symbol.name;
+        if (head == SYM_Pattern && current_p->data.function.arg_count == 2) {
+            bind_sym = current_p->data.function.args[0];
+            current_p = current_p->data.function.args[1];
+        } else if (head == SYM_Shortest) {
+            is_shortest = true;
+            current_p = current_p->data.function.args[0];
+        } else if (head == SYM_Longest) {
+            is_longest = true;
+            is_shortest = false;
+            current_p = current_p->data.function.args[0];
+        } else if (head == SYM_Optional) {
+            is_optional = true;
+            opt_container = current_p;
+            current_p = current_p->data.function.args[0];
+        } else {
+            break;
+        }
+    }
+    
+    Expr* opt_pat = current_p;
+
+    /* OptionsPattern[]: consume the remaining option arguments (each a
+     * Rule/RuleDelayed with a symbol/string name, or a List of such rules),
+     * flatten them, and bind the collected options under the reserved key
+     * "$OptionsPattern$" so OptionValue can resolve them when the rule fires.
+     * It is the least-specific, variable-arity slot, so it greedily takes the
+     * whole trailing option run; any remaining non-option argument makes this
+     * rule fail to match (e.g. f[OptionsPattern[]] does not match f[x]). */
+    if (opt_pat->type == EXPR_FUNCTION
+        && opt_pat->data.function.head->type == EXPR_SYMBOL
+        && opt_pat->data.function.head->data.symbol.name == SYM_OptionsPattern) {
+        size_t cap = (n_exprs ? n_exprs : 1), cnt = 0;
+        Expr** collected = malloc(sizeof(Expr*) * cap);
+        bool ok = true;
+        for (size_t i = 0; i < n_exprs && ok; i++) {
+            Expr* a = exprs[i];
+            if (mo_is_option_rule(a)) {
+                if (cnt == cap) { cap *= 2; collected = realloc(collected, sizeof(Expr*) * cap); }
+                collected[cnt++] = a;
+            } else if (mo_is_list(a)) {
+                for (size_t j = 0; j < a->data.function.arg_count; j++) {
+                    Expr* e2 = a->data.function.args[j];
+                    if (!mo_is_option_rule(e2)) { ok = false; break; }
+                    if (cnt == cap) { cap *= 2; collected = realloc(collected, sizeof(Expr*) * cap); }
+                    collected[cnt++] = e2;
+                }
+            } else {
+                ok = false;
+            }
+        }
+        if (ok) {
+            Expr** items = malloc(sizeof(Expr*) * (cnt ? cnt : 1));
+            for (size_t i = 0; i < cnt; i++) items[i] = expr_copy(collected[i]);
+            Expr* optlist = expr_new_function(expr_new_symbol(SYM_List), items, cnt);
+            free(items);
+            size_t saved = env->count;
+            env_set(env, "$OptionsPattern$", optlist);  /* env_set copies value */
+            expr_free(optlist);
+            /* If the OptionsPattern was named (opts : OptionsPattern[]), also
+             * bind that symbol to a Sequence of the matched options so the RHS
+             * can splice them -- Sequence @@ ..., {opts}, or passing opts down
+             * to another call. WL binds the name to the option sequence; an
+             * empty match binds Sequence[] which vanishes on splice. Without
+             * this only OptionValue (via $OptionsPattern$) works, not the
+             * common opts-forwarding idiom. */
+            if (bind_sym && bind_sym->type == EXPR_SYMBOL) {
+                Expr** sitems = malloc(sizeof(Expr*) * (cnt ? cnt : 1));
+                for (size_t i = 0; i < cnt; i++) sitems[i] = expr_copy(collected[i]);
+                Expr* seq = expr_new_function(expr_new_symbol(SYM_Sequence), sitems, cnt);
+                free(sitems);
+                env_set(env, bind_sym->data.symbol.name, seq);
+                expr_free(seq);
+            }
+            /* Consume every remaining expr; the rest of the pattern list must
+             * match against zero arguments. */
+            if (match_args_internal(exprs + n_exprs, 0, pats + 1, n_pats - 1, env,
+                                    condition, pat_head, total_pats, parent)) {
+                free(collected);
+                return true;
+            }
+            env_rollback(env, saved);
+        }
+        free(collected);
+        return false;
     }
 
     if (is_optional && is_shortest) {
@@ -516,16 +825,22 @@ static bool match_args_internal(Expr** exprs, size_t n_exprs, Expr** pats, size_
         }
 
         if (def_val) {
+            Expr* p_sym = bind_sym;
             Expr* inner_p = opt_pat;
-            Expr* p_sym = NULL;
-            if (is_pattern(opt_pat, &p_sym, &inner_p)) {
-                if (p_sym && p_sym->type == EXPR_SYMBOL) {
-                    env_set(env, p_sym->data.symbol, def_val);
+            if (!p_sym) is_pattern(opt_pat, &p_sym, &inner_p);
+            bool consistent = true;
+            if (p_sym && p_sym->type == EXPR_SYMBOL) {
+                Expr* existing = env_get(env, p_sym->data.symbol.name);
+                if (existing) {
+                    if (!expr_eq(existing, def_val)) consistent = false;
+                } else {
+                    env_set(env, p_sym->data.symbol.name, def_val);
                 }
             }
             expr_free(def_val);
 
-            if (match_args_internal(exprs, n_exprs, pats + 1, n_pats - 1, env, condition, pat_head, total_pats, parent)) {
+
+            if (consistent && match_args_internal(exprs, n_exprs, pats + 1, n_pats - 1, env, condition, pat_head, total_pats, parent)) {
                 return true;
             }
             env_rollback(env, saved_env_count);
@@ -533,7 +848,7 @@ static bool match_args_internal(Expr** exprs, size_t n_exprs, Expr** pats, size_
     }
 
     Expr* inner_p = opt_pat;
-    Expr* p_sym = NULL;
+    Expr* p_sym = bind_sym;
     int min_len = 0;
     int max_len = -1;
     Expr* b_head = NULL;
@@ -541,18 +856,19 @@ static bool match_args_internal(Expr** exprs, size_t n_exprs, Expr** pats, size_
 
     bool is_seq = false;
     bool is_rep = false;
-    if (is_pattern(opt_pat, &p_sym, &inner_p)) {
+    if (!p_sym && is_pattern(opt_pat, &p_sym, &inner_p)) {
         is_seq = is_sequence_blank(inner_p, &b_head, &min_len);
         if (!is_seq) is_rep = is_repeated(inner_p, &rep_pat, &min_len, &max_len);
     } else {
-        is_seq = is_sequence_blank(opt_pat, &b_head, &min_len);
-        if (!is_seq) is_rep = is_repeated(opt_pat, &rep_pat, &min_len, &max_len);
+        is_seq = is_sequence_blank(inner_p, &b_head, &min_len);
+        if (!is_seq) is_rep = is_repeated(inner_p, &rep_pat, &min_len, &max_len);
     }
+
 
     bool is_orderless = false;
     bool is_flat = false;
     if (pat_head && pat_head->type == EXPR_SYMBOL) {
-        SymbolDef* def = symtab_get_def(pat_head->data.symbol);
+        SymbolDef* def = symtab_get_def(pat_head->data.symbol.name);
         if (def) {
             if (def->attributes & ATTR_FLAT) is_flat = true;
             if (def->attributes & ATTR_ORDERLESS) is_orderless = true;
@@ -569,6 +885,50 @@ static bool match_args_internal(Expr** exprs, size_t n_exprs, Expr** pats, size_
     } else if (is_flat) {
         min_k = 1;
         max_k = n_exprs;
+        /* Pruning: if inner_p is a specific Function pattern whose head
+         * is neither pat_head's symbol nor a pattern-construct head that
+         * may match anything, then no constructed
+         * Function[pat_head, subset...] (k > 1) can ever match it -- it
+         * would fail at the head check. The only exception is when
+         * inner_p's head has OneIdentity AND has exactly one pattern arg
+         * (e.g., Plus[a_]), in which case ONEIDENTITY lets the
+         * constructed multi-factor value be absorbed into that single
+         * arg. Without this guard the orderless+Flat enumeration is
+         * exponential in the factor count even though k > 1 cannot
+         * succeed -- dominates Simplify on multi-factor trig products. */
+        if (inner_p && inner_p->type == EXPR_FUNCTION
+            && inner_p->data.function.head
+            && inner_p->data.function.head->type == EXPR_SYMBOL
+            && pat_head && pat_head->type == EXPR_SYMBOL) {
+            const char* inner_hn = inner_p->data.function.head->data.symbol.name;
+            if (inner_hn != pat_head->data.symbol.name
+                && inner_hn != SYM_Blank && inner_hn != SYM_BlankSequence
+                && inner_hn != SYM_BlankNullSequence && inner_hn != SYM_Pattern
+                && inner_hn != SYM_HoldPattern
+                && inner_hn != SYM_Alternatives && inner_hn != SYM_Condition
+                && inner_hn != SYM_PatternTest && inner_hn != SYM_Optional
+                && inner_hn != SYM_Shortest && inner_hn != SYM_Longest
+                && inner_hn != SYM_Repeated && inner_hn != SYM_RepeatedNull) {
+                SymbolDef* idef = symtab_get_def(inner_hn);
+                bool has_oid = idef && (idef->attributes & ATTR_ONEIDENTITY);
+                bool oid_can_absorb = has_oid
+                    && inner_p->data.function.arg_count == 1;
+                if (!oid_can_absorb) {
+                    max_k = (n_exprs > 0) ? 1 : 0;
+                }
+            }
+        } else if (inner_p && inner_p->type != EXPR_FUNCTION) {
+            /* A literal atom (integer/real/symbol/string/bigint) as a
+             * pattern element can only match a single subject element that
+             * is structurally equal to it: a constructed pat_head[subset]
+             * with k > 1 is a Function and can never equal an atom, so the
+             * Flat subset enumeration (max_k = n_exprs) is pure wasted work,
+             * exponential in the argument count. Cap it at 1. This is the
+             * atomic analogue of the Function-pattern pruning above; e.g.
+             * the Pythagorean rule `1 - Cos[x_]^2 + r___`, whose literal `1`
+             * element otherwise drove a 2^n subset scan over a large sum. */
+            max_k = (n_exprs > 0) ? 1 : 0;
+        }
     } else {
         min_k = 1;
         max_k = (n_exprs > 0) ? 1 : 0;
@@ -604,11 +964,11 @@ static bool match_args_internal(Expr** exprs, size_t n_exprs, Expr** pats, size_
                             bool ok = false;
                             if (h) ok = expr_eq(h, b_head);
                             else if (b_head->type == EXPR_SYMBOL) {
-                                const char* hn = b_head->data.symbol;
-                                if (subset[i]->type == EXPR_INTEGER && strcmp(hn, "Integer") == 0) ok = true;
-                                else if (subset[i]->type == EXPR_REAL && strcmp(hn, "Real") == 0) ok = true;
-                                else if (subset[i]->type == EXPR_SYMBOL && strcmp(hn, "Symbol") == 0) ok = true;
-                                else if (subset[i]->type == EXPR_STRING && strcmp(hn, "String") == 0) ok = true;
+                                const char* hn = b_head->data.symbol.name;
+                                if (subset[i]->type == EXPR_INTEGER && hn == SYM_Integer) ok = true;
+                                else if (subset[i]->type == EXPR_REAL && hn == SYM_Real) ok = true;
+                                else if (subset[i]->type == EXPR_SYMBOL && hn == SYM_Symbol) ok = true;
+                                else if (subset[i]->type == EXPR_STRING && hn == SYM_String) ok = true;
                             }
                             if (!ok) { type_ok = false; break; }
                         }
@@ -621,25 +981,25 @@ static bool match_args_internal(Expr** exprs, size_t n_exprs, Expr** pats, size_
 
                 if (type_ok) {
                     if (p_sym) {
-                        Expr* seq_val = expr_new_function(expr_new_symbol("Sequence"), NULL, k);
+                        Expr* seq_val = expr_new_function(expr_new_symbol(SYM_Sequence), NULL, k);
                         for (size_t i = 0; i < k; i++) seq_val->data.function.args[i] = expr_copy(subset[i]);
-                        Expr* existing = env_get(env, p_sym->data.symbol);
+                        Expr* existing = env_get(env, p_sym->data.symbol.name);
                         if (existing) {
                             if (expr_eq(seq_val, existing)) {
                                 if (match_args_internal(remainder, n_exprs - k, pats + 1, n_pats - 1, env, condition, pat_head, total_pats, parent)) {
-                                    expr_free(seq_val); if (subset) free(subset); if (remainder) free(remainder); if (comb) free(comb); return true;
+                                    expr_free(seq_val); { if (subset) free(subset); if (remainder) free(remainder); if (comb) free(comb); return true; }
                                 }
                             }
                         } else {
-                            env_set(env, p_sym->data.symbol, seq_val);
+                            env_set(env, p_sym->data.symbol.name, seq_val);
                             if (match_args_internal(remainder, n_exprs - k, pats + 1, n_pats - 1, env, condition, pat_head, total_pats, parent)) {
-                                expr_free(seq_val); if (subset) free(subset); if (remainder) free(remainder); if (comb) free(comb); return true;
+                                expr_free(seq_val); { if (subset) free(subset); if (remainder) free(remainder); if (comb) free(comb); return true; }
                             }
                         }
                         expr_free(seq_val);
                     } else {
                         if (match_args_internal(remainder, n_exprs - k, pats + 1, n_pats - 1, env, condition, pat_head, total_pats, parent)) {
-                            if (subset) free(subset); if (remainder) free(remainder); if (comb) free(comb); return true;
+                            { if (subset) free(subset); if (remainder) free(remainder); if (comb) free(comb); return true; }
                         }
                     }
                 }
@@ -655,12 +1015,32 @@ static bool match_args_internal(Expr** exprs, size_t n_exprs, Expr** pats, size_
                 }
 
                 if (matched_val) {
-                    ParentMatch pm = { remainder, n_exprs - k, pats + 1, n_pats - 1, condition, pat_head, total_pats, parent };
-                    if (match_internal(matched_val, opt_pat, env, &pm)) {
-                        expr_free(matched_val); if (subset) free(subset); if (remainder) free(remainder); if (comb) free(comb); return true;
+                    size_t saved_env_inner = env->count;
+                    if (match_internal(matched_val, inner_p, env, NULL)) {
+                        if (p_sym) {
+                            Expr* existing = env_get(env, p_sym->data.symbol.name);
+                            if (existing) {
+                                if (expr_eq(matched_val, existing)) {
+                                    if (match_args_internal(remainder, n_exprs - k, pats + 1, n_pats - 1, env, condition, pat_head, total_pats, parent)) {
+                                        expr_free(matched_val); { if (subset) free(subset); if (remainder) free(remainder); if (comb) free(comb); return true; }
+                                    }
+                                }
+                            } else {
+                                env_set(env, p_sym->data.symbol.name, matched_val);
+                                if (match_args_internal(remainder, n_exprs - k, pats + 1, n_pats - 1, env, condition, pat_head, total_pats, parent)) {
+                                    expr_free(matched_val); { if (subset) free(subset); if (remainder) free(remainder); if (comb) free(comb); return true; }
+                                }
+                            }
+                        } else {
+                            if (match_args_internal(remainder, n_exprs - k, pats + 1, n_pats - 1, env, condition, pat_head, total_pats, parent)) {
+                                expr_free(matched_val); { if (subset) free(subset); if (remainder) free(remainder); if (comb) free(comb); return true; }
+                            }
+                        }
                     }
+                    env_rollback(env, saved_env_inner);
                     expr_free(matched_val);
                 }
+
             }
 
             env_rollback(env, saved_env);
@@ -683,16 +1063,28 @@ static bool match_args_internal(Expr** exprs, size_t n_exprs, Expr** pats, size_
         }
 
         if (def_val) {
+            Expr* p_sym = bind_sym;
             Expr* inner_p = opt_pat;
-            Expr* p_sym = NULL;
-            if (is_pattern(opt_pat, &p_sym, &inner_p)) {
-                if (p_sym && p_sym->type == EXPR_SYMBOL) {
-                    env_set(env, p_sym->data.symbol, def_val);
+            if (!p_sym) is_pattern(opt_pat, &p_sym, &inner_p);
+            bool consistent = true;
+            if (p_sym && p_sym->type == EXPR_SYMBOL) {
+                Expr* existing = env_get(env, p_sym->data.symbol.name);
+                if (existing) {
+                    /* Don't overwrite an existing binding for this name; the
+                     * Optional fallback can only commit to the default value if
+                     * it is consistent with what is already bound. Otherwise the
+                     * pattern would produce inconsistent bindings such as
+                     * `a_. Sin[x_]^2 + a_. Cos[x_]^2` matching `Sin[x]^2 -
+                     * Cos[x]^2` with one a=1 and another a=-1. */
+                    if (!expr_eq(existing, def_val)) consistent = false;
+                } else {
+                    env_set(env, p_sym->data.symbol.name, def_val);
                 }
             }
             expr_free(def_val);
 
-            if (match_args_internal(exprs, n_exprs, pats + 1, n_pats - 1, env, condition, pat_head, total_pats, parent)) {
+
+            if (consistent && match_args_internal(exprs, n_exprs, pats + 1, n_pats - 1, env, condition, pat_head, total_pats, parent)) {
                 return true;
             }
             env_rollback(env, saved_env_count);
@@ -706,7 +1098,7 @@ Expr* replace_bindings(Expr* expr, MatchEnv* env) {
     if (!expr) return NULL;
     
     if (expr->type == EXPR_SYMBOL) {
-        Expr* bound = env_get(env, expr->data.symbol);
+        Expr* bound = env_get(env, expr->data.symbol.name);
         if (bound) {
             return expr_copy(bound);
         }
@@ -717,10 +1109,10 @@ Expr* replace_bindings(Expr* expr, MatchEnv* env) {
         
         bool skip_flattening = false;
         if (new_head->type == EXPR_SYMBOL && (
-            strcmp(new_head->data.symbol, "Set") == 0 ||
-            strcmp(new_head->data.symbol, "SetDelayed") == 0 ||
-            strcmp(new_head->data.symbol, "Rule") == 0 ||
-            strcmp(new_head->data.symbol, "RuleDelayed") == 0)) {
+            new_head->data.symbol.name == SYM_Set ||
+            new_head->data.symbol.name == SYM_SetDelayed ||
+            new_head->data.symbol.name == SYM_Rule ||
+            new_head->data.symbol.name == SYM_RuleDelayed)) {
             skip_flattening = true;
         }
 
@@ -731,7 +1123,7 @@ Expr* replace_bindings(Expr* expr, MatchEnv* env) {
             temp_args[i] = replace_bindings(expr->data.function.args[i], env);
             if (!skip_flattening && temp_args[i]->type == EXPR_FUNCTION && 
                 temp_args[i]->data.function.head->type == EXPR_SYMBOL &&
-                strcmp(temp_args[i]->data.function.head->data.symbol, "Sequence") == 0) {
+                temp_args[i]->data.function.head->data.symbol.name == SYM_Sequence) {
                 new_count += temp_args[i]->data.function.arg_count;
             } else {
                 new_count++;
@@ -743,7 +1135,7 @@ Expr* replace_bindings(Expr* expr, MatchEnv* env) {
         for (size_t i = 0; i < expr->data.function.arg_count; i++) {
             if (!skip_flattening && temp_args[i]->type == EXPR_FUNCTION && 
                 temp_args[i]->data.function.head->type == EXPR_SYMBOL &&
-                strcmp(temp_args[i]->data.function.head->data.symbol, "Sequence") == 0) {
+                temp_args[i]->data.function.head->data.symbol.name == SYM_Sequence) {
                 for (size_t j = 0; j < temp_args[i]->data.function.arg_count; j++) {
                     final_args[idx++] = expr_copy(temp_args[i]->data.function.args[j]);
                 }

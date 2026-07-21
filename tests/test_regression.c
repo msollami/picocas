@@ -25,8 +25,8 @@ void test_regression_flat_orderless_eval() {
     bool found_b = false;
     for (size_t i = 0; i < 2; i++) {
         Expr* arg = res1->data.function.args[i];
-        if (arg->type == EXPR_SYMBOL && strcmp(arg->data.symbol, "b") == 0) found_b = true;
-        if (arg->type == EXPR_FUNCTION && strcmp(arg->data.function.head->data.symbol, "Times") == 0) found_times = true;
+        if (arg->type == EXPR_SYMBOL && strcmp(arg->data.symbol.name, "b") == 0) found_b = true;
+        if (arg->type == EXPR_FUNCTION && strcmp(arg->data.function.head->data.symbol.name, "Times") == 0) found_times = true;
     }
     ASSERT(found_b && found_times);
     expr_free(e1); expr_free(res1);
@@ -51,7 +51,7 @@ void test_regression_set_evaluation() {
     // 3. Set down value
     Expr* e3 = parse_expression("SetDelayed[f[Pattern[y, Blank[]]], Plus[y, 5]]");
     Expr* res3 = evaluate(e3);
-    ASSERT(res3->type == EXPR_SYMBOL && strcmp(res3->data.symbol, "Null") == 0);
+    ASSERT(res3->type == EXPR_SYMBOL && strcmp(res3->data.symbol.name, "Null") == 0);
     expr_free(e3); expr_free(res3);
     
     // 4. Evaluate down value with evaluated argument
@@ -65,19 +65,17 @@ void test_regression_set_evaluation() {
     void test_regression_infinite_eval() {
     symtab_init();
     core_init();
-    
-    // HoldFirst should not evaluate the first arg
-    Expr* e1 = parse_expression("Set[Hold[x], 50]");
+
+    // Set is HoldFirst, so the LHS is not evaluated before the assignment
+    // installs a DownValue on the head symbol. Use an unprotected symbol
+    // (ufoo) so the Protected check does not reject the assignment.
+    Expr* e1 = parse_expression("Set[ufoo[x], 50]");
     Expr* res1 = evaluate(e1);
-    // Set is HoldFirst, so Hold[x] is not evaluated (it evaluates to itself anyway).
-    // Set expects LHS to be Symbol or Function. Here it's Function Hold[x].
-    // It creates DownValue for Hold!
-    // We should test if it succeeded.
     ASSERT(res1->type == EXPR_INTEGER && res1->data.integer == 50);
     expr_free(e1); expr_free(res1);
-    
-    // Hold[x] should now evaluate to 50 because we defined a downvalue for Hold!
-    Expr* e2 = parse_expression("Hold[x]");
+
+    // ufoo[x] should now evaluate to 50 via the freshly installed DownValue.
+    Expr* e2 = parse_expression("ufoo[x]");
     Expr* res2 = evaluate(e2);
     ASSERT(res2->type == EXPR_INTEGER && res2->data.integer == 50);
     expr_free(e2); expr_free(res2);
@@ -94,7 +92,7 @@ void test_regression_nested_replace() {
     Expr* e2 = parse_expression("g[10, 20]");
     Expr* res2 = evaluate(e2);
     ASSERT(res2->type == EXPR_FUNCTION);
-    ASSERT(strcmp(res2->data.function.head->data.symbol, "List") == 0);
+    ASSERT(strcmp(res2->data.function.head->data.symbol.name, "List") == 0);
     ASSERT(res2->data.function.arg_count == 3);
     ASSERT(res2->data.function.args[0]->data.integer == 20);
     ASSERT(res2->data.function.args[1]->data.integer == 10);
@@ -119,12 +117,12 @@ void test_regression_clear() {
     // Clear[x]
     Expr* e3 = parse_expression("Clear[x]");
     Expr* res3 = evaluate(e3);
-    ASSERT(res3->type == EXPR_SYMBOL && strcmp(res3->data.symbol, "Null") == 0);
+    ASSERT(res3->type == EXPR_SYMBOL && strcmp(res3->data.symbol.name, "Null") == 0);
     
     // Evaluate x again (should be unbound, so evaluates to symbol 'x')
     Expr* e4 = parse_expression("x");
     Expr* res4 = evaluate(e4);
-    ASSERT(res4->type == EXPR_SYMBOL && strcmp(res4->data.symbol, "x") == 0);
+    ASSERT(res4->type == EXPR_SYMBOL && strcmp(res4->data.symbol.name, "x") == 0);
     
     // SetDelayed f[x_] := x + 1
     Expr* e5 = parse_expression("SetDelayed[f[Pattern[y, Blank[]]], Plus[y, 1]]");
@@ -143,7 +141,7 @@ void test_regression_clear() {
     // Evaluate f[10] again (should be unbound, so evaluates to f[10])
     Expr* e8 = parse_expression("f[10]");
     Expr* res8 = evaluate(e8);
-    ASSERT(res8->type == EXPR_FUNCTION && strcmp(res8->data.function.head->data.symbol, "f") == 0);
+    ASSERT(res8->type == EXPR_FUNCTION && strcmp(res8->data.function.head->data.symbol.name, "f") == 0);
     
     expr_free(e1); expr_free(res1);
     expr_free(e2); expr_free(res2);
@@ -155,6 +153,27 @@ void test_regression_clear() {
     expr_free(e8); expr_free(res8);
 }
 
+void test_regression_condition_rhs_setdelayed() {
+    symtab_init();
+    core_init();
+
+    /* Condition on the RHS of SetDelayed should be moved to the LHS pattern.
+     * f[x_] := body /; test  is equivalent to  f[x_] /; test := body */
+    assert_eval_eq("f[x_] := ppp[x] /; x > 0", "Null", 0);
+    assert_eval_eq("f[1]", "ppp[1]", 0);
+    assert_eval_eq("f[-1]", "f[-1]", 0);
+
+    /* Multi-argument case */
+    assert_eval_eq("h[x_, y_] := x + y /; x > y", "Null", 0);
+    assert_eval_eq("h[5, 3]", "8", 0);
+    assert_eval_eq("h[2, 7]", "h[2, 7]", 0);
+
+    /* Condition on the LHS should still work */
+    assert_eval_eq("g[x_] /; x > 0 := x^2", "Null", 0);
+    assert_eval_eq("g[3]", "9", 0);
+    assert_eval_eq("g[-2]", "g[-2]", 0);
+}
+
 int main() {
     printf("Running extensive regression tests...\n");
     TEST(test_regression_flat_orderless_eval);
@@ -162,6 +181,7 @@ int main() {
     TEST(test_regression_infinite_eval);
     TEST(test_regression_nested_replace);
     TEST(test_regression_clear);
+    TEST(test_regression_condition_rhs_setdelayed);
     printf("All regression tests passed!\n");
     return 0;
 }

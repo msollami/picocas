@@ -1,48 +1,221 @@
 #include "expr.h"
 #include "arithmetic.h"
+#include "sym_intern.h"
+#include "sym_names.h"
+#include "ndarray.h"   /* ndt_elem_size for dtype-aware copy/eq/hash */
 #include <stdbool.h>
 #include <math.h>
 #include <ctype.h>
+#include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
-// Create/allocate a new integer expression. 
+/* Portable strdup (strdup is POSIX, not C99). See expr.h. */
+char* mathilda_strdup(const char* s) {
+    if (!s) return NULL;
+    size_t n = strlen(s) + 1;
+    char* r = (char*)malloc(n);
+    if (r) memcpy(r, s, n);
+    return r;
+}
+
+/* ------------------------------------------------------------------------
+ *  Expr node pool (bounded free-list)
+ *
+ *  Profiling the logistic-map benchmark (Do[x = 3.5 x (1-x), {10^6}]) showed
+ *  ~65% of wall time in the system allocator: the evaluator churns fixed-size
+ *  Expr structs, allocating and freeing tens of nodes per iteration. Because
+ *  every Expr is exactly sizeof(Expr) bytes, freed nodes are recycled through a
+ *  singly-linked free-list instead of round-tripping through malloc/free. The
+ *  link is stored in the dead node's payload (data.function.head, a genuine
+ *  Expr* at union offset 0 — no aliasing games). The REPL is single-threaded,
+ *  so no locking is needed.
+ *
+ *  The free-list is BOUNDED (EXPR_POOL_CAP nodes). This is the crucial detail:
+ *  an unbounded pool accumulates every freed node and, after mixed churn,
+ *  threads across memory in scrambled order — so a large batch allocation (e.g.
+ *  KeySort building a 40k-key association, then sorting it) pulls scattered
+ *  nodes and the sort thrashes the cache (its O(n log n) doubling ratio
+ *  regressed from ~2.2 to ~3.8). Capping keeps the recycled set small and
+ *  cache-hot: the evaluator's working set (tens of nodes) always hits it, while
+ *  a large batch drains the cap and then falls to fresh malloc, whose natural
+ *  burst locality restores the sort's scaling. Frees past the cap go straight
+ *  back to the system allocator.
+ *
+ *  expr_pool_free_all() drains the (bounded) free-list back to the OS; it is
+ *  registered with atexit() on first use so every binary leaves a clean heap
+ *  for valgrind. Nodes still in use at exit are freed by their owners exactly
+ *  as before — the pool only holds nodes that have already been expr_free'd.
+ * ---------------------------------------------------------------------- */
+#define EXPR_POOL_CAP 8192                /* max recycled nodes held (~0.5 MB) */
+static Expr*  g_expr_pool = NULL;         /* free-list head */
+static size_t g_expr_pool_size = 0;       /* current free-list length */
+static bool   g_expr_pool_atexit_registered = false;
+
+static void expr_args_pool_free_all(void);  /* args-array buckets; defined below */
+
+/* Drain the free-list back to the system allocator. Idempotent; registered
+ * with atexit(). Only touches already-freed (pooled) nodes. */
+void expr_pool_free_all(void) {
+    Expr* e = g_expr_pool;
+    while (e) {
+        Expr* next = e->data.function.head;
+        free(e);
+        e = next;
+    }
+    g_expr_pool = NULL;
+    g_expr_pool_size = 0;
+    expr_args_pool_free_all();
+}
+
+static Expr* expr_alloc_node(void) {
+    Expr* e = g_expr_pool;
+    if (e) {
+        g_expr_pool = e->data.function.head;   /* pop */
+        g_expr_pool_size--;
+        return e;
+    }
+    if (!g_expr_pool_atexit_registered) {
+        g_expr_pool_atexit_registered = true;
+        atexit(expr_pool_free_all);
+    }
+    return (Expr*)malloc(sizeof(Expr));
+}
+
+/* Return a physically-dead node to the pool, or to the OS once the pool is at
+ * capacity. Caller must have already released any owned payload. */
+static void expr_release_node(Expr* e) {
+    if (g_expr_pool_size >= EXPR_POOL_CAP) {
+        free(e);
+        return;
+    }
+    e->data.function.head = g_expr_pool;       /* push */
+    g_expr_pool = e;
+    g_expr_pool_size++;
+}
+
+/* ------------------------------------------------------------------------
+ *  Function args-array pool (bucketed free-list)
+ *
+ *  Beyond the fixed-size node struct, every EXPR_FUNCTION owns a heap array of
+ *  `arg_count` Expr* slots. In tight numeric loops the evaluator rebuilds a
+ *  handful of small function nodes per pass (e.g. Times[3.5,x,Plus[1,Times[-1,
+ *  x]]] rebuilds 3), so these small malloc/free pairs are the dominant residual
+ *  allocator traffic once the node struct itself is pooled. We recycle the
+ *  arrays through per-length free-lists (bucket[k] holds arrays of exactly k
+ *  slots), mirroring the bounded node pool.
+ *
+ *  Safety: an array is returned to bucket[k] only when it was allocated for
+ *  exactly k slots (every allocation site sizes to arg_count, and reuse only
+ *  ever touches arg_count slots), so a popped array always has room for the
+ *  requested count. Arrays freed directly with free() elsewhere (parse.c,
+ *  eval.c flatten, ...) simply bypass the pool — harmless, just unpooled.
+ *  Only lengths 1..EXPR_ARGS_POOL_MAXLEN are pooled; larger arrays go straight
+ *  to malloc/free. Each bucket is capped so a big transient batch drains to
+ *  fresh malloc (same locality rationale as the node pool's cap). */
+#define EXPR_ARGS_POOL_MAXLEN   8      /* pool arrays of 1..8 slots */
+#define EXPR_ARGS_POOL_CAP_EACH 1024   /* max recycled arrays per length */
+static Expr** g_args_pool[EXPR_ARGS_POOL_MAXLEN + 1];   /* [len] -> free-list head */
+static size_t g_args_pool_size[EXPR_ARGS_POOL_MAXLEN + 1];
+
+/* Drain every args-array bucket back to the OS. Called from expr_pool_free_all
+ * (which is atexit-registered) so binaries leave a clean heap for valgrind. */
+static void expr_args_pool_free_all(void) {
+    for (size_t k = 1; k <= EXPR_ARGS_POOL_MAXLEN; k++) {
+        Expr** a = g_args_pool[k];
+        while (a) {
+            Expr** next = (Expr**)a[0];   /* link stored in slot 0 */
+            free(a);
+            a = next;
+        }
+        g_args_pool[k] = NULL;
+        g_args_pool_size[k] = 0;
+    }
+}
+
+/* Allocate an args array of `len` slots (contents uninitialised — the caller
+ * fills them). Pops from bucket[len] when available. */
+static Expr** expr_args_alloc(size_t len) {
+    if (len >= 1 && len <= EXPR_ARGS_POOL_MAXLEN && g_args_pool[len]) {
+        Expr** a = g_args_pool[len];
+        g_args_pool[len] = (Expr**)a[0];   /* pop */
+        g_args_pool_size[len]--;
+        return a;
+    }
+    return (Expr**)malloc(sizeof(Expr*) * len);
+}
+
+/* Return an args array of `len` slots to its bucket, or to the OS if the length
+ * is out of range or the bucket is at capacity. */
+static void expr_args_free(Expr** a, size_t len) {
+    if (!a) return;
+    if (len < 1 || len > EXPR_ARGS_POOL_MAXLEN ||
+        g_args_pool_size[len] >= EXPR_ARGS_POOL_CAP_EACH) {
+        free(a);
+        return;
+    }
+    a[0] = (Expr*)g_args_pool[len];        /* push (link in slot 0) */
+    g_args_pool[len] = a;
+    g_args_pool_size[len]++;
+}
+
+// Create/allocate a new integer expression.
 Expr* expr_new_integer(int64_t value) {
-    Expr* e = malloc(sizeof(Expr));
+    Expr* e = expr_alloc_node();
     if (!e) return NULL;
     e->type = EXPR_INTEGER;
+    e->refcount = 1;
+    e->last_evaluated_at = 0;
     e->data.integer = value;
     return e;
 }
 
-// Create/allocate a new real (double) expression. 
+// Create/allocate a new real (double) expression.
 Expr* expr_new_real(double value) {
-    Expr* e = malloc(sizeof(Expr));
+    Expr* e = expr_alloc_node();
     if (!e) return NULL;
     e->type = EXPR_REAL;
+    e->refcount = 1;
+    e->last_evaluated_at = 0;
     e->data.real = value;
     return e;
 }
 
-// Create/allocate a new symbol expression. 
+// Create/allocate a new symbol expression.
+//
+// The symbol name is funneled through the global interner so that two
+// symbols with the same name share the same `const char*`. This makes:
+//   - expr_eq() on symbols a pointer compare,
+//   - expr_copy() of a symbol a pointer copy,
+//   - expr_free() of a symbol a no-op for the name field.
+//
+// The cast to `char*` is intentional: `data.symbol.name` retains its existing
+// type for ABI stability, but the memory is owned by the interner and
+// must never be freed by Expr code.
 Expr* expr_new_symbol(const char* name) {
-    Expr* e = malloc(sizeof(Expr));
+    Expr* e = expr_alloc_node();
     if (!e) return NULL;
     e->type = EXPR_SYMBOL;
-    e->data.symbol = strdup(name);
-    if (!e->data.symbol) {
+    e->refcount = 1;
+    e->last_evaluated_at = 0;
+    e->data.symbol.name = (char*)intern_symbol(name);
+    e->data.symbol.def = NULL;   /* Phase 3b: resolved + cached lazily on first eval use */
+    if (!e->data.symbol.name) {
         free(e);
         return NULL;
     }
     return e;
 }
 
-// Create/allocate a new string expression. 
+// Create/allocate a new string expression.
 Expr* expr_new_string(const char* str) {
-    Expr* e = malloc(sizeof(Expr));
+    Expr* e = expr_alloc_node();
     if (!e) return NULL;
-    
+
     e->type = EXPR_STRING;
-    e->data.string = strdup(str);
+    e->refcount = 1;
+    e->last_evaluated_at = 0;
+    e->data.string = mathilda_strdup(str);
     if (!e->data.string) {
         free(e);
         return NULL;
@@ -52,18 +225,25 @@ Expr* expr_new_string(const char* str) {
 
 // Create/allocate an expression: h[arg1, arg2, ...]
 Expr* expr_new_function(Expr* head, Expr** args, size_t arg_count) {
-    Expr* e = malloc(sizeof(Expr));
+    Expr* e = expr_alloc_node();
     if (!e) return NULL;
-    
+
     e->type = EXPR_FUNCTION;
-    e->data.function.head = head;  
+    e->refcount = 1;
+    e->last_evaluated_at = 0;
+    e->data.function.head = head;
     if (arg_count > 0) {
-        e->data.function.args = calloc(arg_count, sizeof(Expr*));
+        e->data.function.args = expr_args_alloc(arg_count);
         if (!e->data.function.args) {
-            free(e);
+            expr_release_node(e);
             return NULL;
         }
+        /* expr_args_alloc returns uninitialised storage; fill every slot so a
+         * later expr_free never dereferences garbage. memcpy covers all slots
+         * when args is supplied; otherwise zero them (callers that pass NULL
+         * expect NULL slots to fill in themselves). */
         if (args) memcpy(e->data.function.args, args, sizeof(Expr*) * arg_count);
+        else      memset(e->data.function.args, 0, sizeof(Expr*) * arg_count);
     } else {
         e->data.function.args = NULL;
     }
@@ -71,14 +251,277 @@ Expr* expr_new_function(Expr* head, Expr** args, size_t arg_count) {
     return e;
 }
 
-// Deallocate an expression. 
+// BigInt constructors
+Expr* expr_new_bigint_from_mpz(const mpz_t val) {
+    Expr* e = expr_alloc_node();
+    if (!e) return NULL;
+    e->type = EXPR_BIGINT;
+    e->refcount = 1;
+    e->last_evaluated_at = 0;
+    mpz_init_set(e->data.bigint, val);
+    return e;
+}
+
+Expr* expr_new_bigint_from_int64(int64_t val) {
+    Expr* e = expr_alloc_node();
+    if (!e) return NULL;
+    e->type = EXPR_BIGINT;
+    e->refcount = 1;
+    e->last_evaluated_at = 0;
+    mpz_init_set_si(e->data.bigint, val);
+    return e;
+}
+
+Expr* expr_new_bigint_from_str(const char* str) {
+    Expr* e = expr_alloc_node();
+    if (!e) return NULL;
+    e->type = EXPR_BIGINT;
+    e->refcount = 1;
+    e->last_evaluated_at = 0;
+    if (mpz_init_set_str(e->data.bigint, str, 10) == -1) {
+        mpz_clear(e->data.bigint);
+        free(e);
+        return NULL;
+    }
+    return e;
+}
+
+Expr* expr_new_ndarray(int rank, const int64_t* dims, void* data, NDType dtype) {
+    Expr* e = expr_alloc_node();
+    if (!e) return NULL;
+    e->type = EXPR_NDARRAY;
+    e->refcount = 1;
+    e->last_evaluated_at = 0;
+    e->data.ndarray.rank = rank;
+    e->data.ndarray.dims = malloc(sizeof(int64_t) * (size_t)rank);
+    if (!e->data.ndarray.dims) { free(e); return NULL; }
+    memcpy(e->data.ndarray.dims, dims, sizeof(int64_t) * (size_t)rank);
+    e->data.ndarray.data = data;
+    e->data.ndarray.dtype = dtype;
+    return e;
+}
+
+#ifdef USE_MPFR
+/* MPFR constructors. All allocate an Expr and initialize the payload
+ * `mpfr_t` at the requested precision; the caller owns the result and
+ * should free it with `expr_free`, which calls `mpfr_clear`. */
+Expr* expr_new_mpfr_bits(mpfr_prec_t bits) {
+    Expr* e = expr_alloc_node();
+    if (!e) return NULL;
+    e->type = EXPR_MPFR;
+    e->refcount = 1;
+    e->last_evaluated_at = 0;
+    mpfr_init2(e->data.mpfr, bits);
+    mpfr_set_zero(e->data.mpfr, +1);
+    return e;
+}
+Expr* expr_new_mpfr_from_d(double v, mpfr_prec_t bits) {
+    Expr* e = expr_new_mpfr_bits(bits);
+    if (e) mpfr_set_d(e->data.mpfr, v, MPFR_RNDN);
+    return e;
+}
+Expr* expr_new_mpfr_from_si(long v, mpfr_prec_t bits) {
+    Expr* e = expr_new_mpfr_bits(bits);
+    if (e) mpfr_set_si(e->data.mpfr, v, MPFR_RNDN);
+    return e;
+}
+Expr* expr_new_mpfr_from_mpz(const mpz_t z, mpfr_prec_t bits) {
+    Expr* e = expr_new_mpfr_bits(bits);
+    if (e) mpfr_set_z(e->data.mpfr, z, MPFR_RNDN);
+    return e;
+}
+Expr* expr_new_mpfr_from_str(const char* str, mpfr_prec_t bits) {
+    Expr* e = expr_new_mpfr_bits(bits);
+    if (!e) return NULL;
+    if (mpfr_set_str(e->data.mpfr, str, 10, MPFR_RNDN) != 0) {
+        mpfr_clear(e->data.mpfr);
+        free(e);
+        return NULL;
+    }
+    return e;
+}
+Expr* expr_new_mpfr_move(mpfr_t src) {
+    Expr* e = expr_alloc_node();
+    if (!e) { mpfr_clear(src); return NULL; }
+    e->type = EXPR_MPFR;
+    e->refcount = 1;
+    e->last_evaluated_at = 0;
+    /* mpfr_t is an array-type alias for __mpfr_struct[1]; `memcpy` moves
+     * the header — MPFR's documentation (mpfr_swap, GMP's mpz semantics)
+     * sanctions this as long as the source is then treated as uninit. */
+    memcpy(e->data.mpfr, src, sizeof(e->data.mpfr));
+    return e;
+}
+Expr* expr_new_mpfr_copy(const mpfr_t src) {
+    Expr* e = expr_new_mpfr_bits(mpfr_get_prec(src));
+    if (e) mpfr_set(e->data.mpfr, src, MPFR_RNDN);
+    return e;
+}
+#endif
+
+void expr_to_mpz(const Expr* e, mpz_t out) {
+    if (e->type == EXPR_INTEGER) {
+        mpz_init_set_si(out, e->data.integer);
+    } else { // EXPR_BIGINT
+        mpz_init_set(out, e->data.bigint);
+    }
+}
+
+bool expr_is_integer_like(const Expr* e) {
+    return e && (e->type == EXPR_INTEGER || e->type == EXPR_BIGINT);
+}
+
+bool expr_is_numeric_like(const Expr* e) {
+    if (!e) return false;
+    switch (e->type) {
+        case EXPR_INTEGER:
+        case EXPR_BIGINT:
+        case EXPR_REAL:
+#ifdef USE_MPFR
+        case EXPR_MPFR:
+#endif
+            return true;
+        case EXPR_FUNCTION:
+            /* Rational[n,d] and Complex[re,im] with numeric components.
+             * Use the bigint-aware rational check so rationals whose
+             * components have overflowed int64 still fold via the GMP
+             * fallback in multiply_numbers / add_numbers (otherwise
+             * Times[BigInt, Rational[1, BigInt]] survives unsimplified
+             * and breaks exact polynomial division). */
+            if (is_rational_like((Expr*)e)) return true;
+            {
+                Expr *re, *im;
+                if (is_complex((Expr*)e, &re, &im)) {
+                    return expr_is_numeric_like(re) && expr_is_numeric_like(im);
+                }
+            }
+            return false;
+        default:
+            return false;
+    }
+}
+
+Expr* expr_bigint_normalize(Expr* e) {
+    if (e->type == EXPR_BIGINT && mpz_fits_slong_p(e->data.bigint)) {
+        long val = mpz_get_si(e->data.bigint);
+        Expr* result = expr_new_integer((int64_t)val);
+        /* Refcount-safe: dec-ref the BigInt; if shared, the original
+         * stays alive for other holders (each will normalize on their
+         * own); if unique (refcount==1, the common case), expr_free
+         * physically clears the mpz_t and frees the node. */
+        expr_free(e);
+        return result;
+    }
+    return e;
+}
+
+/* Inc-ref. NULL passes through. */
+Expr* expr_ref(Expr* e) {
+    if (e) e->refcount++;
+    return e;
+}
+
+/* M3 phase-2 copy-on-write helper. See header doc. */
+Expr* expr_unshare(Expr* e) {
+    if (!e) return NULL;
+    if (e->refcount == 1) return e;
+
+    /* Build a one-level private copy. Children stay shared (inc-ref). */
+    Expr* fresh = expr_alloc_node();
+    if (!fresh) return e;  /* OOM: fall back to (still-shared) original */
+    fresh->type = e->type;
+    fresh->refcount = 1;
+    /* Reset the eval timestamp on unshare. The caller is preparing to
+     * mutate this node; even if they do not, treating the node as
+     * "never evaluated" only costs one extra evaluation, whereas
+     * inheriting the timestamp risks a false cache hit on a node that
+     * the caller subsequently rewrites. */
+    fresh->last_evaluated_at = 0;
+
+    switch (e->type) {
+        case EXPR_INTEGER:
+            fresh->data.integer = e->data.integer;
+            break;
+        case EXPR_REAL:
+            fresh->data.real = e->data.real;
+            break;
+        case EXPR_SYMBOL:
+            fresh->data.symbol.name = e->data.symbol.name;  /* interned */
+            fresh->data.symbol.def = e->data.symbol.def;    /* same symbol: cache carries over */
+            break;
+        case EXPR_STRING:
+            fresh->data.string = e->data.string ? mathilda_strdup(e->data.string) : NULL;
+            break;
+        case EXPR_BIGINT:
+            mpz_init(fresh->data.bigint);
+            mpz_set(fresh->data.bigint, e->data.bigint);
+            break;
+        case EXPR_NDARRAY: {
+            int rank = e->data.ndarray.rank;
+            NDType dt = e->data.ndarray.dtype;
+            size_t n = 1;
+            for (int i = 0; i < rank; i++) n *= (size_t)e->data.ndarray.dims[i];
+            size_t bytes = ndt_elem_size(dt) * n;
+            fresh->data.ndarray.rank = rank;
+            fresh->data.ndarray.dtype = dt;
+            fresh->data.ndarray.dims = malloc(sizeof(int64_t) * (size_t)rank);
+            memcpy(fresh->data.ndarray.dims, e->data.ndarray.dims, sizeof(int64_t) * (size_t)rank);
+            fresh->data.ndarray.data = malloc(bytes);
+            memcpy(fresh->data.ndarray.data, e->data.ndarray.data, bytes);
+            break;
+        }
+#ifdef USE_MPFR
+        case EXPR_MPFR:
+            mpfr_init2(fresh->data.mpfr, mpfr_get_prec(e->data.mpfr));
+            mpfr_set(fresh->data.mpfr, e->data.mpfr, MPFR_RNDN);
+            break;
+#endif
+        case EXPR_FUNCTION:
+            fresh->data.function.head = expr_copy(e->data.function.head);
+            fresh->data.function.arg_count = e->data.function.arg_count;
+            if (e->data.function.arg_count > 0) {
+                fresh->data.function.args = expr_args_alloc(e->data.function.arg_count);
+                if (!fresh->data.function.args) {
+                    if (fresh->data.function.head) expr_free(fresh->data.function.head);
+                    expr_release_node(fresh);
+                    return e;
+                }
+                for (size_t i = 0; i < e->data.function.arg_count; i++) {
+                    fresh->data.function.args[i] = expr_copy(e->data.function.args[i]);
+                }
+            } else {
+                fresh->data.function.args = NULL;
+            }
+            break;
+        default:
+            break;
+    }
+
+    /* Drop the caller's ref on the original. */
+    expr_free(e);
+    return fresh;
+}
+
+// Deallocate an expression. Decrements the refcount; only physically
+// destroys the node (and its children, for FUNCTION) when refcount
+// drops to 0. Atoms are eligible to have refcount > 1 starting in M3
+// (see expr_copy). FUNCTION nodes always have refcount == 1 today
+// because expr_copy still deep-copies them.
 void expr_free(Expr* e) {
     if (!e) return;
-    
+    if (e->refcount > 1) {
+        e->refcount--;
+        return;
+    }
+    /* refcount == 1 (or, defensively, 0 — should not happen, but treat
+     * as last reference). Physically free. */
+
     switch (e->type) {
         case EXPR_SYMBOL:
+            /* data.symbol.name is interned (owned by sym_intern); never free. */
+            break;
         case EXPR_STRING:
-            if (e->data.symbol) free(e->data.symbol);
+            if (e->data.string) free(e->data.string);
             break;
         case EXPR_FUNCTION:
             if (e->data.function.head) expr_free(e->data.function.head);
@@ -87,62 +530,66 @@ void expr_free(Expr* e) {
                     expr_free(e->data.function.args[i]);
                 }
             }
-            if (e->data.function.args) free(e->data.function.args);
+            if (e->data.function.args)
+                expr_args_free(e->data.function.args, e->data.function.arg_count);
             break;
+        case EXPR_BIGINT:
+            mpz_clear(e->data.bigint);
+            break;
+        case EXPR_NDARRAY:
+            free(e->data.ndarray.dims);
+            free(e->data.ndarray.data);
+            break;
+#ifdef USE_MPFR
+        case EXPR_MPFR:
+            mpfr_clear(e->data.mpfr);
+            break;
+#endif
         default:
             break;
     }
-    free(e);
+    /* Recycle the fixed-size node through the pool instead of free() —
+     * see the free-list note above expr_new_integer. */
+    expr_release_node(e);
 }
 
 
 
-// Create a copy of an expression in memory. 
+// Logically copy an expression. M3 phase-2: every node type, INCLUDING
+// FUNCTION, is shared via inc-ref. Mutating helpers must call
+// expr_unshare() to obtain a private (refcount==1) version before
+// rewriting fields in place. The audit (commit notes) verified that
+// the only sites that mutated a possibly-shared FUNCTION node lived
+// in print.c; those now wrap their expr_copy() in expr_unshare().
+// Other mutators (eval_flatten_args, flatten_sequences, builtin_plus
+// numeric-contagion args[i] writes, parse.c arg appending, match.c
+// sequence-binding writes, core.c QuotientRemainder zeroing, etc.)
+// all act on freshly-constructed FUNCTION nodes whose refcount is
+// guaranteed to be 1 at the point of mutation.
 Expr* expr_copy(Expr* e) {
     if (!e) return NULL;
-    
-    Expr* copy = malloc(sizeof(Expr));
-    if (!copy) return NULL;
-    
-    memcpy(copy, e, sizeof(Expr));
-    
-    switch (e->type) {
-        case EXPR_SYMBOL:
-        case EXPR_STRING:
-            copy->data.symbol = strdup(e->data.symbol);
-            if (!copy->data.symbol) {
-                free(copy);
-                return NULL;
-            }
-            break;
-        case EXPR_FUNCTION:
-            copy->data.function.head = expr_copy(e->data.function.head);
-            if (e->data.function.arg_count > 0) {
-                copy->data.function.args = malloc(sizeof(Expr*) * e->data.function.arg_count);
-                if (!copy->data.function.args) {
-                    expr_free(copy->data.function.head);
-                    free(copy);
-                    return NULL;
-                }
-                for (size_t i = 0; i < e->data.function.arg_count; i++) {
-                    copy->data.function.args[i] = expr_copy(e->data.function.args[i]);
-                }
-            } else {
-                copy->data.function.args = NULL;
-            }
-            break;
-        default:
-            break;
-    }
-    
-    return copy;
+    e->refcount++;
+    return e;
 }
 
 bool expr_eq(const Expr* a, const Expr* b) {
     if (a == b) return true;
     if (!a || !b) return false;
-    if (a->type != b->type) return false;
-    
+    if (a->type != b->type) {
+        // Cross-type equality: EXPR_INTEGER vs EXPR_BIGINT
+        if ((a->type == EXPR_INTEGER && b->type == EXPR_BIGINT) ||
+            (a->type == EXPR_BIGINT && b->type == EXPR_INTEGER)) {
+            mpz_t va, vb;
+            expr_to_mpz(a, va);
+            expr_to_mpz(b, vb);
+            bool result = (mpz_cmp(va, vb) == 0);
+            mpz_clear(va);
+            mpz_clear(vb);
+            return result;
+        }
+        return false;
+    }
+
     switch (a->type) {
         case EXPR_INTEGER:
             return a->data.integer == b->data.integer;
@@ -150,7 +597,8 @@ bool expr_eq(const Expr* a, const Expr* b) {
             if (isnan(a->data.real) && isnan(b->data.real)) return true;
             return a->data.real == b->data.real;
         case EXPR_SYMBOL:
-            return strcmp(a->data.symbol, b->data.symbol) == 0;
+            /* Interned: same name guarantees same pointer. */
+            return a->data.symbol.name == b->data.symbol.name;
         case EXPR_STRING:
             return strcmp(a->data.string, b->data.string) == 0;
         case EXPR_FUNCTION: {
@@ -161,174 +609,38 @@ bool expr_eq(const Expr* a, const Expr* b) {
             }
             return true;
         }
+        case EXPR_BIGINT:
+            return mpz_cmp(a->data.bigint, b->data.bigint) == 0;
+        case EXPR_NDARRAY: {
+            /* dtype is part of identity (a float32 array is not SameQ to a
+             * float64 one with equal values, matching the MPFR-precision rule
+             * below). */
+            if (a->data.ndarray.dtype != b->data.ndarray.dtype) return false;
+            if (a->data.ndarray.rank != b->data.ndarray.rank) return false;
+            size_t n = 1;
+            for (int i = 0; i < a->data.ndarray.rank; i++) {
+                if (a->data.ndarray.dims[i] != b->data.ndarray.dims[i]) return false;
+                n *= (size_t)a->data.ndarray.dims[i];
+            }
+            size_t bytes = ndt_elem_size(a->data.ndarray.dtype) * n;
+            return memcmp(a->data.ndarray.data, b->data.ndarray.data, bytes) == 0;
+        }
+#ifdef USE_MPFR
+        case EXPR_MPFR:
+            /* Equal iff same precision AND same value (matches SameQ
+             * semantics: 1.`20 and 1.`30 are not SameQ even though
+             * their values agree). */
+            if (mpfr_get_prec(a->data.mpfr) != mpfr_get_prec(b->data.mpfr)) return false;
+            return mpfr_equal_p(a->data.mpfr, b->data.mpfr) != 0;
+#endif
     }
     return false;
 }
 
-static int get_canonical_rank(const Expr* e) {
-    if (e->type == EXPR_INTEGER || e->type == EXPR_REAL || is_rational((Expr*)e, NULL, NULL)) return 0;
-    if (is_complex((Expr*)e, NULL, NULL)) return 1;
-    if (e->type == EXPR_STRING) return 2;
-    if (e->type == EXPR_SYMBOL) return 3;
-    return 4; // General function
-}
-
-static double get_numeric_value(const Expr* e) {
-    if (e->type == EXPR_INTEGER) return (double)e->data.integer;
-    if (e->type == EXPR_REAL) return e->data.real;
-    int64_t n, d;
-    if (is_rational((Expr*)e, &n, &d)) return (double)n / d;
-    return 0;
-}
-
-static int string_compare_canonical(const char* s1, const char* s2) {
-    const char* p1 = s1;
-    const char* p2 = s2;
-    while (*p1 && *p2) {
-        char l1 = tolower((unsigned char)*p1);
-        char l2 = tolower((unsigned char)*p2);
-        if (l1 != l2) return (l1 < l2) ? -1 : 1;
-        p1++; p2++;
-    }
-    if (*p1) return 1;
-    if (*p2) return -1;
-    
-    p1 = s1; p2 = s2;
-    while (*p1 && *p2) {
-        if (*p1 != *p2) {
-            if (islower((unsigned char)*p1) && !islower((unsigned char)*p2)) return -1;
-            if (!islower((unsigned char)*p1) && islower((unsigned char)*p2)) return 1;
-            return (*p1 < *p2) ? -1 : 1;
-        }
-        p1++; p2++;
-    }
-    return 0;
-}
-
-static Expr* get_main_factor(Expr* e) {
-    if (e->type != EXPR_FUNCTION) return e;
-    Expr* head = e->data.function.head;
-    if (head->type != EXPR_SYMBOL) return e;
-    
-    if (strcmp(head->data.symbol, "Power") == 0 && e->data.function.arg_count >= 1) {
-        return get_main_factor(e->data.function.args[0]);
-    }
-    if (strcmp(head->data.symbol, "Times") == 0 && e->data.function.arg_count >= 1) {
-        Expr* first = e->data.function.args[0];
-        if (first->type == EXPR_INTEGER || first->type == EXPR_REAL || is_rational(first, NULL, NULL)) {
-            if (e->data.function.arg_count == 2) return get_main_factor(e->data.function.args[1]);
-            return e->data.function.args[1];
-        }
-    }
-    return e;
-}
-
-int expr_compare(const Expr* a, const Expr* b) {
-    if (a == b) return 0;
-    if (!a) return -1;
-    if (!b) return 1;
-
-    // char* sa = expr_to_string_fullform((Expr*)a);
-    // char* sb = expr_to_string_fullform((Expr*)b);
-    // printf("DEBUG: expr_compare(%s, %s)\n", sa, sb);
-    // free(sa); free(sb);
-
-    // Special polynomial order: compare main factors first
-    Expr* ma = get_main_factor((Expr*)a);
-    Expr* mb = get_main_factor((Expr*)b);
-    
-    if (ma != a || mb != b) {
-        int mcmp = expr_compare(ma, mb);
-        if (mcmp != 0) return mcmp;
-    }
-
-    int rank_a = get_canonical_rank(a);
-    int rank_b = get_canonical_rank(b);
-
-    if (rank_a != rank_b) return rank_a - rank_b;
-
-    switch (rank_a) {
-        case 0: { // Number
-            double va = get_numeric_value(a);
-            double vb = get_numeric_value(b);
-            if (va < vb) return -1;
-            if (va > vb) return 1;
-            if (a->type != b->type) return (int)a->type - (int)b->type;
-            return 0;
-        }
-        case 1: { // Complex
-            Expr *re_a, *im_a, *re_b, *im_b;
-            is_complex((Expr*)a, &re_a, &im_a);
-            is_complex((Expr*)b, &re_b, &im_b);
-            int cmp = expr_compare(re_a, re_b);
-            if (cmp != 0) return cmp;
-            double abs_ima = fabs(get_numeric_value(im_a));
-            double abs_imb = fabs(get_numeric_value(im_b));
-            if (abs_ima < abs_imb) return -1;
-            if (abs_ima > abs_imb) return 1;
-            return expr_compare(im_a, im_b);
-        }
-        case 2: // String
-            return string_compare_canonical(a->data.string, b->data.string);
-        case 3: // Symbol
-            return strcmp(a->data.symbol, b->data.symbol);
-        case 4: { // General Function
-            Expr* ha = a->data.function.head;
-            Expr* hb = b->data.function.head;
-            
-            bool plus_a = (ha->type == EXPR_SYMBOL && strcmp(ha->data.symbol, "Plus") == 0);
-            bool plus_b = (hb->type == EXPR_SYMBOL && strcmp(hb->data.symbol, "Plus") == 0);
-            if (plus_a && !plus_b) return 1;
-            if (!plus_a && plus_b) return -1;
-
-            if (ha->type == EXPR_SYMBOL && hb->type == EXPR_SYMBOL) {
-                const char* na = ha->data.symbol;
-                const char* nb = hb->data.symbol;
-                if (strcmp(na, "Times") == 0 && strcmp(nb, "Power") == 0) return -1;
-                if (strcmp(na, "Power") == 0 && strcmp(nb, "Times") == 0) return 1;
-
-                if (strcmp(na, "Times") == 0 && strcmp(nb, "Times") == 0) {
-                    size_t start_a = (a->data.function.arg_count > 0 && 
-                                      (a->data.function.args[0]->type == EXPR_INTEGER || 
-                                       a->data.function.args[0]->type == EXPR_REAL ||
-                                       is_rational(a->data.function.args[0], NULL, NULL))) ? 1 : 0;
-                    size_t start_b = (b->data.function.arg_count > 0 && 
-                                      (b->data.function.args[0]->type == EXPR_INTEGER || 
-                                       b->data.function.args[0]->type == EXPR_REAL ||
-                                       is_rational(b->data.function.args[0], NULL, NULL))) ? 1 : 0;
-                    
-                    size_t count_a = a->data.function.arg_count - start_a;
-                    size_t count_b = b->data.function.arg_count - start_b;
-                    size_t min_count = (count_a < count_b) ? count_a : count_b;
-                    
-                    for (size_t i = 0; i < min_count; i++) {
-                        int cmp = expr_compare(a->data.function.args[start_a + i], b->data.function.args[start_b + i]);
-                        if (cmp != 0) return cmp;
-                    }
-                    if (count_a < count_b) return -1;
-                    if (count_a > count_b) return 1;
-                    
-                    if (start_a > 0 && start_b > 0) return expr_compare(a->data.function.args[0], b->data.function.args[0]);
-                    if (start_a > 0) return -1;
-                    if (start_b > 0) return 1;
-                }
-            }
-
-            if (a->data.function.arg_count < b->data.function.arg_count) return -1;
-            if (a->data.function.arg_count > b->data.function.arg_count) return 1;
-            
-            int head_cmp = expr_compare(ha, hb);
-            if (head_cmp != 0) return head_cmp;
-            
-            for (size_t i = 0; i < a->data.function.arg_count; i++) {
-                int arg_cmp = expr_compare(a->data.function.args[i], b->data.function.args[i]);
-                if (arg_cmp != 0) return arg_cmp;
-            }
-            return 0;
-        }
-    }
-    return 0;
-}
+/* expr_compare lives in sort.c so the canonical-order policy stays in
+ * one place alongside the user-facing Sort/OrderedQ builtins.  The
+ * helpers it needs (is_atomic_numeric, expr_poly_degree, etc.) are
+ * static there. */
 
 uint64_t expr_hash(const Expr* e) {
     if (!e) return 0;
@@ -353,7 +665,7 @@ uint64_t expr_hash(const Expr* e) {
         }
         case EXPR_SYMBOL:
         case EXPR_STRING: {
-            const char* s = e->data.symbol;
+            const char* s = e->data.symbol.name;
             if (s) {
                 while (*s) {
                     h ^= (uint8_t)(*s++);
@@ -371,6 +683,49 @@ uint64_t expr_hash(const Expr* e) {
             }
             break;
         }
+        case EXPR_BIGINT: {
+            h ^= (uint64_t)(mpz_sgn(e->data.bigint) + 2);
+            h *= prime;
+            size_t nlimbs = mpz_size(e->data.bigint);
+            for (size_t i = 0; i < nlimbs; i++) {
+                h ^= mpz_getlimbn(e->data.bigint, i);
+                h *= prime;
+            }
+            break;
+        }
+        case EXPR_NDARRAY: {
+            h ^= (uint64_t)e->data.ndarray.rank;
+            h *= prime;
+            h ^= (uint64_t)e->data.ndarray.dtype;
+            h *= prime;
+            size_t n = 1;
+            for (int i = 0; i < e->data.ndarray.rank; i++) {
+                h ^= (uint64_t)e->data.ndarray.dims[i];
+                h *= prime;
+                n *= (size_t)e->data.ndarray.dims[i];
+            }
+            /* Hash the raw buffer as bytes so all dtypes (incl. 4-byte float /
+             * float32-complex) hash correctly. */
+            const unsigned char* bytes = (const unsigned char*)e->data.ndarray.data;
+            size_t nbytes = ndt_elem_size(e->data.ndarray.dtype) * n;
+            for (size_t i = 0; i < nbytes; i++) {
+                h ^= (uint64_t)bytes[i]; h *= prime;
+            }
+            break;
+        }
+#ifdef USE_MPFR
+        case EXPR_MPFR: {
+            /* Hash precision + IEEE double approximation. Not perfectly
+             * collision-free across precisions with equal double value,
+             * but it's a hash, not an equality. */
+            h ^= (uint64_t)mpfr_get_prec(e->data.mpfr);
+            h *= prime;
+            double d = mpfr_get_d(e->data.mpfr, MPFR_RNDN);
+            uint64_t v; memcpy(&v, &d, 8);
+            h ^= v; h *= prime;
+            break;
+        }
+#endif
     }
     return h;
 }

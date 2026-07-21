@@ -33,7 +33,7 @@ int main() {
     run_test("ReplacePart[{a, b, c, d}, 2 -> x]", "{a, x, c, d}");
     
     // Negative indices
-    run_test("ReplacePart[{a, b, c, d}, -1 -> x]", "{a, b, c, x}");
+    run_test("ReplacePart[{5, 4, 3, 2, 1}, _?PrimeQ -> \"p\"]", "{5, \"p\", \"p\", 2, \"p\"}");
     
     // ReplacePart[expr, {i, j} -> new]
     run_test("ReplacePart[{{a, b}, {c, d}}, {2, 1} -> x]", "{{a, b}, {x, d}}");
@@ -120,6 +120,16 @@ int main() {
     run_test("{a,b,c,d,e,f} /. {Longest[x__], y__} :> {y}", "{f}");
     run_test("{a,b,c,d,e,f} /. {Shortest[x__], y__} :> {x}", "{a}");
     run_test("{a,b,c,d,e,f} /. {x__, Longest[y__]} :> {x}", "{a}");
+
+
+    // ReplaceList
+    run_test("ReplaceList[{a,b,c,d,e,f},{x__,y__}->{{x},{y}}]", "{{{a}, {b, c, d, e, f}}, {{a, b}, {c, d, e, f}}, {{a, b, c}, {d, e, f}}, {{a, b, c, d}, {e, f}}, {{a, b, c, d, e}, {f}}}");
+    run_test("ReplaceList[x,{x->a,x->b,x->c}]", "{a, b, c}");
+    run_test("ReplaceList[a+b+c,x_+y_->g[x,y]]", "{g[a, b + c], g[b, a + c], g[c, a + b], g[a + b, c], g[a + c, b], g[b + c, a]}");
+    run_test("ReplaceList[{a,b,c,d},{___,x__,___}->{x}]", "{{a}, {a, b}, {a, b, c}, {a, b, c, d}, {b}, {b, c}, {b, c, d}, {c}, {c, d}, {d}}");
+    run_test("ReplaceList[{a,b,b,b,c,c,a},{___,x_,x_,___}->x]", "{b, b, c}");
+    run_test("ReplaceList[{a,b,c,a,d,b,d},{___,x_,y__,x_,___}->{x,{y}}]", "{{a, {b, c}}, {b, {c, a, d}}, {d, {b}}}");
+    run_test("ReplaceList[a+b+c,x_+y_:>{x,y}]", "{{a, b + c}, {b, a + c}, {c, a + b}, {a + b, c}, {a + c, b}, {b + c, a}}");
 
     printf("All Replace tests passed!\n");
     symtab_clear();

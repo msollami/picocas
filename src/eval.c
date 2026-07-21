@@ -1,7 +1,7 @@
 /*
  * eval.c
  *
- * This file implements the core evaluation engine of PicoCAS.
+ * This file implements the core evaluation engine of Mathilda.
  * It follows the "infinite evaluation" semantics of the Mathematica:
  * expressions are repeatedly transformed until they no longer change.
  *
@@ -10,18 +10,271 @@
 
 #include "eval.h"
 #include "symtab.h"
+#include "ndarray.h"
 #include "core.h"
 #include "purefunc.h"
 #include "print.h"
+#include "deriv.h"
+#include "sym_names.h"
+#include "sym_intern.h"
+#include "interp.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h>
 
-/* 
+/*
  * The maximum number of evaluation steps to prevent infinite recursion
- * in cases of circular definitions. 
+ * in cases of circular definitions.
  */
 #define MAX_ITERATIONS 4096
+
+/* Small-arity fast path for evaluate_step's per-call scratch array. The vast
+ * majority of function calls (arithmetic heads, Set, control flow, ...) have a
+ * handful of arguments; sizing a stack buffer to cover them avoids a malloc/
+ * free pair per function node per evaluation pass — a dominant cost in tight
+ * numeric loops. Calls with more args fall back to a heap allocation. */
+#define EVAL_SMALL_ARGS 8
+
+/*
+ * $RecursionLimit guard. The REPL is single-threaded so a static counter
+ * suffices. Each call to evaluate() bumps eval_recursion_depth on entry and
+ * decrements on exit; if the depth would exceed eval_recursion_limit we
+ * return the expression wrapped in Hold[] (so it cannot re-enter the
+ * evaluator) and emit a $RecursionLimit::reclim message.
+ *
+ * The default of 1024 matches modern Mathematica and leaves comfortable
+ * headroom under the typical 8 MB thread stack while still catching
+ * pathological recursion (e.g. a self-referential rule like
+ * f[x_] := f[x] + 1).
+ *
+ * Minimum enforced at 20 (Mathematica-compatible) so users cannot brick
+ * the evaluator by setting a value below the depth its own bookkeeping
+ * needs.
+ */
+#define DEFAULT_RECURSION_LIMIT 1024
+#define MIN_RECURSION_LIMIT     20
+static int  eval_recursion_depth = 0;
+static int  eval_recursion_limit = DEFAULT_RECURSION_LIMIT;
+/* Once the recursion limit is hit anywhere in the evaluation tree, this
+ * sticky flag tells *every* enclosing evaluate() loop to stop iterating
+ * and return its current value. Without it, the wrap-in-Hold result
+ * causes outer fixed-point loops to perceive endless "progress" (each
+ * iteration adds another Hold wrapper) and chew through all 4096
+ * outer iterations at every level of the unwind. The flag is cleared
+ * at the top of each top-level evaluate() call. */
+static bool eval_overflow = false;
+
+int  eval_get_recursion_limit(void) { return eval_recursion_limit; }
+int  eval_get_recursion_depth(void) { return eval_recursion_depth; }
+void eval_set_recursion_limit(int n) {
+    eval_recursion_limit = (n >= MIN_RECURSION_LIMIT) ? n : DEFAULT_RECURSION_LIMIT;
+}
+
+/* See eval.h.  Used after a siglongjmp out of evaluate(): the matching
+ * decrements never ran, so we restore the depth counter to the value it
+ * had before the timed call entered the evaluator.  We also clear
+ * eval_overflow so a future evaluate() is not falsely poisoned by the
+ * aborted call. */
+void eval_reset_recursion_depth(int n) {
+    if (n < 0) n = 0;
+    eval_recursion_depth = n;
+    eval_overflow = false;
+}
+
+/* M3 phase-3 evaluation clock. Starts at 1 so a freshly-allocated Expr
+ * (last_evaluated_at == 0) is never mistaken for "already evaluated".
+ * Bumped by symtab.c (add_rule, symtab_clear_symbol) and attr.c
+ * (set_attributes, add/remove_single_attribute). 64 bits is enough to
+ * absorb roughly 2^64 mutations, far beyond any practical session. */
+static uint64_t g_eval_clock = 1;
+uint64_t eval_clock_get(void) { return g_eval_clock; }
+void     eval_clock_bump(void) { g_eval_clock++; }
+
+/* ---- Trace collector (beads-planning-b3k, Phase 2) -----------------------
+ * Trace[expr] records the sequence of top-level intermediate expressions the
+ * fixed-point loop below produces while reducing expr. A single collector is
+ * installed at a time via g_trace_active; nested Trace saves/installs/restores
+ * it through the natural C call stack (see eval_collect_trace). While a
+ * collector is installed, evaluate()'s loop appends each real top-level
+ * rewrite, gated to the exact recursion depth of the traced expression's own
+ * loop so that argument sub-evaluations (which run at greater depth) are
+ * excluded -- the flat, top-level-only v1 semantics.
+ *
+ * Ownership: every expression handed to the collector is inc-ref'd
+ * (expr_copy) before storage, so the steps survive the evaluator freeing the
+ * transient `current`/`next` trees; eval_collect_trace hands the array to
+ * expr_new_function (which takes ownership of the elements) and frees the
+ * array shell. Cost when not tracing: one predicted-false global-pointer read
+ * per loop iteration, matching the existing eval_overflow check. */
+typedef struct TraceCollector {
+    Expr**  steps;         /* each element inc-ref'd (owned by the collector) */
+    size_t  count, cap;
+    int     record_depth;  /* record only when eval_recursion_depth == this */
+    bool    seeded;        /* whether the initial e0 has been recorded yet */
+} TraceCollector;
+
+static TraceCollector* g_trace_active = NULL;  /* NULL when not tracing */
+
+/* Push an inc-ref'd copy of `e` onto the active collector, growing on demand. */
+static void trace_push(TraceCollector* tc, Expr* e) {
+    if (tc->count == tc->cap) {
+        size_t newcap = tc->cap ? tc->cap * 2 : 8;
+        Expr** grown = realloc(tc->steps, newcap * sizeof(Expr*));
+        if (!grown) return;   /* OOM: drop this step rather than crash */
+        tc->steps = grown;
+        tc->cap = newcap;
+    }
+    tc->steps[tc->count++] = expr_copy(e);
+}
+
+/* Record one real top-level rewrite. `before` is the pre-step expression and
+ * `after` is the result of the step; both are borrowed. Called only from the
+ * evaluate() change branch. Depth-gated: a no-op unless the currently running
+ * loop is the traced expression's own. On the first recorded step the pre-step
+ * e0 is seeded first, so an evaluation that never takes a step yields {}. */
+static void trace_record_step(Expr* before, Expr* after) {
+    TraceCollector* tc = g_trace_active;
+    if (!tc || eval_recursion_depth != tc->record_depth) return;
+    if (!tc->seeded) {
+        trace_push(tc, before);
+        tc->seeded = true;
+    }
+    trace_push(tc, after);
+}
+
+/*
+ * eval_classify_return:
+ * See the contract in eval.h. Pointer-equality on interned symbols is
+ * the dispatch primitive: every Expr_Symbol's `data.symbol.name` field is the
+ * canonical interned pointer (sym_intern.c), so checks like
+ * `head->data.symbol.name == SYM_Return` and `target->data.symbol.name ==
+ * boundary_head` are O(1) and never strcmp.
+ *
+ * Care is taken to keep this side-effect free: no eval_clock_bump,
+ * no expr_free, no allocation when the answer is NONE/PROPAGATE. The
+ * single allocation on CONSUME is either a fresh `Null` symbol (for the
+ * 0-arg form) or an expr_copy of args[0] (for 1-arg / 2-arg forms).
+ * That copy is necessary because the caller will free `e` after
+ * yielding the value.
+ */
+bool eval_is_inflight_throw(const Expr* e) {
+    return e && e->type == EXPR_FUNCTION &&
+           e->data.function.head->type == EXPR_SYMBOL &&
+           e->data.function.head->data.symbol.name == SYM_Throw &&
+           e->data.function.arg_count >= 1 && e->data.function.arg_count <= 3;
+}
+
+bool eval_is_inflight_goto(const Expr* e) {
+    return e && e->type == EXPR_FUNCTION &&
+           e->data.function.head->type == EXPR_SYMBOL &&
+           e->data.function.head->data.symbol.name == SYM_Goto &&
+           e->data.function.arg_count == 1;
+}
+
+EvalReturnAction eval_classify_return(Expr* e,
+                                      const char* boundary_head,
+                                      Expr** out_value) {
+    if (out_value) *out_value = NULL;
+    if (!e) return EVAL_RETURN_NONE;
+    if (e->type != EXPR_FUNCTION) return EVAL_RETURN_NONE;
+    if (e->data.function.head->type != EXPR_SYMBOL) return EVAL_RETURN_NONE;
+    if (e->data.function.head->data.symbol.name != SYM_Return) return EVAL_RETURN_NONE;
+
+    size_t argc = e->data.function.arg_count;
+
+    /* Return[]: yield Null at the nearest boundary. */
+    if (argc == 0) {
+        if (out_value) *out_value = expr_new_symbol(SYM_Null);
+        return EVAL_RETURN_CONSUME;
+    }
+
+    /* Return[expr]: yield expr at the nearest boundary, regardless of
+     * boundary_head. */
+    if (argc == 1) {
+        if (out_value) *out_value = expr_copy(e->data.function.args[0]);
+        return EVAL_RETURN_CONSUME;
+    }
+
+    /* Return[expr, h, ...]: target the nearest boundary whose head is h.
+     * Extra arguments are ignored (Mathematica accepts up to 2 args; we
+     * accept the same and leave further args to a caller-side message
+     * if the user supplies them).
+     *
+     * The target must be an EXPR_SYMBOL for the comparison to be
+     * meaningful. If it isn't, fall back to PROPAGATE so that the
+     * marker isn't accidentally consumed by an arbitrary boundary. */
+    Expr* target = e->data.function.args[1];
+    if (boundary_head &&
+        target->type == EXPR_SYMBOL &&
+        target->data.symbol.name == boundary_head) {
+        if (out_value) *out_value = expr_copy(e->data.function.args[0]);
+        return EVAL_RETURN_CONSUME;
+    }
+    return EVAL_RETURN_PROPAGATE;
+}
+
+/*
+ * eval_init:
+ * Registers the user-visible $RecursionLimit symbol with its default value
+ * as an OwnValue so that the user can read or assign to it from the REPL.
+ * The C-side state is kept in sync via the hook in apply_assignment.
+ *
+ * Must be called after symtab_init().
+ */
+void eval_init(void) {
+    Expr* sym = expr_new_symbol(SYM_DollarRecursionLimit);
+    Expr* val = expr_new_integer(eval_recursion_limit);
+    symtab_add_own_value("$RecursionLimit", sym, val);
+    expr_free(sym);
+    expr_free(val);
+
+    symtab_set_docstring("$RecursionLimit",
+        "$RecursionLimit\n"
+        "\tgives the maximum length of the evaluation stack -- the maximum\n"
+        "\tnumber of nested invocations of the evaluator that can occur.\n"
+        "\n"
+        "Assigning a positive integer N (>= 20) updates the limit; smaller\n"
+        "values are rejected with a $RecursionLimit::limset message.");
+}
+
+/*
+ * sync_recursion_limit_from_value:
+ * Inspect a candidate value (typically the RHS of $RecursionLimit = ...)
+ * and, if it is a positive integer >= MIN_RECURSION_LIMIT, push it into
+ * the C-level limit. Otherwise emit a $RecursionLimit::limset message and
+ * leave the C state untouched. Bigints are clamped to INT_MAX.
+ */
+static void sync_recursion_limit_from_value(Expr* value) {
+    long n = -1;
+    if (value->type == EXPR_INTEGER) {
+        n = (long)value->data.integer;
+    } else if (value->type == EXPR_BIGINT) {
+        /* Anything large enough not to fit in a long is far beyond any
+         * useful recursion limit; treat it as "huge and acceptable". */
+        if (mpz_fits_slong_p(value->data.bigint)) {
+            n = mpz_get_si(value->data.bigint);
+        } else if (mpz_sgn(value->data.bigint) > 0) {
+            n = (long)INT_MAX;
+        }
+    }
+
+    if (n < MIN_RECURSION_LIMIT) {
+        fprintf(stderr,
+                "$RecursionLimit::limset: Cannot set $RecursionLimit to a value below %d.\n",
+                MIN_RECURSION_LIMIT);
+        /* Restore the OwnValue to the current C-side limit so the symbol
+         * does not lie about the active value. */
+        Expr* sym  = expr_new_symbol(SYM_DollarRecursionLimit);
+        Expr* curr = expr_new_integer(eval_recursion_limit);
+        symtab_add_own_value("$RecursionLimit", sym, curr);
+        expr_free(sym);
+        expr_free(curr);
+        return;
+    }
+    if (n > INT_MAX) n = INT_MAX;
+    eval_set_recursion_limit((int)n);
+}
 
 /*
  * eval_compare_expr_ptrs:
@@ -42,32 +295,38 @@ int eval_compare_expr_ptrs(const void* a, const void* b) {
  * of the parent function.
  * Example: f[a, f[b, c], d] -> f[a, b, c, d]
  */
-void eval_flatten_args(Expr* e, const char* head_name) {
+/* Returns true iff the call actually flattened nested same-head children
+ * (i.e. produced a structurally different argument list). When false,
+ * `e` is byte-for-byte unchanged and the §3.4 fixed-point detector can
+ * count this step as a no-op. */
+/* Core flatten, assuming `head_name` is ALREADY the interned canonical
+ * pointer. The hot evaluator path (which holds an EXPR_SYMBOL's name, always
+ * interned) calls this directly to skip a per-call hash on every Flat head. */
+static bool eval_flatten_args_interned(Expr* e, const char* head_name) {
     size_t new_count = 0;
     bool needs_flattening = false;
-    
-    /* First pass: calculate the total number of arguments after flattening */
+
     for (size_t i = 0; i < e->data.function.arg_count; i++) {
         Expr* arg = e->data.function.args[i];
-        if (arg->type == EXPR_FUNCTION && arg->data.function.head->type == EXPR_SYMBOL && 
-            strcmp(arg->data.function.head->data.symbol, head_name) == 0) {
+        if (arg->type == EXPR_FUNCTION && arg->data.function.head->type == EXPR_SYMBOL &&
+            arg->data.function.head->data.symbol.name == head_name) {
             new_count += arg->data.function.arg_count;
             needs_flattening = true;
         } else {
             new_count++;
         }
     }
-    
+
     /* If no nested occurrences of the head were found, we are done */
-    if (!needs_flattening) return;
-    
+    if (!needs_flattening) return false;
+
     /* Second pass: allocate new argument array and copy elements */
     Expr** new_args = malloc(sizeof(Expr*) * new_count);
     size_t idx = 0;
     for (size_t i = 0; i < e->data.function.arg_count; i++) {
         Expr* arg = e->data.function.args[i];
-        if (arg->type == EXPR_FUNCTION && arg->data.function.head->type == EXPR_SYMBOL && 
-            strcmp(arg->data.function.head->data.symbol, head_name) == 0) {
+        if (arg->type == EXPR_FUNCTION && arg->data.function.head->type == EXPR_SYMBOL &&
+            arg->data.function.head->data.symbol.name == head_name) {
             /* Splat nested arguments into the new array */
             for (size_t j = 0; j < arg->data.function.arg_count; j++) {
                 new_args[idx++] = expr_copy(arg->data.function.args[j]);
@@ -83,6 +342,14 @@ void eval_flatten_args(Expr* e, const char* head_name) {
     free(e->data.function.args);
     e->data.function.args = new_args;
     e->data.function.arg_count = new_count;
+    return true;
+}
+
+/* Public entry: callers may hand us a C-string literal (e.g. internal_call_impl
+ * passes "Plus") rather than the interned canonical pointer, so funnel through
+ * the interner before the pointer-compare core. */
+bool eval_flatten_args(Expr* e, const char* head_name) {
+    return eval_flatten_args_interned(e, intern_symbol(head_name));
 }
 
 /*
@@ -93,7 +360,9 @@ void eval_flatten_args(Expr* e, const char* head_name) {
 static bool has_list_arg(Expr* e) {
     for (size_t i = 0; i < e->data.function.arg_count; i++) {
         Expr* arg = e->data.function.args[i];
-        if (arg->type == EXPR_FUNCTION && strcmp(arg->data.function.head->data.symbol, "List") == 0) {
+        if (arg->type == EXPR_FUNCTION &&
+            arg->data.function.head->type == EXPR_SYMBOL &&
+            arg->data.function.head->data.symbol.name == SYM_List) {
             return true;
         }
     }
@@ -107,25 +376,45 @@ static bool has_list_arg(Expr* e) {
  * Example: f[{a, b}, c] -> {f[a, c], f[b, c]}
  */
 static Expr* apply_listable(Expr* e) {
-    /* Determine the required length of the result list */
+    /* Determine the required result length from the list arguments, and verify
+     * that every List argument shares that length (Mathematica threads over
+     * equal-length lists only). The length may legitimately be 0: threading a
+     * Listable function over an empty list yields an empty list, e.g.
+     * BernoulliB[{}] -> {} and f[{}, c] -> {}. */
+    bool have_list = false;
     size_t list_len = 0;
     for (size_t i = 0; i < e->data.function.arg_count; i++) {
         Expr* arg = e->data.function.args[i];
-        if (arg->type == EXPR_FUNCTION && strcmp(arg->data.function.head->data.symbol, "List") == 0) {
-            list_len = arg->data.function.arg_count;
-            break;
+        if (arg->type == EXPR_FUNCTION &&
+            arg->data.function.head->type == EXPR_SYMBOL &&
+            arg->data.function.head->data.symbol.name == SYM_List) {
+            size_t len = arg->data.function.arg_count;
+            if (!have_list) { have_list = true; list_len = len; }
+            else if (len != list_len) {
+                char* s = expr_to_string(e);
+                printf("Thread::tdlen: Objects of unequal length in %s cannot be combined.\n", s);
+                free(s);
+                return NULL;
+            }
         }
     }
-    
-    if (list_len == 0) return NULL;
-    
+
+    if (!have_list) return NULL;
+
+    /* Empty list: thread to an empty list without per-element work. */
+    if (list_len == 0) {
+        return expr_new_function(expr_new_symbol(SYM_List), NULL, 0);
+    }
+
     /* Construct a new List containing the threaded evaluations */
     Expr** new_list_args = malloc(sizeof(Expr*) * list_len);
     for (size_t j = 0; j < list_len; j++) {
         Expr** new_func_args = malloc(sizeof(Expr*) * e->data.function.arg_count);
         for (size_t i = 0; i < e->data.function.arg_count; i++) {
             Expr* arg = e->data.function.args[i];
-            if (arg->type == EXPR_FUNCTION && strcmp(arg->data.function.head->data.symbol, "List") == 0) {
+            if (arg->type == EXPR_FUNCTION &&
+            arg->data.function.head->type == EXPR_SYMBOL &&
+            arg->data.function.head->data.symbol.name == SYM_List) {
                 /* All list arguments must have identical lengths */
                 if (arg->data.function.arg_count != list_len) {
                     char* s = expr_to_string(e);
@@ -150,9 +439,106 @@ static Expr* apply_listable(Expr* e) {
         expr_free(tmp);
     }
     
-    Expr* final_res = expr_new_function(expr_new_symbol("List"), new_list_args, list_len);
+    Expr* final_res = expr_new_function(expr_new_symbol(SYM_List), new_list_args, list_len);
     free(new_list_args);
     return final_res;
+}
+
+/*
+ * lhs_arg_contains_pattern:
+ * Walks an expression looking for any pattern construct (Blank,
+ * BlankSequence, BlankNullSequence, Pattern, Optional, Repeated,
+ * RepeatedNull, PatternTest, HoldPattern, Condition).  Returns true
+ * if any node is found.
+ *
+ * Used by the Set/SetDelayed dispatcher to decide whether the LHS arg
+ * should be evaluated.  Mathematica's rule semantics scope pattern
+ * variables inside the LHS — they must NOT be rewritten by existing
+ * DownValues during definition.  Evaluating a pattern-bearing LHS
+ * arg via the generic evaluator inadvertently fires earlier DownValues
+ * on the held pattern (e.g. a CRC table entry whose LHS reshapes to
+ * match an earlier rule's pattern, returning that rule's RHS shape),
+ * destroying the rule being installed.  Holding the arg whenever it
+ * contains a pattern construct sidesteps that.
+ *
+ * The `f[x] = 1` (x has an OwnValue c → defines f[c] = 1) case still
+ * works because non-pattern LHSes contain no Blank/Pattern node and
+ * continue down the evaluation path.
+ */
+static bool lhs_arg_contains_pattern(Expr* e) {
+    if (!e) return false;
+    if (e->type != EXPR_FUNCTION) return false;
+    if (e->data.function.head && e->data.function.head->type == EXPR_SYMBOL) {
+        const char* h = e->data.function.head->data.symbol.name;
+        if (h == SYM_Blank || h == SYM_BlankSequence || h == SYM_BlankNullSequence
+            || h == SYM_Pattern || h == SYM_Optional || h == SYM_Repeated
+            || h == SYM_RepeatedNull || h == SYM_PatternTest
+            || h == SYM_HoldPattern || h == SYM_Condition) {
+            return true;
+        }
+        if (lhs_arg_contains_pattern(e->data.function.head)) return true;
+    }
+    for (size_t i = 0; i < e->data.function.arg_count; i++) {
+        if (lhs_arg_contains_pattern(e->data.function.args[i])) return true;
+    }
+    return false;
+}
+
+/*
+ * assignment_target_symbol:
+ * Returns the name of the symbol whose OwnValue/DownValue/Part would be
+ * written if lhs were used as the LHS of a Set or SetDelayed, or NULL if
+ * lhs does not name a specific symbol. Wrappers that do not change the
+ * ultimate target (Condition[pat, test], HoldPattern[pat], Part[x, ...])
+ * are unwrapped so that Protected can be detected on the underlying head.
+ */
+static const char* assignment_target_symbol(Expr* lhs) {
+    if (!lhs) return NULL;
+    if (lhs->type == EXPR_SYMBOL) return lhs->data.symbol.name;
+    if (lhs->type == EXPR_FUNCTION &&
+        lhs->data.function.head->type == EXPR_SYMBOL &&
+        lhs->data.function.arg_count >= 1) {
+        const char* h = lhs->data.function.head->data.symbol.name;
+        if (h == SYM_Condition || h == SYM_HoldPattern || h == SYM_Part ||
+            h == SYM_MessageName) {
+            /* f::tag = ... targets f, not MessageName: a usage message may be
+             * attached to an unprotected symbol even though MessageName itself
+             * is Protected. */
+            return assignment_target_symbol(lhs->data.function.args[0]);
+        }
+        return h;
+    }
+    return NULL;
+}
+
+/*
+ * is_assignable_lhs:
+ * Validate that `lhs` shaped against `rhs` is a structurally legal target
+ * for a Set/SetDelayed, including all destructured sub-elements. Used as a
+ * pre-flight check on List destructuring so a malformed element (e.g. a
+ * literal integer on the LHS) cannot land partial assignments before being
+ * detected by the in-loop failure path.
+ */
+static bool is_assignable_lhs(Expr* lhs, Expr* rhs) {
+    if (!lhs) return false;
+    if (lhs->type == EXPR_SYMBOL) return true;
+    if (lhs->type != EXPR_FUNCTION) return false;
+    if (lhs->data.function.head->type != EXPR_SYMBOL) return false;
+    const char* h = lhs->data.function.head->data.symbol.name;
+    if (h != SYM_List) return true; /* downvalue / part / etc. handled in apply_assignment */
+
+    if (rhs->type != EXPR_FUNCTION ||
+        rhs->data.function.head->type != EXPR_SYMBOL ||
+        rhs->data.function.head->data.symbol.name != SYM_List) {
+        return false;
+    }
+    if (lhs->data.function.arg_count != rhs->data.function.arg_count) return false;
+    for (size_t i = 0; i < lhs->data.function.arg_count; i++) {
+        if (!is_assignable_lhs(lhs->data.function.args[i], rhs->data.function.args[i])) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /*
@@ -160,29 +546,112 @@ static Expr* apply_listable(Expr* e) {
  * Helper to handle the 'Set' (=) and 'SetDelayed' (:=) primitives.
  * Supports recursive list destructuring.
  * Example: {x, y} = {1, 2}
+ *
+ * Returns true if the caller should respond as if the assignment
+ * succeeded (return the RHS for Set, Null for SetDelayed). Attempts to
+ * assign to a Protected symbol emit a Set::wrsym message, leave state
+ * unchanged, and still return true so the caller yields the RHS, matching
+ * Mathematica semantics.
  */
 static bool apply_assignment(Expr* lhs, Expr* rhs, bool is_delayed) {
+    /* Options[sym] = {name -> value, ...} redefines the symbol's default
+     * option settings. Intercepted before the Protected guard below because
+     * Options itself is Protected; this writes the dedicated options store
+     * rather than a DownValue (mirrors SetOptions). The RHS must be a List of
+     * Rule/RuleDelayed with symbol/string names, else the assignment is left
+     * unevaluated. */
+    if (lhs->type == EXPR_FUNCTION
+        && lhs->data.function.head->type == EXPR_SYMBOL
+        && lhs->data.function.head->data.symbol.name == SYM_Options
+        && lhs->data.function.arg_count == 1
+        && lhs->data.function.args[0]->type == EXPR_SYMBOL) {
+        if (rhs->type == EXPR_FUNCTION
+            && rhs->data.function.head->type == EXPR_SYMBOL
+            && rhs->data.function.head->data.symbol.name == SYM_List) {
+            bool all_rules = true;
+            for (size_t i = 0; i < rhs->data.function.arg_count; i++) {
+                Expr* r = rhs->data.function.args[i];
+                if (!(r->type == EXPR_FUNCTION
+                      && r->data.function.head->type == EXPR_SYMBOL
+                      && (r->data.function.head->data.symbol.name == SYM_Rule
+                          || r->data.function.head->data.symbol.name == SYM_RuleDelayed)
+                      && r->data.function.arg_count == 2
+                      && (r->data.function.args[0]->type == EXPR_SYMBOL
+                          || r->data.function.args[0]->type == EXPR_STRING))) {
+                    all_rules = false;
+                    break;
+                }
+            }
+            if (all_rules) {
+                symtab_set_options(lhs->data.function.args[0]->data.symbol.name,
+                                   expr_copy(rhs));
+                eval_clock_bump();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /* Block writes to Protected symbols. List destructuring is recursed
+     * into below and each child runs through apply_assignment again, so
+     * per-element protection checks happen naturally -- we only skip the
+     * outer check when lhs itself is a List. */
+    bool lhs_is_list = (lhs->type == EXPR_FUNCTION &&
+                        lhs->data.function.head->type == EXPR_SYMBOL &&
+                        lhs->data.function.head->data.symbol.name == SYM_List);
+    if (!lhs_is_list) {
+        const char* target = assignment_target_symbol(lhs);
+        if (target && (get_attributes(target) & ATTR_PROTECTED)) {
+            fprintf(stderr, "%s::wrsym: Symbol %s is Protected.\n",
+                    is_delayed ? "SetDelayed" : "Set", target);
+            return true;
+        }
+    }
+
     if (lhs->type == EXPR_SYMBOL) {
         /* Standard symbol assignment */
-        symtab_add_own_value(lhs->data.symbol, lhs, rhs);
+        symtab_add_own_value(lhs->data.symbol.name, lhs, rhs);
+
+        /* Special system variables: keep their C-side mirror state in sync.
+         * Set has HoldFirst, so for `$RecursionLimit = expr` the rhs is
+         * already evaluated; for SetDelayed, we evaluate a copy here so the
+         * limit reflects the value the user expects to see when they read
+         * the symbol back. If validation fails, the OwnValue is rolled back
+         * to the current C-side limit. */
+        if (strcmp(lhs->data.symbol.name, "$RecursionLimit") == 0) {
+            Expr* probe = is_delayed ? evaluate(expr_copy(rhs)) : expr_copy(rhs);
+            sync_recursion_limit_from_value(probe);
+            expr_free(probe);
+        }
         return true;
     } else if (lhs->type == EXPR_FUNCTION) {
-        if (lhs->data.function.head->type == EXPR_SYMBOL && 
-            strcmp(lhs->data.function.head->data.symbol, "List") == 0 &&
+        if (lhs->data.function.head->type == EXPR_SYMBOL &&
+            lhs->data.function.head->data.symbol.name == SYM_List &&
             rhs->type == EXPR_FUNCTION &&
             rhs->data.function.head->type == EXPR_SYMBOL &&
-            strcmp(rhs->data.function.head->data.symbol, "List") == 0) {
+            rhs->data.function.head->data.symbol.name == SYM_List) {
             
-            /* List destructuring: match lengths and recurse */
+            /* List destructuring: match lengths and recurse. Pre-flight every
+             * element so a malformed child (e.g. a literal integer on the LHS)
+             * fails the whole destructuring before any sibling is assigned --
+             * partial assignments would otherwise leak past the failure. */
             if (lhs->data.function.arg_count != rhs->data.function.arg_count) {
                 return false;
             }
-            
             for (size_t i = 0; i < lhs->data.function.arg_count; i++) {
-                apply_assignment(lhs->data.function.args[i], rhs->data.function.args[i], is_delayed);
+                if (!is_assignable_lhs(lhs->data.function.args[i], rhs->data.function.args[i])) {
+                    return false;
+                }
             }
-            return true;
-        } else if (lhs->data.function.head->type == EXPR_SYMBOL && strcmp(lhs->data.function.head->data.symbol, "Part") == 0) {
+
+            bool all_ok = true;
+            for (size_t i = 0; i < lhs->data.function.arg_count; i++) {
+                if (!apply_assignment(lhs->data.function.args[i], rhs->data.function.args[i], is_delayed)) {
+                    all_ok = false;
+                }
+            }
+            return all_ok;
+        } else if (lhs->data.function.head->type == EXPR_SYMBOL && lhs->data.function.head->data.symbol.name == SYM_Part) {
             Expr* expr_part_assign(Expr* lhs, Expr* rhs); // Forward declare or include part.h
             Expr* assigned = expr_part_assign(lhs, rhs);
             if (assigned) {
@@ -193,16 +662,52 @@ static bool apply_assignment(Expr* lhs, Expr* rhs, bool is_delayed) {
         } else if (lhs->data.function.head->type == EXPR_SYMBOL) {
             /* Pattern-based assignment (DownValues) */
             /* We use the entire lhs as the pattern, and its head as the key */
-            const char* symbol_name = lhs->data.function.head->data.symbol;
-            if (strcmp(symbol_name, "Condition") == 0 && lhs->data.function.arg_count == 2) {
-                Expr* actual_lhs = lhs->data.function.args[0];
-                if (actual_lhs->type == EXPR_FUNCTION && actual_lhs->data.function.head->type == EXPR_SYMBOL) {
-                    symbol_name = actual_lhs->data.function.head->data.symbol;
-                } else if (actual_lhs->type == EXPR_SYMBOL) {
-                    symbol_name = actual_lhs->data.symbol;
+            const char* symbol_name = lhs->data.function.head->data.symbol.name;
+
+            /* f::usage = "..." additionally registers the string as f's
+             * docstring so ?f and Information[f] surface it. The message is
+             * still installed as a DownValue on MessageName below, which makes
+             * MessageName[f, "usage"] (i.e. f::usage) retrievable. */
+            if (symbol_name == SYM_MessageName &&
+                lhs->data.function.arg_count == 2 &&
+                lhs->data.function.args[0]->type == EXPR_SYMBOL &&
+                lhs->data.function.args[1]->type == EXPR_STRING &&
+                strcmp(lhs->data.function.args[1]->data.string, "usage") == 0 &&
+                rhs->type == EXPR_STRING) {
+                symtab_set_docstring(lhs->data.function.args[0]->data.symbol.name,
+                                     rhs->data.string);
+            }
+
+            Expr* actual_pattern = lhs;
+            Expr* actual_rhs = rhs;
+
+            /* If the RHS is Condition[body, test], move the condition to the LHS.
+             * This makes f[x_] := body /; test equivalent to f[x_] /; test := body.
+             * This is standard Mathematica semantics. */
+            if (is_delayed && rhs->type == EXPR_FUNCTION &&
+                rhs->data.function.head->type == EXPR_SYMBOL &&
+                rhs->data.function.head->data.symbol.name == SYM_Condition &&
+                rhs->data.function.arg_count == 2) {
+                /* Build Condition[lhs, test] as the new pattern */
+                Expr** cond_args = malloc(sizeof(Expr*) * 2);
+                cond_args[0] = expr_copy(lhs);
+                cond_args[1] = expr_copy(rhs->data.function.args[1]);
+                actual_pattern = expr_new_function(expr_new_symbol(SYM_Condition), cond_args, 2);
+                free(cond_args);
+                /* The actual replacement is just the body */
+                actual_rhs = rhs->data.function.args[0];
+            }
+
+            if (symbol_name == SYM_Condition && actual_pattern->data.function.arg_count == 2) {
+                Expr* inner_lhs = actual_pattern->data.function.args[0];
+                if (inner_lhs->type == EXPR_FUNCTION && inner_lhs->data.function.head->type == EXPR_SYMBOL) {
+                    symbol_name = inner_lhs->data.function.head->data.symbol.name;
+                } else if (inner_lhs->type == EXPR_SYMBOL) {
+                    symbol_name = inner_lhs->data.symbol.name;
                 }
             }
-            symtab_add_down_value(symbol_name, lhs, rhs);
+            symtab_add_down_value(symbol_name, actual_pattern, actual_rhs);
+            if (actual_pattern != lhs) expr_free(actual_pattern);
             return true;
         }
     }
@@ -212,29 +717,34 @@ static bool apply_assignment(Expr* lhs, Expr* rhs, bool is_delayed) {
 /*
  * flatten_sequences:
  * Flattens any Sequence[...] heads found in the arguments of e.
+ * Returns true iff the args list was actually rewritten.
  */
-static void flatten_sequences(Expr* e) {
-    if (e->type != EXPR_FUNCTION) return;
-    
+static bool flatten_sequences(Expr* e) {
+    if (e->type != EXPR_FUNCTION) return false;
+
     size_t new_count = 0;
+    bool found_sequence = false;
     for (size_t i = 0; i < e->data.function.arg_count; i++) {
         Expr* arg = e->data.function.args[i];
         if (arg->type == EXPR_FUNCTION && arg->data.function.head->type == EXPR_SYMBOL &&
-            strcmp(arg->data.function.head->data.symbol, "Sequence") == 0) {
+            arg->data.function.head->data.symbol.name == SYM_Sequence) {
             new_count += arg->data.function.arg_count;
+            found_sequence = true;
         } else {
             new_count++;
         }
     }
-    
-    if (new_count == e->data.function.arg_count) return;
+
+    /* A lone Sequence[x] changes structure without changing arg_count, so we
+     * cannot gate on (new_count == arg_count) -- test for any Sequence head. */
+    if (!found_sequence) return false;
     
     Expr** new_args = malloc(sizeof(Expr*) * new_count);
     size_t k = 0;
     for (size_t i = 0; i < e->data.function.arg_count; i++) {
         Expr* arg = e->data.function.args[i];
         if (arg->type == EXPR_FUNCTION && arg->data.function.head->type == EXPR_SYMBOL &&
-            strcmp(arg->data.function.head->data.symbol, "Sequence") == 0) {
+            arg->data.function.head->data.symbol.name == SYM_Sequence) {
             for (size_t j = 0; j < arg->data.function.arg_count; j++) {
                 new_args[k++] = expr_copy(arg->data.function.args[j]);
             }
@@ -247,128 +757,411 @@ static void flatten_sequences(Expr* e) {
     free(e->data.function.args);
     e->data.function.args = new_args;
     e->data.function.arg_count = new_count;
+    return true;
 }
 
 /*
  * evaluate_step:
  * Performs exactly one level of evaluation transformation.
+ *
+ * `changed` is an out-parameter set to true iff a real rewrite fired
+ * during this step (M3 §3.4 — eager early-exit fixed-point loop). The
+ * outer loop in evaluate() uses it to skip the O(tree) expr_eq compare.
+ * See the contract in eval.h. NULL is permitted for callers that do not
+ * care about the signal.
  */
-Expr* evaluate_step(Expr* e) {
+Expr* evaluate_step(Expr* e, bool* changed) {
+    /* Local sink so we can write through `*changed` unconditionally. */
+    bool sink = false;
+    if (!changed) changed = &sink;
+    *changed = false;
+
     if (!e) return NULL;
 
     switch (e->type) {        /* Atomics evaluate to themselves */
         case EXPR_INTEGER:
         case EXPR_REAL:
         case EXPR_STRING:
+        case EXPR_BIGINT:
+        case EXPR_NDARRAY:        /* dense ndarray: an atomic value */
+#ifdef USE_MPFR
+        case EXPR_MPFR:
+#endif
             return expr_copy(e);
-            
+
         case EXPR_SYMBOL: {
             /* Check for immediate assignments (OwnValues) like x = 5 */
             Expr* own = apply_own_values(e);
-            if (own) return own;
+            if (own) { *changed = true; return own; }
             return expr_copy(e);
         }
             
         case EXPR_FUNCTION: {
-            /* 1. Evaluate the head recursively (e.g. f[x][y]) */
-            Expr* head = evaluate(e->data.function.head);
-            
+            /* 1. Evaluate the head recursively (e.g. f[x][y]).
+             * Refcount sharing means evaluate() returns the same pointer
+             * when nothing rewrote — pointer-inequality is a sound
+             * "head changed" signal, and we only fall through to the
+             * structural compare if needed. */
+            Expr* orig_head = e->data.function.head;
+            Expr* head = evaluate(orig_head);
+            if (head != orig_head) *changed = true;
+
             uint32_t attrs = ATTR_NONE;
+            /* Phase 3a: resolve the head's definition ONCE, then thread it
+             * through attribute lookup, DownValue dispatch, and builtin dispatch
+             * below -- instead of re-resolving (re-hashing) the same head up to
+             * three times per node per evaluation pass. The def node is stable
+             * (Phase 2: never freed/reallocated), so the pointer stays valid
+             * even if the symbol is redefined mid-step; each use reads its
+             * fields fresh. */
+            SymbolDef* hdef = NULL;
             if (head->type == EXPR_SYMBOL) {
-                attrs = get_attributes(head->data.symbol);
+                /* Phase 3b: the symbol node caches its resolved def. First touch
+                 * looks it up (one hash on the unified table); every later pass
+                 * over this same node is a pointer load. Writing the cache on a
+                 * possibly-shared node is safe -- it is benign metadata, and all
+                 * sharers are the same symbol with the same def. */
+                hdef = head->data.symbol.def;
+                if (!hdef) {
+                    hdef = symtab_get_def(head->data.symbol.name);
+                    head->data.symbol.def = hdef;
+                }
+                attrs = get_attributes_def(hdef);
             } else if (head->type == EXPR_FUNCTION) {
                 attrs = pure_function_attributes(head);
             }
             
-            /* 2. Handle 'Hold' attributes */
-            
-            /* ATTR_HOLDALLCOMPLETE: Do not evaluate arguments or process attributes */
-            if (attrs & ATTR_HOLDALLCOMPLETE) {
-                Expr** new_args = malloc(sizeof(Expr*) * e->data.function.arg_count);
-                for (size_t i = 0; i < e->data.function.arg_count; i++) {
-                    new_args[i] = expr_copy(e->data.function.args[i]);
-                }
-                Expr* ret = expr_new_function(head, new_args, e->data.function.arg_count);
-                free(new_args);
-                return ret;
-            }
-            
-            /* Evaluate arguments unless suppressed by HoldFirst, HoldRest, or HoldAll */
-            Expr** new_args = malloc(sizeof(Expr*) * e->data.function.arg_count);
+            /* 2. Handle 'Hold' attributes.
+             *
+             * HoldAllComplete is like HoldAll but additionally suppresses
+             * Sequence flattening, Unevaluated stripping, Flat flattening,
+             * and (eventually) UpValues lookup. Inside a HoldAllComplete
+             * head, Evaluate[expr] does NOT force evaluation. Built-ins and
+             * DownValues attached to the head still apply -- this is what
+             * lets Hold-style heads do useful work (e.g. Length[Hold[a,b,c]]
+             * via the down code on Hold). */
+            bool hold_all_complete = (attrs & ATTR_HOLDALLCOMPLETE) != 0;
+
+            /* Evaluate arguments unless suppressed by HoldFirst, HoldRest,
+             * HoldAll, or HoldAllComplete.
+             *
+             * Pointer-identity check against the original arg signals
+             * "did sub-evaluation change anything"; with refcount sharing
+             * (M3 phase-2) evaluate() returns the same pointer for
+             * already-stable inputs. Stripping an Evaluate[] wrapper is
+             * itself a rewrite even if the wrapped expression evaluates
+             * to itself — flag it explicitly. */
+            size_t argc = e->data.function.arg_count;
+            Expr* new_args_stack[EVAL_SMALL_ARGS];
+            Expr** new_args = (argc <= EVAL_SMALL_ARGS)
+                                  ? new_args_stack
+                                  : malloc(sizeof(Expr*) * argc);
+            /* Pointers of Unevaluated[...] wrappers that landed in a HELD slot.
+             * Per WMA, such wrappers are NOT stripped below (the argument was
+             * never going to be evaluated, so Unevaluated has nothing to do).
+             * We track by pointer identity, not index, because flatten_sequences
+             * can shift argument positions before the strip pass runs; held
+             * Unevaluated nodes are never Sequence, so their pointers survive it.
+             * Held Unevaluated wrappers are vanishingly rare (essentially never
+             * in numeric code), so this tracking array is allocated lazily on
+             * first sighting rather than on every function node. */
+            Expr** held_uneval = NULL;
+            size_t held_uneval_count = 0;
             for (size_t i = 0; i < e->data.function.arg_count; i++) {
-                bool hold = false;
+                bool hold = hold_all_complete;
                 if (i == 0 && (attrs & ATTR_HOLDFIRST)) hold = true;
                 if (i > 0 && (attrs & ATTR_HOLDREST)) hold = true;
 
-                if (hold) {                    new_args[i] = expr_copy(e->data.function.args[i]);
+                /* Track whether this slot was produced by *evaluation* (vs a
+                 * held plain copy). Only an evaluated argument can be an
+                 * in-flight Throw that must short-circuit the call; a held
+                 * copy of a literal Throw[...] (e.g. Hold[Throw[1]]) is inert
+                 * and must NOT short-circuit. */
+                bool arg_evaluated = false;
+                Expr* orig_arg = e->data.function.args[i];
+                if (hold) {
+                    /* Check for Evaluate[...] - overrides HoldFirst/HoldRest/HoldAll
+                     * but NOT HoldAllComplete. Arity 1 forces the single argument;
+                     * any other arity forces each argument and splices them via a
+                     * Sequence, which flatten_sequences resolves below (so
+                     * Evaluate[] vanishes and Evaluate[a, b] -> a, b). */
+                    if (!hold_all_complete &&
+                        orig_arg->type == EXPR_FUNCTION &&
+                        orig_arg->data.function.head->type == EXPR_SYMBOL &&
+                        orig_arg->data.function.head->data.symbol.name == SYM_Evaluate) {
+                        size_t ne = orig_arg->data.function.arg_count;
+                        if (ne == 1) {
+                            new_args[i] = evaluate(orig_arg->data.function.args[0]);
+                        } else {
+                            Expr** seq = malloc(sizeof(Expr*) * ne);
+                            for (size_t k = 0; k < ne; k++)
+                                seq[k] = evaluate(orig_arg->data.function.args[k]);
+                            new_args[i] = expr_new_function(
+                                expr_new_symbol(SYM_Sequence), seq, ne);
+                            free(seq);
+                        }
+                        arg_evaluated = true;
+                        *changed = true; /* Evaluate wrapper stripped */
+                    } else {
+                        new_args[i] = expr_copy(orig_arg);
+                    }
+                    /* Record a held Unevaluated[...] wrapper so the strip pass
+                     * below leaves it intact (WMA: held wrappers are not removed).
+                     * Covers both the plain held copy and the
+                     * Hold[Evaluate[Unevaluated[x]]] case where the override
+                     * evaluates to Unevaluated[x] in a held slot. */
+                    if (new_args[i]->type == EXPR_FUNCTION &&
+                        new_args[i]->data.function.head->type == EXPR_SYMBOL &&
+                        new_args[i]->data.function.head->data.symbol.name == SYM_Unevaluated &&
+                        new_args[i]->data.function.arg_count == 1) {
+                        /* Lazily allocate: capacity argc is always enough since
+                         * there is at most one held wrapper per argument slot. */
+                        if (!held_uneval)
+                            held_uneval = malloc(sizeof(Expr*) * (argc ? argc : 1));
+                        if (held_uneval) held_uneval[held_uneval_count++] = new_args[i];
+                    }
                 } else {
-                    new_args[i] = evaluate(e->data.function.args[i]);
+                    new_args[i] = evaluate(orig_arg);
+                    arg_evaluated = true;
+                    if (new_args[i] != orig_arg) *changed = true;
+                }
+
+                /* Catch/Throw and Goto/Label: an evaluated argument that is an
+                 * in-flight Throw or Goto short-circuits the entire call. Free
+                 * the siblings produced so far and the evaluated head, then hand
+                 * the sentinel up through the normal return path -- this frame
+                 * and every enclosing frame still run their own cleanup (this is
+                 * why longjmp is not used). `res` has not been built yet, so
+                 * nothing else is owned here. Runs before `res` is built and
+                 * before Orderless sorting, so first-throw-wins holds for
+                 * Plus/Times arguments too. A Goto bubbles the same way until an
+                 * enclosing CompoundExpression consumes it (see
+                 * builtin_compoundexpression). */
+                if (arg_evaluated && (eval_is_inflight_throw(new_args[i]) ||
+                                      eval_is_inflight_goto(new_args[i]))) {
+                    Expr* sentinel = new_args[i];
+                    for (size_t j = 0; j < i; j++) expr_free(new_args[j]);
+                    if (new_args != new_args_stack) free(new_args);
+                    free(held_uneval);   /* free(NULL) is a no-op */
+                    expr_free(head);
+                    *changed = true;
+                    return sentinel;
                 }
             }
             
-            Expr* res = expr_new_function(head, new_args, e->data.function.arg_count);
-            free(new_args);
+            Expr* res = expr_new_function(head, new_args, argc);
+            if (new_args != new_args_stack) free(new_args);
             
-    /* 2.5 Flatten Sequences - must happen before attributes */
-    if (head->type == EXPR_SYMBOL && 
-        (strcmp(head->data.symbol, "Set") == 0 || strcmp(head->data.symbol, "SetDelayed") == 0 ||
-         strcmp(head->data.symbol, "Rule") == 0 || strcmp(head->data.symbol, "RuleDelayed") == 0)) {
-        // Do not flatten sequences in assignments or rules
+    /* 2.5 Flatten Sequences - must happen before attributes.
+     * Suppressed for heads carrying SequenceHold (e.g. Set/SetDelayed/Rule/
+     * RuleDelayed, so assignments and rules can return Sequence objects) and for
+     * HoldAllComplete heads (HoldAllComplete implies SequenceHold). Any
+     * user-defined head with SequenceHold is honored automatically. */
+    if (hold_all_complete || (attrs & ATTR_SEQUENCEHOLD)) {
+        /* SequenceHold / HoldAllComplete leaves Sequence intact */
     } else {
-        flatten_sequences(res);
+        if (flatten_sequences(res)) *changed = true;
     }
 
-            /* 3. Apply structural and semantic attributes */
+            /* 2.6 Strip Unevaluated wrappers.
+             * f[Unevaluated[expr]] passes expr (unevaluated) to f, with the
+             * wrapper removed. This runs AFTER flatten_sequences so that any
+             * Sequence[...] directly inside Unevaluated is preserved (e.g.
+             * Length[Unevaluated[Sequence[a,b]]] gives 2 because Sequence is
+             * not flattened into Length's argument list).
+             * Per WMA semantics, the wrapper is stripped ONLY in positions that
+             * would otherwise be evaluated (non-held slots): the wrapper's job is
+             * to temporarily hold an argument that a non-Hold head would evaluate.
+             * In genuinely held slots -- HoldFirst/HoldRest/HoldAll on that
+             * position, or content forced there by Evaluate -- the wrapper is
+             * left intact (so f[Unevaluated[1+2]] with f HoldAll stays
+             * f[Unevaluated[1+2]], and Hold[Evaluate[Unevaluated[1+2]]] stays
+             * Hold[Unevaluated[1+2]]). Those held wrappers were recorded by
+             * pointer in held_uneval above. HoldAllComplete heads keep every
+             * wrapper and skip this pass entirely. Stripping merely removes the
+             * wrapper; the exposed content is not itself evaluated, so the head's
+             * hold attributes are respected on the next pass. */
+            if (!hold_all_complete) {
+                for (size_t i = 0; i < res->data.function.arg_count; i++) {
+                    Expr* arg = res->data.function.args[i];
+                    if (arg->type == EXPR_FUNCTION &&
+                        arg->data.function.head->type == EXPR_SYMBOL &&
+                        arg->data.function.head->data.symbol.name == SYM_Unevaluated &&
+                        arg->data.function.arg_count == 1) {
+                        bool held_here = false;
+                        for (size_t k = 0; k < held_uneval_count; k++) {
+                            if (held_uneval[k] == arg) { held_here = true; break; }
+                        }
+                        if (held_here) continue; /* held slot: keep wrapper */
+                        Expr* stripped = expr_copy(arg->data.function.args[0]);
+                        expr_free(arg);
+                        res->data.function.args[i] = stripped;
+                        *changed = true; /* Unevaluated wrapper removed */
+                    }
+                }
+            }
+            free(held_uneval);
+
+            /* 3. Apply structural and semantic attributes.
+             * Order follows Withoff §3.1: Flat → Sequence (already done above) →
+             * Listable → Orderless. Flat must run before Listable so that lists
+             * exposed by flattening get threaded, e.g. Plus[Plus[a,{1,2}],3]
+             * → Plus[a,{1,2},3] → {Plus[a,1,3], Plus[a,2,3]}. */
+
+            /* Flat: associative flattening (requires symbolic head, suppressed by HoldAllComplete) */
+            if (head->type == EXPR_SYMBOL && (attrs & ATTR_FLAT) && !hold_all_complete) {
+                /* head is an EXPR_SYMBOL, so its name is already interned —
+                 * call the core directly and skip the redundant hash. */
+                if (eval_flatten_args_interned(res, head->data.symbol.name)) *changed = true;
+            }
+
             /* Listable: automatic threading */
             if ((attrs & ATTR_LISTABLE) && has_list_arg(res)) {
                 Expr* list_res = apply_listable(res);
                 if (list_res) {
                     expr_free(res);
+                    *changed = true; /* List threading reshaped the call */
                     return list_res;
                 }
             }
 
             if (head->type == EXPR_SYMBOL) {
-                const char* head_name = head->data.symbol;
-                
-                /* Flat: associative flattening */
-                if (attrs & ATTR_FLAT) {
-                    eval_flatten_args(res, head_name);
-                }
-                
-                /* Orderless: commutative sorting */
+                const char* head_name = head->data.symbol.name;
+
+                /* Orderless: commutative sorting. Pre-check whether the
+                 * args are already in canonical order so the §3.4 detector
+                 * can skip a no-op qsort on stable expressions
+                 * (Plus[a,b,c] re-evaluating, etc.). */
                 if (attrs & ATTR_ORDERLESS) {
-                    qsort(res->data.function.args, res->data.function.arg_count, sizeof(Expr*), eval_compare_expr_ptrs);
+                    bool already_sorted = true;
+                    for (size_t i = 1; i < res->data.function.arg_count; i++) {
+                        if (eval_compare_expr_ptrs(&res->data.function.args[i - 1],
+                                                   &res->data.function.args[i]) > 0) {
+                            already_sorted = false;
+                            break;
+                        }
+                    }
+                    if (!already_sorted) {
+                        qsort(res->data.function.args, res->data.function.arg_count, sizeof(Expr*), eval_compare_expr_ptrs);
+                        *changed = true;
+                    }
                 }
 
-                /* 4. Call C-level Built-in Functions */
-                SymbolDef* def = symtab_get_def(head_name);
-                if (def && def->builtin_func) {
-                    Expr* ret = def->builtin_func(res);
+                /* 4. Apply user-defined DownValues FIRST (Withoff §3.1).
+                 * In Mathematica's evaluation pipeline, user-defined
+                 * DownValues take precedence over internal "down code"
+                 * (built-in implementations). This lets a user override
+                 * a built-in for non-Protected symbols, while Protected
+                 * symbols (which is most builtin-bearing heads) are
+                 * unaffected because apply_assignment refuses to install
+                 * DownValues on a Protected target. */
+                Expr* down = apply_down_values_def(hdef, res);
+                if (down) {
+                    expr_free(res);
+                    *changed = true; /* DownValue rule fired */
+                    return down;
+                }
+
+                /* 4b. NDArray element-wise fast path. Listable functions with a
+                 * registered machine kernel (elementary/special functions) map
+                 * directly over an NDArray argument's flat buffer at C speed
+                 * instead of falling through to the slow List-threading path
+                 * (which NDArrays don't even trigger). A kernel failure on any
+                 * element (pole/overflow) degrades faithfully to the List path,
+                 * so results always match f[{...}]. Runs after user DownValues
+                 * (so overrides still win) and before the builtin (whose scalar
+                 * numeric paths ignore NDArrays anyway). */
+                if (hdef) {
+                    size_t na = res->data.function.arg_count;
+                    Expr** aa = res->data.function.args;
+                    Expr* nd = NULL;
+                    if (na == 1 && hdef->ndarray_unary_kernel && is_ndarray(aa[0])) {
+                        nd = ndarray_map_unary(aa[0], hdef->ndarray_unary_kernel);
+                        if (!nd) nd = ndarray_delist_and_reeval(res);
+                    } else if (na == 2 && hdef->ndarray_binary_kernel &&
+                               (is_ndarray(aa[0]) ^ is_ndarray(aa[1]))) {
+                        nd = ndarray_map_binary(aa[0], aa[1], hdef->ndarray_binary_kernel);
+                        if (!nd) nd = ndarray_delist_and_reeval(res);
+                    }
+                    if (nd) {
+                        expr_free(res);
+                        *changed = true; /* NDArray fast path rewrote the call */
+                        return nd;
+                    }
+                }
+
+                /* 5. Call C-level Built-in Functions (internal "down code") */
+                if (hdef && hdef->builtin_func) {
+                    Expr* ret = hdef->builtin_func(res);
                     if (ret) {
                         expr_free(res);
+                        *changed = true; /* Built-in produced a rewrite */
                         return ret;
                     }
                 }
-                
-                /* 5. Special primitives (Set, SetDelayed) */
-                if ((strcmp(head_name, "Set") == 0 || strcmp(head_name, "SetDelayed") == 0) && res->data.function.arg_count == 2) {
+
+                /* 6. Special primitives (Set, SetDelayed) */
+                if ((head_name == SYM_Set || head_name == SYM_SetDelayed) && res->data.function.arg_count == 2) {
                     Expr* lhs = res->data.function.args[0];
                     Expr* rhs = res->data.function.args[1];
-                    int is_delayed = (strcmp(head_name, "SetDelayed") == 0);
+                    int is_delayed = (head_name == SYM_SetDelayed);
                     
-                    /* For Set (not SetDelayed), we might need to evaluate the LHS to find the actual target */
+                    /* For Set and SetDelayed, we evaluate the arguments of the LHS to find the actual target */
                     /* e.g. f[x] = 1 where x=c should define f[c]=1 */
+                    /* Patterns must also be evaluated to canonical form to match evaluated inputs. */
                     Expr* target_lhs = lhs;
                     bool free_target = false;
-                    if (!is_delayed && lhs->type == EXPR_FUNCTION) {
+                    if (lhs->type == EXPR_FUNCTION) {
                         /* Only evaluate arguments, not the head, to avoid matching existing rules */
                         Expr** eval_args = malloc(sizeof(Expr*) * lhs->data.function.arg_count);
-                        bool is_part = (lhs->data.function.head->type == EXPR_SYMBOL && strcmp(lhs->data.function.head->data.symbol, "Part") == 0);
-                        
+                        bool is_part = (lhs->data.function.head->type == EXPR_SYMBOL && lhs->data.function.head->data.symbol.name == SYM_Part);
+                        /* List destructuring: {a, b, ...} = {...}. Each element that is
+                         * a Symbol is a binding target and must NOT be evaluated (otherwise
+                         * prior OwnValues clobber the targets -- e.g. {a,b}={1,2} then
+                         * {a,b}={3,4} would try to assign to the values 1,2 instead of a,b).
+                         * Non-symbol elements (e.g. a[x] in {a[x], b[y]} = ...) still need
+                         * their inner arguments evaluated so the target pattern is correct. */
+                        bool is_list = (lhs->data.function.head->type == EXPR_SYMBOL && lhs->data.function.head->data.symbol.name == SYM_List);
+
+                        uint32_t lhs_attrs = ATTR_NONE;
+                        if (lhs->data.function.head->type == EXPR_SYMBOL) {
+                            lhs_attrs = get_attributes(lhs->data.function.head->data.symbol.name);
+                        }
+
                         for (size_t i = 0; i < lhs->data.function.arg_count; i++) {
-                            if (is_part && i == 0) {
-                                eval_args[i] = expr_copy(lhs->data.function.args[i]); // Hold the first argument of Part
+                            bool hold = false;
+                            if ((lhs_attrs & ATTR_HOLDALLCOMPLETE) == ATTR_HOLDALLCOMPLETE) hold = true;
+                            else if ((lhs_attrs & ATTR_HOLDALL) == ATTR_HOLDALL) hold = true;
+                            else if (i == 0 && (lhs_attrs & ATTR_HOLDFIRST)) hold = true;
+                            else if (i > 0 && (lhs_attrs & ATTR_HOLDREST)) hold = true;
+
+                            if (is_part && i == 0) hold = true; // Hold the first argument of Part
+
+                            /* Hold args that contain pattern constructs.  Otherwise
+                             * the generic evaluator would apply existing DownValues
+                             * to the held pattern and rewrite the LHS of the rule
+                             * being installed — corrupting it.  See header comment
+                             * on lhs_arg_contains_pattern for the failure mode this
+                             * prevents. */
+                            if (!hold && lhs_arg_contains_pattern(lhs->data.function.args[i])) {
+                                hold = true;
+                            }
+
+                            /* In a List-LHS, hold any element that is itself a symbol or
+                             * a nested List (binding targets / nested destructuring). */
+                            if (is_list) {
+                                Expr* child = lhs->data.function.args[i];
+                                if (child->type == EXPR_SYMBOL) {
+                                    hold = true;
+                                } else if (child->type == EXPR_FUNCTION &&
+                                           child->data.function.head->type == EXPR_SYMBOL &&
+                                           child->data.function.head->data.symbol.name == SYM_List) {
+                                    hold = true;
+                                }
+                            }
+
+                            if (hold) {
+                                eval_args[i] = expr_copy(lhs->data.function.args[i]);
                             } else {
                                 eval_args[i] = evaluate(lhs->data.function.args[i]);
                             }
@@ -379,38 +1172,202 @@ Expr* evaluate_step(Expr* e) {
                     }
 
                     if (apply_assignment(target_lhs, rhs, is_delayed)) {
-                        Expr* ret = is_delayed ? expr_new_symbol("Null") : evaluate(rhs);
+                        Expr* ret = is_delayed ? expr_new_symbol(SYM_Null) : evaluate(rhs);
                         if (free_target) expr_free(target_lhs);
                         expr_free(res);
+                        *changed = true; /* Set/SetDelayed installed a rule */
                         return ret;
                     }
                     if (free_target) expr_free(target_lhs);
                 }
                 
-                /* 6. Apply User-defined Rules (DownValues) via Pattern Matching */
-                Expr* down = apply_down_values(res);
-                if (down) {
-                    expr_free(res);
-                    return down;
-                }
-
-                /* OneIdentity: f[x] -> x if f is OneIdentity and no other rules applied */
-                if ((attrs & ATTR_ONEIDENTITY) && res->data.function.arg_count == 1) {
-                    Expr* inner = expr_copy(res->data.function.args[0]);
-                    expr_free(res);
-                    return inner;
-                }
+                /* OneIdentity is intentionally NOT rewritten at evaluation
+                 * time. In Mathematica it is purely a pattern-matching
+                 * attribute: it lets f[x_, y_:def] match a literal `a`.
+                 * The 1-arg collapse f[x] -> x is the responsibility of
+                 * each head's builtin (Plus, Times, Power, GCD, LCM, And,
+                 * Or, Dot all handle the n==1 case explicitly), so a
+                 * user-defined OneIdentity head like
+                 *   SetAttributes[g, OneIdentity]
+                 * leaves g[x] as g[x] rather than rewriting to x.
+                 * The pattern-matching half lives in src/match.c (search
+                 * for ATTR_ONEIDENTITY). */
             } else if (head->type == EXPR_FUNCTION && head->data.function.head->type == EXPR_SYMBOL &&
-                       strcmp(head->data.function.head->data.symbol, "Function") == 0) {
-                
+                       head->data.function.head->data.symbol.name == SYM_Function) {
+
                 /* 7. Apply Pure Function */
                 Expr* applied = apply_pure_function(head, res->data.function.args, res->data.function.arg_count);
                 if (applied) {
                     expr_free(res);
+                    *changed = true; /* Pure Function applied */
+                    return applied;
+                }
+            } else if (head->type == EXPR_FUNCTION && head->data.function.head->type == EXPR_SYMBOL &&
+                       head->data.function.head->data.symbol.name == SYM_Association &&
+                       res->data.function.arg_count >= 1) {
+                /* 7a. Association as accessor: <|...|>[key] (or [Key[key]]) looks
+                 * the key up, giving the value or Missing["KeyAbsent", key] --
+                 * the idiomatic Wolfram accessor, complementing Lookup and Part.
+                 * Multi-key <|...|>[k1, k2, ...] is nested lookup: the value for
+                 * k1 is then applied to the remaining keys. */
+                Expr* keyarg = res->data.function.args[0];
+                Expr* lookup_key = keyarg;
+                if (keyarg->type == EXPR_FUNCTION && keyarg->data.function.head->type == EXPR_SYMBOL &&
+                    keyarg->data.function.head->data.symbol.name == SYM_Key &&
+                    keyarg->data.function.arg_count == 1) {
+                    lookup_key = keyarg->data.function.args[0];
+                }
+                Expr* found = NULL;
+                for (size_t i = 0; i < head->data.function.arg_count; i++) {
+                    Expr* rule = head->data.function.args[i];
+                    if (rule->type == EXPR_FUNCTION && rule->data.function.arg_count == 2 &&
+                        expr_eq(rule->data.function.args[0], lookup_key)) {
+                        found = rule->data.function.args[1];
+                        break;
+                    }
+                }
+                Expr* out;
+                if (found) {
+                    out = expr_copy(found);
+                } else {
+                    Expr* margs[2] = { expr_new_string("KeyAbsent"), expr_copy(lookup_key) };
+                    out = expr_new_function(expr_new_symbol(SYM_Missing), margs, 2);
+                }
+                size_t nkeys = res->data.function.arg_count;
+                if (nkeys > 1 && found) {
+                    /* Apply the retrieved value to the remaining keys and let the
+                     * evaluator continue (nested associations recurse here). */
+                    size_t rest = nkeys - 1;
+                    Expr** rest_args = malloc(sizeof(Expr*) * rest);
+                    for (size_t i = 0; i < rest; i++)
+                        rest_args[i] = expr_copy(res->data.function.args[i + 1]);
+                    Expr* nested = expr_new_function(out, rest_args, rest);
+                    free(rest_args);
+                    out = nested;
+                }
+                expr_free(res);
+                *changed = true;
+                return out;
+            } else if (head->type == EXPR_FUNCTION && head->data.function.head->type == EXPR_SYMBOL &&
+                       head->data.function.head->data.symbol.name == SYM_Key &&
+                       head->data.function.arg_count == 1 &&
+                       res->data.function.arg_count == 1 &&
+                       res->data.function.args[0]->type == EXPR_FUNCTION &&
+                       res->data.function.args[0]->data.function.head->type == EXPR_SYMBOL &&
+                       res->data.function.args[0]->data.function.head->data.symbol.name == SYM_Association) {
+                /* 7a'. Key[k][assoc] operator form: extract the value at key k,
+                 * giving the value or Missing["KeyAbsent", k]. This is the
+                 * curried complement of assoc[Key[k]], and it is what makes
+                 * record pipelines like GroupBy[records, Key["field"]] and
+                 * SortBy[records, Key["field"]] work. */
+                Expr* key   = head->data.function.args[0];
+                Expr* assoc = res->data.function.args[0];
+                Expr* found = NULL;
+                for (size_t i = 0; i < assoc->data.function.arg_count; i++) {
+                    Expr* rule = assoc->data.function.args[i];
+                    if (rule->type == EXPR_FUNCTION && rule->data.function.arg_count == 2 &&
+                        expr_eq(rule->data.function.args[0], key)) {
+                        found = rule->data.function.args[1];
+                        break;
+                    }
+                }
+                Expr* out;
+                if (found) {
+                    out = expr_copy(found);
+                } else {
+                    Expr* margs[2] = { expr_new_string("KeyAbsent"), expr_copy(key) };
+                    out = expr_new_function(expr_new_symbol(SYM_Missing), margs, 2);
+                }
+                expr_free(res);
+                *changed = true;
+                return out;
+            } else if (head->type == EXPR_FUNCTION && head->data.function.head->type == EXPR_SYMBOL &&
+                       head->data.function.head->data.symbol.name == SYM_Derivative &&
+                       res->data.function.arg_count == 1 &&
+                       res->data.function.args[0]->type == EXPR_FUNCTION &&
+                       res->data.function.args[0]->data.function.head->type == EXPR_SYMBOL &&
+                       res->data.function.args[0]->data.function.head->data.symbol.name == SYM_Function) {
+                /* 7b. Derivative[n1,...,nm][Function[...]] reduces to a new
+                 * Function whose body has been differentiated. Without this
+                 * step, f'[x] for a pure-function f would remain stuck as
+                 * Derivative[1][Function[...]][x]. */
+                Expr* reduced = derivative_of_pure_function(head, res->data.function.args[0]);
+                if (reduced) {
+                    expr_free(res);
+                    *changed = true; /* Derivative-of-Function reduced */
+                    return reduced;
+                }
+            } else if (head->type == EXPR_FUNCTION && head->data.function.head->type == EXPR_SYMBOL &&
+                       head->data.function.head->data.symbol.name == SYM_Derivative &&
+                       res->data.function.arg_count == 1 &&
+                       res->data.function.args[0]->type == EXPR_FUNCTION &&
+                       res->data.function.args[0]->data.function.head->type == EXPR_SYMBOL &&
+                       res->data.function.args[0]->data.function.head->data.symbol.name == SYM_InterpolatingFunction) {
+                /* 7b''. Derivative[d1,...,dm][InterpolatingFunction[...]] reduces
+                 * to a fresh InterpolatingFunction carrying the accumulated
+                 * derivative orders, which evaluates the mixed partial when
+                 * applied. This makes ifun'[x] and D[ifun[x],x] work. */
+                Expr* reduced = interp_make_derivative(head, res->data.function.args[0]);
+                if (reduced) {
+                    expr_free(res);
+                    *changed = true; /* Derivative-of-InterpolatingFunction reduced */
+                    return reduced;
+                }
+            } else if (head->type == EXPR_FUNCTION && head->data.function.head->type == EXPR_SYMBOL &&
+                       head->data.function.head->data.symbol.name == SYM_Derivative &&
+                       res->data.function.arg_count == 1 &&
+                       res->data.function.args[0]->type == EXPR_SYMBOL) {
+                /* 7b'. Derivative[n1,...,nm][f] where f is a symbol with
+                 * DownValues. Reduce by synthesising
+                 *     Function[{t1,...,tm}, f[t1,...,tm]]
+                 * after the DownValue rewrite, then differentiate via the
+                 * pure-function pipeline. This is what makes f'[x] work
+                 * for user-defined f[x_] := body. */
+                Expr* reduced = derivative_of_symbol(head, res->data.function.args[0]);
+                if (reduced) {
+                    expr_free(res);
+                    *changed = true; /* Derivative-of-symbol reduced */
+                    return reduced;
+                }
+            } else if (head->type == EXPR_FUNCTION && head->data.function.head->type == EXPR_SYMBOL &&
+                       head->data.function.head->data.symbol.name == SYM_Composition &&
+                       head->data.function.arg_count >= 1) {
+                /* 7c. Composition[f1, ..., fn][args...] -> f1[f2[...[fn[args...]]]].
+                 * The innermost call carries all the user-supplied arguments;
+                 * each outer fk wraps the previous result as a single argument. */
+                size_t nf = head->data.function.arg_count;
+                size_t na = res->data.function.arg_count;
+                Expr** call_args = malloc(sizeof(Expr*) * na);
+                for (size_t i = 0; i < na; i++) {
+                    call_args[i] = expr_copy(res->data.function.args[i]);
+                }
+                Expr* inner = expr_new_function(
+                    expr_copy(head->data.function.args[nf - 1]),
+                    call_args, na);
+                free(call_args);
+                for (size_t k = nf - 1; k > 0; k--) {
+                    Expr* one[1] = { inner };
+                    inner = expr_new_function(
+                        expr_copy(head->data.function.args[k - 1]),
+                        one, 1);
+                }
+                expr_free(res);
+                *changed = true; /* Composition unrolled */
+                return inner;
+            } else if (head->type == EXPR_FUNCTION && head->data.function.head->type == EXPR_SYMBOL &&
+                       head->data.function.head->data.symbol.name == SYM_InterpolatingFunction) {
+                /* 7d. InterpolatingFunction[domain, table][x] -> interpolated
+                 * value. The object itself is a normal form; only its
+                 * application is reduced here. interp_apply returns NULL for a
+                 * symbolic / out-of-form argument, leaving the call intact. */
+                Expr* applied = interp_apply(head, res->data.function.args, res->data.function.arg_count);
+                if (applied) {
+                    expr_free(res);
+                    *changed = true; /* InterpolatingFunction evaluated */
                     return applied;
                 }
             }
-            
+
             return res;
         }
     }
@@ -423,28 +1380,207 @@ Expr* evaluate_step(Expr* e) {
  * expression reaches a fixed point (no further changes) or the iteration 
  * limit is reached.
  */
+/* Convert an uncaught in-flight Throw that reached the top level into its WL
+ * result: Throw[v,t,f] -> f[v,t] (evaluated); Throw[v] / Throw[v,t] ->
+ * Hold[Throw[...]] (inert, so feeding it back does not re-throw). Emits
+ * Throw::nocatch on stderr -- the channel eval already uses for
+ * $RecursionLimit/$IterationLimit (there is no Message[] builtin). Takes
+ * ownership of `thr`. */
+static Expr* eval_report_uncaught_throw(Expr* thr) {
+    char* s = expr_to_string(thr);
+    fprintf(stderr, "Throw::nocatch: Uncaught %s returned to top level.\n",
+            s ? s : "Throw[...]");
+    free(s);
+    if (thr->data.function.arg_count == 3) {
+        Expr* fa[2] = { expr_copy(thr->data.function.args[0]),
+                        expr_copy(thr->data.function.args[1]) };
+        Expr* call = expr_new_function(expr_copy(thr->data.function.args[2]), fa, 2);
+        expr_free(thr);
+        Expr* out = evaluate(call);
+        expr_free(call);
+        return out;
+    }
+    Expr* one[1] = { thr };
+    return expr_new_function(expr_new_symbol(SYM_Hold), one, 1);
+}
+
+/* An in-flight Goto that survives to the top level found no matching Label in
+ * any enclosing CompoundExpression. Emit Goto::nolabel on stderr (same channel
+ * as Throw::nocatch) and return the Goto[tag] node unchanged -- unlike Throw,
+ * the inert node itself is the WL result, so no rewrite is needed. Takes
+ * ownership of and returns `g`. */
+static Expr* eval_report_uncaught_goto(Expr* g) {
+    char* s = expr_to_string(g);
+    fprintf(stderr, "Goto::nolabel: %s found no matching Label.\n",
+            s ? s : "Goto[...]");
+    free(s);
+    return g;
+}
+
 Expr* evaluate(Expr* e) {
     if (!e) return NULL;
-    
+
+    /* M3 phase-3 timestamp early-exit. If this expression has been fully
+     * evaluated under the current symbol-table state (clock unchanged
+     * since), return an inc-ref'd view immediately and skip the entire
+     * fixed-point loop and all of evaluate_step. This lifts the cost of
+     * a re-evaluation from O(tree size) to O(1). Atoms and bare symbols
+     * already short-circuit cheaply inside evaluate_step (atom returns
+     * expr_copy, symbol-no-OwnValue returns expr_copy), so we limit the
+     * pre-check to FUNCTION nodes -- both to avoid an extra branch on
+     * the common atom path and because atoms are never expensive to
+     * "re-evaluate" anyway. */
+    if (e->type == EXPR_FUNCTION && e->last_evaluated_at == g_eval_clock) {
+        return expr_copy(e);
+    }
+
+    bool is_top_level = (eval_recursion_depth == 0);
+    if (is_top_level) eval_overflow = false;
+
+    /* Guard the C stack: when nested evaluate() calls would exceed the
+     * recursion limit, wrap the input in Hold[] so it stops re-entering
+     * the evaluator, set the sticky overflow flag so all enclosing
+     * fixed-point loops bail, and emit a message exactly once per
+     * top-level evaluation. */
+    if (eval_recursion_depth >= eval_recursion_limit) {
+        if (!eval_overflow) {
+            fprintf(stderr,
+                    "$RecursionLimit::reclim: Recursion depth of %d exceeded.\n",
+                    eval_recursion_limit);
+        }
+        eval_overflow = true;
+        Expr** wrap = malloc(sizeof(Expr*));
+        wrap[0] = expr_copy(e);
+        Expr* held = expr_new_function(expr_new_symbol(SYM_Hold), wrap, 1);
+        free(wrap);
+        return held;
+    }
+
+    eval_recursion_depth++;
+
     Expr* current = expr_copy(e);
     Expr* next = NULL;
     int iterations = 0;
-    
+
     while (iterations < MAX_ITERATIONS) {
-        next = evaluate_step(current);
-        
-        /* Fixed point check: if step produced an identical expression, we are done */
-        if (expr_eq(current, next)) {
+        /* TimeConstrained's cooperative wall-clock backstop.  No-op
+         * unless we're inside an active TimeConstrained call; on
+         * hosts where ITIMER_PROF/SIGPROF are reliable the signal
+         * normally fires first and this check stays a cheap inactive
+         * read.  On hosts where they aren't (WSL 1), this is what
+         * actually enforces the deadline.  When tripped, the call
+         * siglongjmp's out of this loop straight to TimeConstrained's
+         * sigsetjmp; no further cleanup runs here, exactly matching
+         * the signal-handler path. */
+        tc_check_deadline();
+
+        bool step_changed = false;
+        next = evaluate_step(current, &step_changed);
+
+        /* M3 phase-4 (§3.4): eager early exit. evaluate_step signals via
+         * the `step_changed` out-parameter whether any rewrite fired
+         * during the step (head re-evaluation, arg evaluation, Sequence
+         * flatten, Unevaluated strip, Flat, Listable, Orderless,
+         * DownValue, built-in, special primitive, pure Function,
+         * Derivative-of-Function, Composition-unfold). When nothing
+         * fired, the result is structurally identical to `current` and
+         * we are at a fixed point — skip the O(tree) expr_eq compare.
+         *
+         * Some built-ins (Plus, Times, ...) unconditionally rebuild
+         * their output even when no terms combined; those trip the
+         * change flag without producing a structural difference. Use
+         * expr_eq as a fallback in the changed-true branch so those
+         * "false positives" still converge in one iteration, matching
+         * the old semantics. Cost: identical to the pre-§3.4 path on
+         * the slow case; the win is the cheap boolean fast-path on the
+         * common case where nothing fires (atoms, bare symbols, fully
+         * reduced functions). */
+        bool is_fixed_point = !step_changed || expr_eq(current, next);
+        if (is_fixed_point) {
             expr_free(next);
+            /* M3 phase-3: stamp the fully-evaluated result with the
+             * current clock so a subsequent evaluate(current) hits the
+             * early-exit above. We deliberately stamp ONLY on a clean
+             * fixed-point exit; the iteration-cap and recursion-overflow
+             * paths below leave the timestamp untouched, so a later
+             * evaluator gets a fresh chance to make progress. The
+             * write is benign metadata, so it is safe even when
+             * `current` is shared (refcount > 1). */
+            if (!eval_overflow) {
+                current->last_evaluated_at = g_eval_clock;
+            }
+            eval_recursion_depth--;
+            /* An in-flight Throw that survives to the top level is uncaught
+             * (any enclosing Catch would have consumed it at depth >= 1). */
+            if (is_top_level && eval_is_inflight_throw(current))
+                current = eval_report_uncaught_throw(current);
+            else if (is_top_level && eval_is_inflight_goto(current))
+                current = eval_report_uncaught_goto(current);
             return current;
         }
-        
+
+        /* Trace: this is a real top-level rewrite (current -> next). Record it
+         * before we drop `current`. Depth-gated inside trace_record_step so
+         * only the traced expression's own loop contributes; the g_trace_active
+         * guard keeps the untraced hot path to a single predicted-false read. */
+        if (g_trace_active) trace_record_step(current, next);
+
         /* Prepare for the next iteration */
         expr_free(current);
         current = next;
         iterations++;
+
+        /* If a deeper call hit the recursion limit, the rewrites
+         * above are no longer making real progress -- bail out so the
+         * unwind doesn't burn $IterationLimit at every level. */
+        if (eval_overflow) break;
     }
-    
-    fprintf(stderr, "$IterationLimit exceeded\n");
+
+    if (iterations >= MAX_ITERATIONS) {
+        fprintf(stderr, "$IterationLimit exceeded\n");
+    }
+    eval_recursion_depth--;
+    if (is_top_level && eval_is_inflight_throw(current))
+        current = eval_report_uncaught_throw(current);
+    else if (is_top_level && eval_is_inflight_goto(current))
+        current = eval_report_uncaught_goto(current);
     return current;
+}
+
+/* See eval.h. Evaluate `held_expr` to a fixed point while recording each
+ * top-level rewrite, returning a fresh flat List of the intermediates (Trace
+ * v1 semantics). `held_expr` is BORROWED -- evaluate() copies it and the
+ * caller retains ownership. Reentrant: the previously-active collector is
+ * saved on the C stack and restored on return, so a nested Trace produces its
+ * own list without perturbing the outer one (the inner trace appears to the
+ * outer as a single already-reduced value). */
+Expr* eval_collect_trace(Expr* held_expr) {
+    if (!held_expr) return NULL;
+
+    TraceCollector* prev = g_trace_active;
+    TraceCollector tc;
+    tc.steps        = NULL;
+    tc.count        = 0;
+    tc.cap          = 0;
+    /* The traced expression's own loop runs one level below the current depth
+     * (evaluate() increments eval_recursion_depth on entry). Recording only at
+     * that depth excludes argument sub-evaluations -> flat, top-level steps. */
+    tc.record_depth = eval_recursion_depth + 1;
+    tc.seeded       = false;
+    g_trace_active  = &tc;
+
+    /* Phase-1 mitigation A: bump the eval clock so the timestamp early-exit
+     * (see top of evaluate()) cannot short-circuit an already-stamped root --
+     * a full re-evaluation is required to observe its steps. Trace is thereby
+     * documented as non-memoized (it invalidates the eval cache once per call).*/
+    eval_clock_bump();
+
+    Expr* final = evaluate(held_expr);   /* borrowed in; fresh copy out */
+    expr_free(final);                    /* == the last recorded step; discard */
+
+    g_trace_active = prev;               /* restore the outer collector, if any */
+
+    Expr* list = expr_new_function(expr_new_symbol(SYM_List), tc.steps, tc.count);
+    free(tc.steps);                      /* elements now owned by `list` */
+    return list;
 }

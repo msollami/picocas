@@ -1,0 +1,160 @@
+---
+title: qa substrate — accept Power[c, p/q] for general integer p
+date_started: 2026-05-13
+status: shipped 2026-05-13 (Phases A–F + Q(γ)-constant canonical rendering)
+---
+
+## Status (2026-05-13)
+
+Phases A (recogniser broadening), B (lift inputs), C (complexity gate),
+D (Q(γ)-arithmetic in the no-variable path), E (input-side radicand
+canonicalisation), F (multi-gen tower fallback to single-α
+Together/Cancel), and G (Q(γ)-constant canonical linear-basis
+rendering via Expand + Together-no-extension post-processing) all
+shipped with zero regressions
+(96 pass / 14 fail — identical pre-existing failure set).
+
+Key user-visible wins:
+- `Cancel[Power[2,-2/3] x^2 - x/Power[2,1/3], Extension -> Power[2,1/3]]`
+  → `1/2 (-2^(2/3) x + 2^(1/3) x^2)` (Phase B lift)
+- `Cancel[(Sqrt[2]+Sqrt[3])(Sqrt[2]-Sqrt[3]), Extension -> Automatic]`
+  → `-1` (Phase D Q(γ)-arithmetic, replaces the degree-16 γ-polynomial
+  expansion that the previous code produced)
+- `Together[Sqrt[-1/9/2^(2/3) + 2/9·2^(1/3)] - Sqrt[1/3/2^(2/3)],
+  Extension -> Automatic]` → `0` (Phase E input-side canonicaliser
+  collapses mathematically-equal radicands before tower substitution).
+  Test: `tests/test_simp_algebraic_cuberoot.c::test_together_equal_nested_radicals`.
+- `Together[D[Integrate[a x/(x^3+2), x], x], Extension -> Automatic]`
+  → `a x / (x^3 + 2)` (Phase F multi-gen fallback).  Test:
+  `tests/test_simp_algebraic_cuberoot.c::test_together_headline_d_integrate`.
+- `Together[1/(Sqrt[2]+Sqrt[3]) + 1/(Sqrt[2]-Sqrt[3]), Extension -> Automatic]`
+  → `-2 Sqrt[2]` (Phase G Q(γ)-constant canonical linear-basis form).
+  Test:
+  `tests/test_simp_algebraic_cuberoot.c::test_together_qgamma_constant_canonical_linear_basis`.
+
+### Phase G: Q(γ)-constant canonical linear-basis rendering (2026-05-13)
+
+`qa_cancel_with_tower`'s no-variable branch (the path that lifts a
+Q(γ)-element to a QANum via `qa_div` and renders it back as
+`gamma_render` substituted into the γ-polynomial) previously stopped
+at plain `evaluate` of the substituted form.  For γ = sum of atomic
+radicals, that left the result in unsimplified γ-polynomial form (e.g.
+`-(Sqrt[2]+Sqrt[3])^3 + 9(Sqrt[2]+Sqrt[3])` instead of `-2 Sqrt[2]`).
+
+Fix: after substitution, run **Expand** (collapses Plus^k into the
+linear basis `c_0 + c_1 Sqrt[2] + c_2 Sqrt[3] + c_3 Sqrt[6]`) then
+**Together (no extension)** (folds radical denominators via Sqrt-base
+polynomial GCD and catches arithmetically-zero spurious nonzero forms).
+The existing leaf-count gate rejects the candidate if these passes
+make the form larger than the input.
+
+### Phase F: multi-gen tower fallback (2026-05-13)
+
+When `extension_autodetect` builds an n ≥ 2 tower and
+`qa_cancel_with_tower` declines (safety gate fires, lift fails, etc.),
+`builtin_together` / `builtin_cancel` no longer drop straight to the
+no-extension path.  Instead they iterate over the tower's
+`alpha_renders[i]`, calling `together_recursive_ext` (or
+`cancel_with_extension` for non-Plus inputs) with each as a single-α
+extension, running a final no-extension `Together` fold-up on each
+candidate, and picking the smallest result that strictly beats the
+input by `leaf_count_internal`.
+
+The single-α path treats the remaining generators as opaque polynomial-
+variable coefficients but still cancels correctly over Q(α)[x]; the
+final fold-up combines like-coefficient terms (e.g. pulling `1/a` out
+of `1/(144 a) + x^3/(288 a)` to give `(2 + x^3)/(288 a)`).
+
+This sidesteps the original deferred plan (a multi-generator analogue
+of `together_recursive_ext` threading tower relations through
+PolynomialLCM/Quotient directly, requiring multivariate-coefficient
+support in qaupoly) by exploiting the fact that any one tower generator
+is usually enough to drive the GCD-based cancellation, and the
+no-extension fold-up cleans up the rest.
+
+
+
+# Plan
+
+Extends Mathilda's algebraic-number substrate to accept `Power[c, p/q]` with
+general integer `p` (currently only `p == 1` is accepted by G8's
+`expr_is_atomic_algebraic`).  Closes the motivating example
+`Together[D[Integrate[a x/(x^3+2), x], x], Extension -> Automatic]` →
+`a x^2/(x^3+2)`.
+
+## Design decisions (locked)
+
+- **Q1**: A — `qa_resolve_extension` returns `*render_out` in the
+  natural form `Power[c, 1/q_red]` for the new general-p case.  When
+  `p == 1` (existing behaviour), `*render_out` is bitwise-identical
+  to what is returned today (preserves `Sqrt[c]` and `Power[c, 1/n]`
+  shapes byte-for-byte).
+- **Q2**: yes — accept both positive and negative `p` uniformly via
+  gcd reduction.
+- **Q3**: falls out of Q1.A automatically (auto-detect merges via
+  expr_eq on the natural form).
+- **Q4**: reject `c ∈ {-1, 0, 1}` in the new branch; non-integer base
+  + `p != 1` falls through to existing behaviour (no G8 rewrite).
+
+## Phases
+
+### A. Recogniser broadening
+- `src/qafactor.c::expr_is_atomic_algebraic`: extend Power branch to
+  accept any `Power[c, p/q]` with `q_red >= 2` after gcd reduction.
+- `src/qafactor.c::qa_resolve_extension`: in Power branch, accept
+  general p; return QAExt for `y^q_red - c` with `*render_out` set to
+  the natural form per Q1.A.  Keep `p == 1` shortcut for byte-for-byte
+  identical existing-test output.
+
+### B. Lift inputs containing `Power[c, p/q]`
+- **B1** `qa_alpha_power_signed(ext, p)` (qa.{c,h}): α^p for any
+  integer p, using `qa_inverse` for p < 0; repeated-squaring for
+  efficiency.
+- **B2** `expand_radicals_to_atomic_poly(poly, c_base, q_natural,
+  alpha_sym, ext)`: walk poly; rewrite every `Power[c_base, p/q]`
+  whose reduced denominator divides q_natural into the polynomial-
+  in-alpha_sym form `qa_alpha_power_signed(ext, p_red · q_natural/q_red)`.
+  Raw expr substitution — must NOT call `evaluate` (would re-canonicalise
+  via the Times absorber).
+- **B3** Wire into `qa_expr_to_qaupoly_with_alpha`: add `c_base` and
+  `q_natural` parameters (option B3.a from the plan).  Lift callers
+  pass `c_base = 0` (sentinel) for non-radical-extension cases.
+- **B4** G6 tower path: stash `(c, q)` per generator in `QATower`;
+  apply preprocessing per-generator inside the substitute-α_i loop
+  in `qa_factor_with_extension_tower` and `qa_cancel_with_tower`.
+
+### C. Autodetect verification (no code change anticipated)
+- Verify autodetect_walk's existing `q >= 2` accept still works.
+- Verify autodetect_build_tower → qa_resolve_extension → Phase A path.
+- End-to-end smoke test on the motivating example.
+
+### D. Polish
+- D1: keep `α^k with k >= ext->deg` safety belt in lift.
+- D2: refuse non-integer base + `p != 1` in qa_resolve_extension's G8
+  fallthrough (documented limitation).
+- D3: `qa_factor_inner` lift in the G5 path needs B preprocessing too.
+
+## Safety-check corpus (must keep working unchanged)
+
+```c
+/* 1. Pure G5, p == 1, Sqrt: most-trodden path. */
+Factor[x^2 - 2, Extension -> Sqrt[2]]
+    →  (x - Sqrt[2]) (x + Sqrt[2])
+
+/* 2. G5, p == 1, cube root: user-form Power[2, 1/3]. */
+Factor[x^3 - 2, Extension -> Power[2, 1/3]]
+    →  (x - 2^(1/3)) (x^2 + 2^(1/3) x + 2^(2/3))
+
+/* 3. Together with autodetect — the headline. */
+Together[D[Integrate[a x/(x^3+2), x], x], Extension -> Automatic]
+    →  a x^2 / (x^3 + 2)
+
+/* 4. G6 tower with Sqrt[1 + Sqrt[2]] autodetect → degree 4. */
+extension_autodetect("Sqrt[1 + Sqrt[2]]") →  n=1, deg=4
+
+/* 5. Cancel with explicit Power[2, p/q] in input — Phase B path. */
+Cancel[(x^3 - 2) / (x - Power[2, 1/3]), Extension -> Power[2, 1/3]]
+    →  x^2 + 2^(1/3) x + 2^(2/3)
+```
+
+Plus full existing-test invariance: 94 PASS / 16 FAIL must remain.

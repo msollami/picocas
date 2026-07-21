@@ -2,8 +2,84 @@
 
 #include "eval.h"
 #include "symtab.h"
+#include "sym_names.h"
+#include "assoc.h"
+#include "ndarray.h"
 
 static bool is_atomic(Expr* e);
+static Expr* expr_part_assign_rec(Expr* expr, Expr** indices, size_t nindices, Expr* rhs, size_t* rhs_idx, bool is_rhs_list);
+/* Single-index association Part: resolve one key/Key[k]/positional index into
+ * its value (recursing for any remaining indices), or Missing["KeyAbsent", k].
+ * Returns NULL only for an out-of-range positional index. */
+static Expr* assoc_part_single(Expr* assoc, Expr* idx, Expr** rest, size_t nrest);
+
+/* Assign into the value slot (args[1]) of association entry `rule`, recursing
+ * for any remaining indices. No-op if `rule` is not a 2-argument rule. */
+static void assoc_assign_value(Expr* rule, Expr** rest, size_t nrest, Expr* rhs, size_t* rhs_idx, bool is_rhs_list) {
+    if (rule->type == EXPR_FUNCTION && rule->data.function.arg_count == 2) {
+        Expr* nv = expr_part_assign_rec(rule->data.function.args[1], rest, nrest, rhs, rhs_idx, is_rhs_list);
+        expr_free(rule->data.function.args[1]);
+        rule->data.function.args[1] = nv;
+    }
+}
+
+/* Extract the (re, im) machine-double value of a numeric Expr for storing into a
+ * typed NDArray buffer. Handles Integer, Real, BigInt, Rational, and Complex. */
+static bool nd_num_reim(Expr* e, double* re, double* im) {
+    if (!e) return false;
+    switch (e->type) {
+        case EXPR_INTEGER: *re = (double)e->data.integer; *im = 0.0; return true;
+        case EXPR_REAL:    *re = e->data.real;            *im = 0.0; return true;
+        case EXPR_BIGINT:  *re = mpz_get_d(e->data.bigint); *im = 0.0; return true;
+        default: break;
+    }
+    if (e->type == EXPR_FUNCTION && e->data.function.head->type == EXPR_SYMBOL &&
+        e->data.function.arg_count == 2) {
+        const char* h = e->data.function.head->data.symbol.name;
+        double a, b, t;
+        if (h == SYM_Rational &&
+            nd_num_reim(e->data.function.args[0], &a, &t) &&
+            nd_num_reim(e->data.function.args[1], &b, &t) && b != 0.0) {
+            *re = a / b; *im = 0.0; return true;
+        }
+        if (h == SYM_Complex &&
+            nd_num_reim(e->data.function.args[0], &a, &t) &&
+            nd_num_reim(e->data.function.args[1], &b, &t)) {
+            *re = a; *im = b; return true;
+        }
+    }
+    return false;
+}
+
+/* Assign a single element of a dense NDArray addressed by a full index list (one
+ * integer per axis). Returns a fresh NDArray with the element replaced, or the
+ * array unchanged when the pattern isn't a supported single-element numeric set
+ * (partial/list/span index, out-of-range, non-numeric or complex-into-real rhs). */
+static Expr* nd_part_assign(Expr* arr, Expr** indices, size_t nindices, Expr* rhs) {
+    int rank = arr->data.ndarray.rank;
+    if ((size_t)rank != nindices) return expr_copy(arr);
+    int64_t offset = 0, N = 1;
+    for (size_t j = 0; j < nindices; j++) {
+        if (indices[j]->type != EXPR_INTEGER) return expr_copy(arr);
+        int64_t dim = arr->data.ndarray.dims[j];
+        int64_t p = indices[j]->data.integer;
+        if (p < 0) p = dim + p + 1;
+        if (p < 1 || p > dim) return expr_copy(arr);
+        offset = offset * dim + (p - 1);
+    }
+    for (int j = 0; j < rank; j++) N *= arr->data.ndarray.dims[j];
+
+    double re, im;
+    if (!nd_num_reim(rhs, &re, &im)) return expr_copy(arr);
+    if (im != 0.0 && !ndt_is_complex(arr->data.ndarray.dtype)) return expr_copy(arr);
+
+    size_t esz = ndt_elem_size(arr->data.ndarray.dtype);
+    void* nb = malloc((size_t)N * esz);
+    if (!nb) return expr_copy(arr);
+    memcpy(nb, arr->data.ndarray.data, (size_t)N * esz);
+    ndt_set(nb, (size_t)offset, arr->data.ndarray.dtype, re, im);
+    return expr_new_ndarray(rank, arr->data.ndarray.dims, nb, arr->data.ndarray.dtype);
+}
 
 static Expr* expr_part_assign_rec(Expr* expr, Expr** indices, size_t nindices, Expr* rhs, size_t* rhs_idx, bool is_rhs_list) {
     if (nindices == 0) {
@@ -11,11 +87,15 @@ static Expr* expr_part_assign_rec(Expr* expr, Expr** indices, size_t nindices, E
             if (*rhs_idx < rhs->data.function.arg_count) {
                 return expr_copy(rhs->data.function.args[(*rhs_idx)++]);
             } else {
-                return expr_copy(rhs); 
+                return expr_copy(rhs);
             }
         }
         return expr_copy(rhs);
     }
+
+    /* Dense NDArray element assignment (a[[i]] = v, a[[i,j]] = v). */
+    if (expr->type == EXPR_NDARRAY)
+        return nd_part_assign(expr, indices, nindices, rhs);
 
     if (is_atomic(expr)) return expr_copy(expr);
 
@@ -31,7 +111,81 @@ static Expr* expr_part_assign_rec(Expr* expr, Expr** indices, size_t nindices, E
     }
     Expr* new_head = expr_copy(expr->data.function.head);
 
-    if (idx->type == EXPR_INTEGER) {
+    if (is_association(expr)) {
+        /* Association assignment always targets entry *values*:
+         *   a[[Key[k]]]/a[["s"]] = v  update (or append when absent),
+         *   a[[i]] = v                positional value,
+         *   a[[All]] = v              every value,
+         *   a[[i;;j]] = v             spanned values,
+         *   a[[{k1,k2,...}]] = v      the listed keys'/positions' values.
+         * Non-key structural indices must NOT be appended as literal keys. */
+        if (idx->type == EXPR_SYMBOL && idx->data.symbol.name == SYM_All) {
+            for (size_t i = 0; i < len; i++)
+                assoc_assign_value(new_args[i], rest, nrest, rhs, rhs_idx, is_rhs_list);
+        } else if (idx->type == EXPR_FUNCTION && idx->data.function.head->type == EXPR_SYMBOL &&
+                   idx->data.function.head->data.symbol.name == SYM_Span) {
+            int64_t start = 1, end = (int64_t)len, step = 1;
+            size_t sa = idx->data.function.arg_count;
+            if (sa >= 1 && idx->data.function.args[0]->type == EXPR_INTEGER) {
+                start = idx->data.function.args[0]->data.integer; if (start < 0) start = (int64_t)len + start + 1;
+            }
+            if (sa >= 2 && idx->data.function.args[1]->type == EXPR_INTEGER) {
+                end = idx->data.function.args[1]->data.integer; if (end < 0) end = (int64_t)len + end + 1;
+            }
+            if (sa >= 3 && idx->data.function.args[2]->type == EXPR_INTEGER) {
+                step = idx->data.function.args[2]->data.integer;
+            }
+            if (step > 0)
+                for (int64_t i = start; i <= end && i >= 1 && i <= (int64_t)len; i += step)
+                    assoc_assign_value(new_args[i - 1], rest, nrest, rhs, rhs_idx, is_rhs_list);
+        } else if (idx->type == EXPR_FUNCTION && idx->data.function.head->type == EXPR_SYMBOL &&
+                   idx->data.function.head->data.symbol.name == SYM_List) {
+            for (size_t j = 0; j < idx->data.function.arg_count; j++) {
+                Expr* sub = idx->data.function.args[j];
+                if (sub->type == EXPR_INTEGER) {
+                    int64_t p = sub->data.integer; if (p < 0) p = (int64_t)len + p + 1;
+                    if (p >= 1 && p <= (int64_t)len)
+                        assoc_assign_value(new_args[p - 1], rest, nrest, rhs, rhs_idx, is_rhs_list);
+                } else {
+                    Expr* k = (sub->type == EXPR_FUNCTION && sub->data.function.head->type == EXPR_SYMBOL &&
+                               sub->data.function.head->data.symbol.name == SYM_Key && sub->data.function.arg_count == 1)
+                              ? sub->data.function.args[0] : sub;
+                    for (size_t i = 0; i < len; i++)
+                        if (new_args[i]->type == EXPR_FUNCTION && new_args[i]->data.function.arg_count == 2 &&
+                            expr_eq(new_args[i]->data.function.args[0], k)) {
+                            assoc_assign_value(new_args[i], rest, nrest, rhs, rhs_idx, is_rhs_list); break;
+                        }
+                }
+            }
+        } else if (idx->type == EXPR_INTEGER) {
+            int64_t pos = idx->data.integer;
+            if (pos < 0) pos = (int64_t)len + pos + 1;
+            if (pos >= 1 && pos <= (int64_t)len)
+                assoc_assign_value(new_args[pos - 1], rest, nrest, rhs, rhs_idx, is_rhs_list);
+        } else {
+            /* Single key: Key[k] (unwrapped) or a literal key. */
+            Expr* lookup_key = (idx->type == EXPR_FUNCTION && idx->data.function.head->type == EXPR_SYMBOL &&
+                                idx->data.function.head->data.symbol.name == SYM_Key && idx->data.function.arg_count == 1)
+                               ? idx->data.function.args[0] : idx;
+            int64_t found = -1;
+            for (size_t i = 0; i < len; i++) {
+                Expr* rule = new_args[i];
+                if (rule->type == EXPR_FUNCTION && rule->data.function.arg_count == 2 &&
+                    expr_eq(rule->data.function.args[0], lookup_key)) { found = (int64_t)i; break; }
+            }
+            if (found >= 0) {
+                assoc_assign_value(new_args[found], rest, nrest, rhs, rhs_idx, is_rhs_list);
+            } else if (nrest == 0) {
+                /* nrest == 0 -> the recursive call returns the RHS value. */
+                Expr* nv = expr_part_assign_rec(new_head, rest, nrest, rhs, rhs_idx, is_rhs_list);
+                Expr* krule_args[2] = { expr_copy(lookup_key), nv };
+                Expr* nrule = expr_new_function(expr_new_symbol(SYM_Rule), krule_args, 2);
+                new_args = realloc(new_args, sizeof(Expr*) * (len + 1));
+                new_args[len] = nrule;
+                len++;
+            }
+        }
+    } else if (idx->type == EXPR_INTEGER) {
         int64_t k = idx->data.integer;
         if (k == 0) {
             Expr* replaced = expr_part_assign_rec(new_head, rest, nrest, rhs, rhs_idx, is_rhs_list);
@@ -45,20 +199,20 @@ static Expr* expr_part_assign_rec(Expr* expr, Expr** indices, size_t nindices, E
                 new_args[k - 1] = replaced;
             }
         }
-    } else if (idx->type == EXPR_SYMBOL && strcmp(idx->data.symbol, "All") == 0) {
+    } else if (idx->type == EXPR_SYMBOL && idx->data.symbol.name == SYM_All) {
         for (size_t i = 0; i < len; i++) {
             Expr* replaced = expr_part_assign_rec(new_args[i], rest, nrest, rhs, rhs_idx, is_rhs_list);
             expr_free(new_args[i]);
             new_args[i] = replaced;
         }
-    } else if (idx->type == EXPR_FUNCTION && strcmp(idx->data.function.head->data.symbol, "Span") == 0) {
+    } else if (idx->type == EXPR_FUNCTION && idx->data.function.head->data.symbol.name == SYM_Span) {
         int64_t start = 1, end = len, step = 1;
         size_t span_argc = idx->data.function.arg_count;
         if (span_argc >= 1) {
             Expr* a1 = idx->data.function.args[0];
             if (a1->type == EXPR_INTEGER) { start = a1->data.integer; if (start < 0) start = len + start + 1; }
-            else if (a1->type == EXPR_SYMBOL && strcmp(a1->data.symbol, "All") == 0) start = 1;
-            else if (a1->type == EXPR_FUNCTION && strcmp(a1->data.function.head->data.symbol, "UpTo") == 0 && a1->data.function.arg_count == 1 && a1->data.function.args[0]->type == EXPR_INTEGER) {
+            else if (a1->type == EXPR_SYMBOL && a1->data.symbol.name == SYM_All) start = 1;
+            else if (a1->type == EXPR_FUNCTION && a1->data.function.head->data.symbol.name == SYM_UpTo && a1->data.function.arg_count == 1 && a1->data.function.args[0]->type == EXPR_INTEGER) {
                 start = a1->data.function.args[0]->data.integer;
                 if (start > (int64_t)len) start = len;
                 if (start < 0) start = len + start + 1;
@@ -67,8 +221,8 @@ static Expr* expr_part_assign_rec(Expr* expr, Expr** indices, size_t nindices, E
         if (span_argc >= 2) {
             Expr* a2 = idx->data.function.args[1];
             if (a2->type == EXPR_INTEGER) { end = a2->data.integer; if (end < 0) end = len + end + 1; }
-            else if (a2->type == EXPR_SYMBOL && strcmp(a2->data.symbol, "All") == 0) end = len;
-            else if (a2->type == EXPR_FUNCTION && strcmp(a2->data.function.head->data.symbol, "UpTo") == 0 && a2->data.function.arg_count == 1 && a2->data.function.args[0]->type == EXPR_INTEGER) {
+            else if (a2->type == EXPR_SYMBOL && a2->data.symbol.name == SYM_All) end = len;
+            else if (a2->type == EXPR_FUNCTION && a2->data.function.head->data.symbol.name == SYM_UpTo && a2->data.function.arg_count == 1 && a2->data.function.args[0]->type == EXPR_INTEGER) {
                 end = a2->data.function.args[0]->data.integer;
                 if (end > (int64_t)len) end = len;
                 if (end < 0) end = len + end + 1;
@@ -77,7 +231,7 @@ static Expr* expr_part_assign_rec(Expr* expr, Expr** indices, size_t nindices, E
         if (span_argc >= 3) {
             Expr* a3 = idx->data.function.args[2];
             if (a3->type == EXPR_INTEGER) step = a3->data.integer;
-            else if (a3->type == EXPR_SYMBOL && strcmp(a3->data.symbol, "All") == 0) step = 1;
+            else if (a3->type == EXPR_SYMBOL && a3->data.symbol.name == SYM_All) step = 1;
         }
 
         if (step > 0) {
@@ -93,7 +247,7 @@ static Expr* expr_part_assign_rec(Expr* expr, Expr** indices, size_t nindices, E
                 new_args[i - 1] = replaced;
             }
         }
-    } else if (idx->type == EXPR_FUNCTION && strcmp(idx->data.function.head->data.symbol, "List") == 0) {
+    } else if (idx->type == EXPR_FUNCTION && idx->data.function.head->data.symbol.name == SYM_List) {
         for (size_t i = 0; i < idx->data.function.arg_count; i++) {
             Expr* sub_idx = idx->data.function.args[i];
             if (sub_idx->type == EXPR_INTEGER) {
@@ -120,23 +274,23 @@ static Expr* expr_part_assign_rec(Expr* expr, Expr** indices, size_t nindices, E
 }
 
 Expr* expr_part_assign(Expr* lhs, Expr* rhs) {
-    if (lhs->type != EXPR_FUNCTION || lhs->data.function.head->type != EXPR_SYMBOL || strcmp(lhs->data.function.head->data.symbol, "Part") != 0) return NULL;
+    if (lhs->type != EXPR_FUNCTION || lhs->data.function.head->type != EXPR_SYMBOL || lhs->data.function.head->data.symbol.name != SYM_Part) return NULL;
     if (lhs->data.function.arg_count < 2) return NULL;
     
     Expr* sym = lhs->data.function.args[0];
     if (sym->type != EXPR_SYMBOL) return NULL;
     
-    Expr* current_val = symtab_get_own_values(sym->data.symbol) ? evaluate(sym) : NULL;
+    Expr* current_val = symtab_get_own_values(sym->data.symbol.name) ? evaluate(sym) : NULL;
     if (!current_val) return NULL;
     
-    bool is_rhs_list = (rhs->type == EXPR_FUNCTION && rhs->data.function.head->type == EXPR_SYMBOL && strcmp(rhs->data.function.head->data.symbol, "List") == 0);
+    bool is_rhs_list = (rhs->type == EXPR_FUNCTION && rhs->data.function.head->type == EXPR_SYMBOL && rhs->data.function.head->data.symbol.name == SYM_List);
     
     size_t rhs_idx = 0;
     Expr* new_val = expr_part_assign_rec(current_val, lhs->data.function.args + 1, lhs->data.function.arg_count - 1, rhs, &rhs_idx, is_rhs_list);
     expr_free(current_val);
     
     if (new_val) {
-        symtab_add_own_value(sym->data.symbol, sym, new_val);
+        symtab_add_own_value(sym->data.symbol.name, sym, new_val);
         return new_val;
     }
     return NULL;
@@ -146,8 +300,8 @@ static bool is_atomic(Expr* e) {
     if (!e) return true;
     if (e->type != EXPR_FUNCTION) return true;
     if (e->data.function.head->type == EXPR_SYMBOL) {
-        const char* h = e->data.function.head->data.symbol;
-        if (strcmp(h, "Complex") == 0 || strcmp(h, "Rational") == 0) return true;
+        const char* h = e->data.function.head->data.symbol.name;
+        if (h == SYM_Complex || h == SYM_Rational) return true;
     }
     return false;
 }
@@ -155,20 +309,37 @@ static bool is_atomic(Expr* e) {
 Expr* expr_head(Expr* e) {
     if (!e) return NULL;
     switch (e->type) {
-        case EXPR_INTEGER: return expr_new_symbol("Integer");
-        case EXPR_REAL: return expr_new_symbol("Real");
-        case EXPR_SYMBOL: return expr_new_symbol("Symbol");
-        case EXPR_STRING: return expr_new_symbol("String");
+        case EXPR_INTEGER: return expr_new_symbol(SYM_Integer);
+        case EXPR_BIGINT: return expr_new_symbol(SYM_Integer);
+        case EXPR_REAL: return expr_new_symbol(SYM_Real);
+#ifdef USE_MPFR
+        case EXPR_MPFR: return expr_new_symbol(SYM_Real);
+#endif
+        case EXPR_NDARRAY: return expr_new_symbol(SYM_NDArray);
+        case EXPR_SYMBOL: return expr_new_symbol(SYM_Symbol);
+        case EXPR_STRING: return expr_new_symbol(SYM_String);
         case EXPR_FUNCTION: return expr_copy(e->data.function.head);
         default: return NULL;
     }
 }
 
 Expr* builtin_head(Expr* res) {
-    if (res->type != EXPR_FUNCTION || res->data.function.arg_count != 1) {
-        return NULL;
-    }
-    return expr_head(res->data.function.args[0]);
+    if (res->type != EXPR_FUNCTION) return NULL;
+    size_t argc = res->data.function.arg_count;
+    if (argc != 1 && argc != 2) return NULL;
+
+    Expr* head = expr_head(res->data.function.args[0]);
+    if (!head) return NULL;
+    if (argc == 1) return head;
+
+    /* Head[expr, h] -> h[Head[expr]]. The wrapper h itself is left to the
+     * evaluator to evaluate further (e.g. Head[{a,b}, f] -> f[List]). */
+    Expr** wargs = malloc(sizeof(Expr*));
+    wargs[0] = head;
+    Expr* wrapper = expr_copy(res->data.function.args[1]);
+    Expr* out = expr_new_function(wrapper, wargs, 1);
+    free(wargs);
+    return out;
 }
 
 Expr* expr_part(Expr* expr, Expr** indices, size_t nindices) {
@@ -178,6 +349,32 @@ Expr* expr_part(Expr* expr, Expr** indices, size_t nindices) {
     Expr* idx = indices[0];
     Expr** rest = indices + 1;
     size_t nrest = nindices - 1;
+
+    /* Association indexing: assoc[[Key[k]]] / assoc[["strkey"]] look a key up
+     * by value; assoc[[i]] with a positive/negative integer is positional
+     * over the values (Wolfram semantics); assoc[[{k1,...}]] maps over the
+     * sub-indices, giving {assoc[[k1]], ...}. A missing key yields
+     * Missing["KeyAbsent", key]. */
+    if (is_association(expr)) {
+        if (idx->type == EXPR_FUNCTION && idx->data.function.head->type == EXPR_SYMBOL &&
+            idx->data.function.head->data.symbol.name == SYM_List) {
+            size_t m = idx->data.function.arg_count;
+            Expr** out = malloc(sizeof(Expr*) * (m ? m : 1));
+            for (size_t j = 0; j < m; j++) {
+                Expr* sub = idx->data.function.args[j];
+                Expr* v = assoc_part_single(expr, sub, rest, nrest);
+                if (!v) {  /* e.g. positional out of range: report as missing */
+                    Expr* margs[2] = { expr_new_string("KeyAbsent"), expr_copy(sub) };
+                    v = expr_new_function(expr_new_symbol(SYM_Missing), margs, 2);
+                }
+                out[j] = v;
+            }
+            Expr* result = expr_new_function(expr_new_symbol(SYM_List), out, m);
+            free(out);
+            return result;
+        }
+        return assoc_part_single(expr, idx, rest, nrest);
+    }
 
     // Handle integer index
     if (idx->type == EXPR_INTEGER) {
@@ -200,7 +397,7 @@ Expr* expr_part(Expr* expr, Expr** indices, size_t nindices) {
     }
 
     // Handle "Span"
-    if (idx->type == EXPR_FUNCTION && strcmp(idx->data.function.head->data.symbol, "Span") == 0) {
+    if (idx->type == EXPR_FUNCTION && idx->data.function.head->data.symbol.name == SYM_Span) {
         if (is_atomic(expr)) return NULL;
         int64_t len = (int64_t)expr->data.function.arg_count;
         int64_t start = 1, end = len, step = 1;
@@ -211,9 +408,9 @@ Expr* expr_part(Expr* expr, Expr** indices, size_t nindices) {
             if (a1->type == EXPR_INTEGER) {
                 start = a1->data.integer;
                 if (start < 0) start = len + start + 1;
-            } else if (a1->type == EXPR_SYMBOL && strcmp(a1->data.symbol, "All") == 0) {
+            } else if (a1->type == EXPR_SYMBOL && a1->data.symbol.name == SYM_All) {
                 start = 1;
-            } else if (a1->type == EXPR_FUNCTION && strcmp(a1->data.function.head->data.symbol, "UpTo") == 0 && a1->data.function.arg_count == 1 && a1->data.function.args[0]->type == EXPR_INTEGER) {
+            } else if (a1->type == EXPR_FUNCTION && a1->data.function.head->data.symbol.name == SYM_UpTo && a1->data.function.arg_count == 1 && a1->data.function.args[0]->type == EXPR_INTEGER) {
                 start = a1->data.function.args[0]->data.integer;
                 if (start > len) start = len;
                 if (start < 0) start = len + start + 1;
@@ -224,9 +421,9 @@ Expr* expr_part(Expr* expr, Expr** indices, size_t nindices) {
             if (a2->type == EXPR_INTEGER) {
                 end = a2->data.integer;
                 if (end < 0) end = len + end + 1;
-            } else if (a2->type == EXPR_SYMBOL && strcmp(a2->data.symbol, "All") == 0) {
+            } else if (a2->type == EXPR_SYMBOL && a2->data.symbol.name == SYM_All) {
                 end = len;
-            } else if (a2->type == EXPR_FUNCTION && strcmp(a2->data.function.head->data.symbol, "UpTo") == 0 && a2->data.function.arg_count == 1 && a2->data.function.args[0]->type == EXPR_INTEGER) {
+            } else if (a2->type == EXPR_FUNCTION && a2->data.function.head->data.symbol.name == SYM_UpTo && a2->data.function.arg_count == 1 && a2->data.function.args[0]->type == EXPR_INTEGER) {
                 end = a2->data.function.args[0]->data.integer;
                 if (end > len) end = len;
                 if (end < 0) end = len + end + 1;
@@ -235,7 +432,7 @@ Expr* expr_part(Expr* expr, Expr** indices, size_t nindices) {
         if (span_argc >= 3) {
             Expr* a3 = idx->data.function.args[2];
             if (a3->type == EXPR_INTEGER) step = a3->data.integer;
-            else if (a3->type == EXPR_SYMBOL && strcmp(a3->data.symbol, "All") == 0) step = 1;
+            else if (a3->type == EXPR_SYMBOL && a3->data.symbol.name == SYM_All) step = 1;
             else return NULL;
             if (step == 0) return NULL; // invalid step
         }
@@ -286,7 +483,7 @@ Expr* expr_part(Expr* expr, Expr** indices, size_t nindices) {
     }
 
     // Handle "All"
-    if (idx->type == EXPR_SYMBOL && strcmp(idx->data.symbol, "All") == 0) {
+    if (idx->type == EXPR_SYMBOL && idx->data.symbol.name == SYM_All) {
         if (is_atomic(expr)) return NULL;
         size_t len = expr->data.function.arg_count;
         Expr** args = NULL;
@@ -318,7 +515,7 @@ Expr* expr_part(Expr* expr, Expr** indices, size_t nindices) {
     }
 
     // Handle List of indices
-    if (idx->type == EXPR_FUNCTION && strcmp(idx->data.function.head->data.symbol, "List") == 0) {
+    if (idx->type == EXPR_FUNCTION && idx->data.function.head->data.symbol.name == SYM_List) {
         if (is_atomic(expr)) return NULL;
         size_t len = idx->data.function.arg_count;
         Expr** args = NULL;
@@ -351,6 +548,47 @@ Expr* expr_part(Expr* expr, Expr** indices, size_t nindices) {
     return NULL;
 }
 
+static Expr* assoc_part_single(Expr* assoc, Expr* idx, Expr** rest, size_t nrest) {
+    size_t na = assoc->data.function.arg_count;
+    Expr* lookup_key = NULL;   /* borrowed */
+    bool positional = false;
+    int64_t pos = 0;
+
+    if (idx->type == EXPR_FUNCTION && idx->data.function.head->type == EXPR_SYMBOL &&
+        idx->data.function.head->data.symbol.name == SYM_Key && idx->data.function.arg_count == 1) {
+        lookup_key = idx->data.function.args[0];
+    } else if (idx->type == EXPR_INTEGER) {
+        positional = true;
+        pos = idx->data.integer;
+    } else {
+        lookup_key = idx;  /* strings and other literal keys */
+    }
+
+    if (positional) {
+        if (pos == 0) {
+            /* assoc[[0]] gives the head Association (as for any expression);
+             * an integer *key* must be requested with Key[k]. */
+            Expr* head = expr_head(assoc);
+            if (!head) return NULL;
+            Expr* result = expr_part(head, rest, nrest);
+            expr_free(head);
+            return result;
+        }
+        if (pos < 0) pos = (int64_t)na + pos + 1;
+        if (pos < 1 || pos > (int64_t)na) return NULL;
+        Expr* rule = assoc->data.function.args[pos - 1];
+        return expr_part(rule->data.function.args[1], rest, nrest);
+    }
+    for (size_t i = 0; i < na; i++) {
+        Expr* rule = assoc->data.function.args[i];
+        if (expr_eq(rule->data.function.args[0], lookup_key))
+            return expr_part(rule->data.function.args[1], rest, nrest);
+    }
+    /* Key absent. */
+    Expr* margs[2] = { expr_new_string("KeyAbsent"), expr_copy(lookup_key) };
+    return expr_new_function(expr_new_symbol(SYM_Missing), margs, 2);
+}
+
 Expr* builtin_part(Expr* res) {
     if (res->type != EXPR_FUNCTION || res->data.function.arg_count < 2) {
         return NULL;
@@ -359,6 +597,20 @@ Expr* builtin_part(Expr* res) {
     Expr* expr = res->data.function.args[0];
     Expr** indices = res->data.function.args + 1;
     size_t nindices = res->data.function.arg_count - 1;
+
+    /* NDArray: index the flat buffer directly. [[0]] (head extraction) falls
+     * through to expr_part/expr_head, which reports NDArray as the head. Plain
+     * integer subscripts index natively; Span/All/List positions degrade to the
+     * general List Part via delist-and-reeval. */
+    if (is_ndarray(expr) &&
+        !(nindices > 0 && indices[0]->type == EXPR_INTEGER &&
+          indices[0]->data.integer == 0)) {
+        bool degrade = false;
+        Expr* r = ndarray_part(expr, indices, nindices, &degrade);
+        if (r) return r;
+        if (degrade) return ndarray_delist_and_reeval(res);
+        return NULL;  /* out-of-range / too many subscripts: leave unevaluated */
+    }
 
     // Mathematica allows [[0]] even for atoms
     if (nindices > 0 && indices[0]->type == EXPR_INTEGER && indices[0]->data.integer == 0) {
@@ -371,9 +623,20 @@ Expr* builtin_part(Expr* res) {
 }
 
 static Expr* extract_single(Expr* expr, Expr* pos, Expr* h) {
-    if (pos->type != EXPR_FUNCTION || strcmp(pos->data.function.head->data.symbol, "List") != 0) return NULL;
-    size_t nindices = pos->data.function.arg_count;
-    Expr** indices = pos->data.function.args;
+    size_t nindices;
+    Expr** indices;
+    Expr* single_index_buf[1];
+    if (pos->type == EXPR_FUNCTION && pos->data.function.head->type == EXPR_SYMBOL &&
+        pos->data.function.head->data.symbol.name == SYM_List) {
+        nindices = pos->data.function.arg_count;
+        indices = pos->data.function.args;
+    } else {
+        /* Scalar position (e.g. integer) is treated as a one-element path,
+         * matching Mathematica: Extract[expr, n] == Extract[expr, {n}]. */
+        single_index_buf[0] = pos;
+        indices = single_index_buf;
+        nindices = 1;
+    }
     Expr* part = expr_part(expr, indices, nindices);
     if (!part) {
         return NULL;
@@ -390,11 +653,11 @@ Expr* builtin_extract(Expr* res) {
     size_t argc = res->data.function.arg_count;
     if (argc == 1) { // Operator form
         Expr* slot_args[1] = { expr_new_integer(1) };
-        Expr* slot = expr_new_function(expr_new_symbol("Slot"), slot_args, 1);
+        Expr* slot = expr_new_function(expr_new_symbol(SYM_Slot), slot_args, 1);
         Expr* inner_args[2] = { slot, expr_copy(res->data.function.args[0]) };
-        Expr* inner_extract = expr_new_function(expr_new_symbol("Extract"), inner_args, 2);
+        Expr* inner_extract = expr_new_function(expr_new_symbol(SYM_Extract), inner_args, 2);
         Expr* func_args[1] = { inner_extract };
-        return expr_new_function(expr_new_symbol("Function"), func_args, 1);
+        return expr_new_function(expr_new_symbol(SYM_Function), func_args, 1);
     }
     if (argc < 2 || argc > 3) return NULL;
     Expr* expr = res->data.function.args[0];
@@ -402,15 +665,16 @@ Expr* builtin_extract(Expr* res) {
     Expr* h = (argc == 3) ? res->data.function.args[2] : NULL;
 
     bool is_list_of_pos = false;
-    if (pos->type == EXPR_FUNCTION && strcmp(pos->data.function.head->data.symbol, "List") == 0) {
-        if (pos->data.function.arg_count > 0 && pos->data.function.args[0]->type == EXPR_FUNCTION && strcmp(pos->data.function.args[0]->data.function.head->data.symbol, "List") == 0) {
+    if (pos->type == EXPR_FUNCTION && pos->data.function.head->type == EXPR_SYMBOL &&
+        pos->data.function.head->data.symbol.name == SYM_List) {
+        if (pos->data.function.arg_count > 0 && pos->data.function.args[0]->type == EXPR_FUNCTION &&
+            pos->data.function.args[0]->data.function.head->type == EXPR_SYMBOL &&
+            pos->data.function.args[0]->data.function.head->data.symbol.name == SYM_List) {
             is_list_of_pos = true;
-        } else if (pos->data.function.arg_count == 0) {
-            is_list_of_pos = false;
         }
-    } else {
-        return NULL; // pos must be a List
     }
+    /* Otherwise pos is treated as a single position (a scalar like an integer,
+     * or a single-position list); extract_single handles both forms. */
 
     if (is_list_of_pos) {
         size_t npos = pos->data.function.arg_count;
@@ -423,23 +687,44 @@ Expr* builtin_extract(Expr* res) {
                 return NULL;
             }
         }
-        return expr_new_function(expr_new_symbol("List"), args, npos);
+        Expr* r = expr_new_function(expr_new_symbol(SYM_List), args, npos);
+        free(args);   /* expr_new_function copies the array; free our copy */
+        return r;
     } else {
         return extract_single(expr, pos, h);
     }
 }
+/* For an association entry (a Rule[k,v]), the "element" First/Last yields is the
+ * value v, not the whole rule -- matching Wolfram. Returns the entry unchanged
+ * for non-associations. */
+static Expr* first_last_element(Expr* container, Expr* entry) {
+    if (is_association(container) && entry->type == EXPR_FUNCTION &&
+        entry->data.function.arg_count == 2) {
+        return entry->data.function.args[1];
+    }
+    return entry;
+}
+
 Expr* builtin_first(Expr* res) {
-    if (res->type != EXPR_FUNCTION || res->data.function.arg_count != 1) return NULL;
+    if (res->type != EXPR_FUNCTION ||
+        res->data.function.arg_count < 1 || res->data.function.arg_count > 2) return NULL;
     Expr* arg = res->data.function.args[0];
-    if (is_atomic(arg) || arg->data.function.arg_count < 1) return NULL;
-    return expr_copy(arg->data.function.args[0]);
+    Expr* deflt = (res->data.function.arg_count == 2) ? res->data.function.args[1] : NULL;
+    /* First[expr, def] returns def when expr has no elements (or is atomic);
+     * with no default the 1-arg form is left unevaluated, as before. */
+    if (is_atomic(arg) || arg->data.function.arg_count < 1)
+        return deflt ? expr_copy(deflt) : NULL;
+    return expr_copy(first_last_element(arg, arg->data.function.args[0]));
 }
 
 Expr* builtin_last(Expr* res) {
-    if (res->type != EXPR_FUNCTION || res->data.function.arg_count != 1) return NULL;
+    if (res->type != EXPR_FUNCTION ||
+        res->data.function.arg_count < 1 || res->data.function.arg_count > 2) return NULL;
     Expr* arg = res->data.function.args[0];
-    if (is_atomic(arg) || arg->data.function.arg_count < 1) return NULL;
-    return expr_copy(arg->data.function.args[arg->data.function.arg_count - 1]);
+    Expr* deflt = (res->data.function.arg_count == 2) ? res->data.function.args[1] : NULL;
+    if (is_atomic(arg) || arg->data.function.arg_count < 1)
+        return deflt ? expr_copy(deflt) : NULL;
+    return expr_copy(first_last_element(arg, arg->data.function.args[arg->data.function.arg_count - 1]));
 }
 
 Expr* builtin_most(Expr* res) {
@@ -554,7 +839,7 @@ Expr* expr_insert(Expr* expr, Expr* elem, Expr* pos) {
     if (!expr || !elem || !pos) return NULL;
     
     // Case 3: List of positions
-    if (pos->type == EXPR_FUNCTION && strcmp(pos->data.function.head->data.symbol, "List") == 0) {
+    if (pos->type == EXPR_FUNCTION && pos->data.function.head->data.symbol.name == SYM_List) {
         bool all_lists = true;
         for (size_t i = 0; i < pos->data.function.arg_count; i++) {
             if (pos->data.function.args[i]->type != EXPR_FUNCTION) {
@@ -604,10 +889,45 @@ Expr* builtin_insert(Expr* res) {
 
 static Expr* delete_path(Expr* expr, Expr** path, size_t path_len) {
     if (path_len == 0) {
-        return expr_new_function(expr_new_symbol("Sequence"), NULL, 0);
+        return expr_new_function(expr_new_symbol(SYM_Sequence), NULL, 0);
     }
-    
+
     if (is_atomic(expr)) return expr_copy(expr);
+
+    /* Association: a non-integer index is a key (Key[k] or a literal key). Find
+     * the entry, then either drop it (last index) or recurse into its value. */
+    if (is_association(expr) && path[0]->type != EXPR_INTEGER) {
+        Expr* key = path[0];
+        if (path[0]->type == EXPR_FUNCTION && path[0]->data.function.head->type == EXPR_SYMBOL &&
+            path[0]->data.function.head->data.symbol.name == SYM_Key && path[0]->data.function.arg_count == 1)
+            key = path[0]->data.function.args[0];
+        size_t len = expr->data.function.arg_count;
+        int64_t t = -1;
+        for (size_t i = 0; i < len; i++) {
+            Expr* rule = expr->data.function.args[i];
+            if (rule->type == EXPR_FUNCTION && rule->data.function.arg_count == 2 &&
+                expr_eq(rule->data.function.args[0], key)) { t = (int64_t)i; break; }
+        }
+        if (t < 0) return expr_copy(expr);
+        if (path_len == 1) {
+            Expr** na = (len > 1) ? malloc(sizeof(Expr*) * (len - 1)) : NULL;
+            size_t j = 0;
+            for (size_t i = 0; i < len; i++)
+                if ((int64_t)i != t) na[j++] = expr_copy(expr->data.function.args[i]);
+            Expr* result = expr_new_function(expr_copy(expr->data.function.head), na, len - 1);
+            if (na) free(na);
+            return result;
+        }
+        Expr** na = malloc(sizeof(Expr*) * len);
+        for (size_t i = 0; i < len; i++) na[i] = expr_copy(expr->data.function.args[i]);
+        Expr* rule = na[t];
+        Expr* nv = delete_path(rule->data.function.args[1], path + 1, path_len - 1);
+        expr_free(rule->data.function.args[1]);
+        rule->data.function.args[1] = nv;
+        Expr* result = expr_new_function(expr_copy(expr->data.function.head), na, len);
+        free(na);
+        return result;
+    }
 
     int64_t n = 0;
     if (path[0]->type != EXPR_INTEGER) return expr_copy(expr);
@@ -622,7 +942,7 @@ static Expr* delete_path(Expr* expr, Expr** path, size_t path_len) {
                     new_args[i] = expr_copy(expr->data.function.args[i]);
                 }
             }
-            Expr* result = expr_new_function(expr_new_symbol("Sequence"), new_args, expr->data.function.arg_count);
+            Expr* result = expr_new_function(expr_new_symbol(SYM_Sequence), new_args, expr->data.function.arg_count);
             if (new_args) free(new_args);
             return result;
         }
@@ -687,12 +1007,17 @@ static Expr* delete_path(Expr* expr, Expr** path, size_t path_len) {
 
 Expr* expr_delete(Expr* expr, Expr* pos) {
     if (!expr || !pos) return NULL;
-    
+
     // Case 3: List of positions
-    if (pos->type == EXPR_FUNCTION && strcmp(pos->data.function.head->data.symbol, "List") == 0) {
-        bool all_lists = true;
+    if (pos->type == EXPR_FUNCTION && pos->data.function.head->data.symbol.name == SYM_List) {
+        /* Multiple-paths iff every element is itself a List (a sub-path).
+         * A non-List step such as Key[k] means `pos` is a single path, e.g.
+         * {Key["a"], Key["x"]} is one nested path, not two. */
+        bool all_lists = pos->data.function.arg_count > 0;
         for (size_t i = 0; i < pos->data.function.arg_count; i++) {
-            if (pos->data.function.args[i]->type != EXPR_FUNCTION) {
+            Expr* e = pos->data.function.args[i];
+            if (!(e->type == EXPR_FUNCTION && e->data.function.head->type == EXPR_SYMBOL &&
+                  e->data.function.head->data.symbol.name == SYM_List)) {
                 all_lists = false;
                 break;
             }

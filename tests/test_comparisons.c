@@ -4,6 +4,7 @@
 #include "symtab.h"
 #include "test_utils.h"
 #include "arithmetic.h"
+#include "parse.h"
 #include <string.h>
 
 void test_sameq_basic() {
@@ -14,7 +15,7 @@ void test_sameq_basic() {
     
     Expr* res = evaluate(sameq);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     
     expr_free(sameq);
     expr_free(res);
@@ -28,7 +29,7 @@ void test_sameq_different() {
     
     Expr* res = evaluate(sameq);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "False");
+    ASSERT_STR_EQ(res->data.symbol.name, "False");
     
     expr_free(sameq);
     expr_free(res);
@@ -43,7 +44,7 @@ void test_sameq_multiple() {
     
     Expr* res = evaluate(sameq);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     
     expr_free(sameq);
     expr_free(res);
@@ -58,7 +59,7 @@ void test_sameq_multiple_false() {
     
     Expr* res = evaluate(sameq);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "False");
+    ASSERT_STR_EQ(res->data.symbol.name, "False");
     
     expr_free(sameq);
     expr_free(res);
@@ -72,7 +73,7 @@ void test_unsameq_basic() {
     
     Expr* res = evaluate(unsameq);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     
     expr_free(unsameq);
     expr_free(res);
@@ -86,7 +87,7 @@ void test_unsameq_false() {
     
     Expr* res = evaluate(unsameq);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "False");
+    ASSERT_STR_EQ(res->data.symbol.name, "False");
     
     expr_free(unsameq);
     expr_free(res);
@@ -101,7 +102,7 @@ void test_unsameq_multiple() {
     
     Expr* res = evaluate(unsameq);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     
     expr_free(unsameq);
     expr_free(res);
@@ -116,7 +117,7 @@ void test_unsameq_multiple_false() {
     
     Expr* res = evaluate(unsameq);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "False");
+    ASSERT_STR_EQ(res->data.symbol.name, "False");
     
     expr_free(unsameq);
     expr_free(res);
@@ -127,7 +128,7 @@ void test_unsameq_zero_arg() {
     
     Expr* res = evaluate(unsameq);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     
     expr_free(unsameq);
     expr_free(res);
@@ -140,7 +141,7 @@ void test_unsameq_one_arg() {
     
     Expr* res = evaluate(unsameq);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     
     expr_free(unsameq);
     expr_free(res);
@@ -154,7 +155,7 @@ void test_equal_identical() {
     
     Expr* res = evaluate(equal);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     
     expr_free(equal);
     expr_free(res);
@@ -168,7 +169,7 @@ void test_equal_numeric() {
     
     Expr* res = evaluate(equal);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     
     expr_free(equal);
     expr_free(res);
@@ -183,7 +184,7 @@ void test_equal_unevaluated() {
     Expr* res = evaluate(equal);
     // Returns original Equal[x, y]
     ASSERT(res->type == EXPR_FUNCTION);
-    ASSERT_STR_EQ(res->data.function.head->data.symbol, "Equal");
+    ASSERT_STR_EQ(res->data.function.head->data.symbol.name, "Equal");
     
     expr_free(equal);
     expr_free(res);
@@ -197,7 +198,7 @@ void test_equal_numeric_false() {
     
     Expr* res = evaluate(equal);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "False");
+    ASSERT_STR_EQ(res->data.symbol.name, "False");
     
     expr_free(equal);
     expr_free(res);
@@ -211,7 +212,7 @@ void test_equal_tolerance() {
     
     Expr* res = evaluate(equal);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     
     expr_free(equal);
     expr_free(res);
@@ -226,7 +227,7 @@ void test_equal_mixed_false() {
     
     Expr* res = evaluate(equal);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "False");
+    ASSERT_STR_EQ(res->data.symbol.name, "False");
     
     expr_free(equal);
     expr_free(res);
@@ -241,7 +242,7 @@ void test_equal_mixed_unevaluated() {
     
     Expr* res = evaluate(equal);
     ASSERT(res->type == EXPR_FUNCTION);
-    ASSERT_STR_EQ(res->data.function.head->data.symbol, "Equal");
+    ASSERT_STR_EQ(res->data.function.head->data.symbol.name, "Equal");
     
     expr_free(equal);
     expr_free(res);
@@ -254,7 +255,7 @@ void test_less_basic() {
     Expr* less = expr_new_function(expr_new_symbol("Less"), args, 2);
     Expr* res = evaluate(less);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     expr_free(less); expr_free(res);
 }
 
@@ -265,7 +266,7 @@ void test_less_false() {
     Expr* less = expr_new_function(expr_new_symbol("Less"), args, 2);
     Expr* res = evaluate(less);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "False");
+    ASSERT_STR_EQ(res->data.symbol.name, "False");
     expr_free(less); expr_free(res);
 }
 
@@ -276,7 +277,7 @@ void test_less_rational_real() {
     Expr* less = expr_new_function(expr_new_symbol("Less"), args, 2);
     Expr* res = evaluate(less);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     expr_free(less); expr_free(res);
 }
 
@@ -287,7 +288,7 @@ void test_less_exact_rational() {
     Expr* less = expr_new_function(expr_new_symbol("Less"), args, 2);
     Expr* res = evaluate(less);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     expr_free(less); expr_free(res);
 }
 
@@ -299,7 +300,7 @@ void test_lessequal_mixed() {
     Expr* le = expr_new_function(expr_new_symbol("LessEqual"), args, 3);
     Expr* res = evaluate(le);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     expr_free(le); expr_free(res);
 }
 
@@ -310,8 +311,42 @@ void test_greater_unevaluated() {
     Expr* gt = expr_new_function(expr_new_symbol("Greater"), args, 2);
     Expr* res = evaluate(gt);
     ASSERT(res->type == EXPR_FUNCTION);
-    ASSERT_STR_EQ(res->data.function.head->data.symbol, "Greater");
+    ASSERT_STR_EQ(res->data.function.head->data.symbol.name, "Greater");
     expr_free(gt); expr_free(res);
+}
+
+/* Regression: BigInt-vs-BigInt comparisons used to coerce both sides to
+ * double, which collapsed neighbouring values above 2^53 to a single
+ * representation and returned False for Less[10^20, 10^20 + 1]. */
+static void check_compare_yields(const char* expr_text, const char* expected) {
+    Expr* in = parse_expression(expr_text);
+    ASSERT(in != NULL);
+    Expr* res = evaluate(in);
+    ASSERT(res != NULL);
+    ASSERT(res->type == EXPR_SYMBOL);
+    ASSERT_STR_EQ(res->data.symbol.name, expected);
+    expr_free(in);
+    expr_free(res);
+}
+
+void test_compare_bigint_adjacent() {
+    check_compare_yields("Less[10^20, 10^20 + 1]",          "True");
+    check_compare_yields("Less[10^30, 10^30 + 1]",          "True");
+    check_compare_yields("Less[10^50 - 1, 10^50]",          "True");
+    check_compare_yields("Greater[10^30, 10^30 - 1]",       "True");
+    check_compare_yields("LessEqual[10^20 + 1, 10^20]",     "False");
+    check_compare_yields("GreaterEqual[10^30 - 1, 10^30]",  "False");
+    check_compare_yields("Equal[10^30, 10^30]",             "True");
+    check_compare_yields("Equal[10^30, 10^30 + 1]",         "False");
+    check_compare_yields("Unequal[10^30, 10^30 + 1]",       "True");
+    /* Mixed Integer/BigInt: 5 < 10^30 must hold exactly. */
+    check_compare_yields("Less[5, 10^30]",                  "True");
+    check_compare_yields("Greater[10^30, 5]",               "True");
+    /* Sanity: small-integer path still works. */
+    check_compare_yields("Less[1, 2]",                      "True");
+    check_compare_yields("Less[2, 1]",                      "False");
+    check_compare_yields("LessEqual[1.5, 2.5]",             "True");
+    check_compare_yields("Less[3/4, 4/5]",                  "True");
 }
 
 void test_unequal_basic() {
@@ -321,7 +356,7 @@ void test_unequal_basic() {
     Expr* unequal = expr_new_function(expr_new_symbol("Unequal"), args, 2);
     Expr* res = evaluate(unequal);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "True");
+    ASSERT_STR_EQ(res->data.symbol.name, "True");
     expr_free(unequal); expr_free(res);
 }
 
@@ -332,7 +367,7 @@ void test_unequal_false() {
     Expr* unequal = expr_new_function(expr_new_symbol("Unequal"), args, 2);
     Expr* res = evaluate(unequal);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "False");
+    ASSERT_STR_EQ(res->data.symbol.name, "False");
     expr_free(unequal); expr_free(res);
 }
 
@@ -344,7 +379,7 @@ void test_unequal_multiple() {
     Expr* unequal = expr_new_function(expr_new_symbol("Unequal"), args, 3);
     Expr* res = evaluate(unequal);
     ASSERT(res->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res->data.symbol, "False");
+    ASSERT_STR_EQ(res->data.symbol.name, "False");
     expr_free(unequal); expr_free(res);
 }
 
@@ -355,7 +390,7 @@ void test_unequal_unevaluated() {
     Expr* unequal = expr_new_function(expr_new_symbol("Unequal"), args, 2);
     Expr* res = evaluate(unequal);
     ASSERT(res->type == EXPR_FUNCTION);
-    ASSERT_STR_EQ(res->data.function.head->data.symbol, "Unequal");
+    ASSERT_STR_EQ(res->data.function.head->data.symbol.name, "Unequal");
     expr_free(unequal); expr_free(res);
 }
 
@@ -365,7 +400,7 @@ void test_not_basic() {
     Expr* not_t = expr_new_function(expr_new_symbol("Not"), args_t, 1);
     Expr* res_t = evaluate(not_t);
     ASSERT(res_t->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res_t->data.symbol, "False");
+    ASSERT_STR_EQ(res_t->data.symbol.name, "False");
     expr_free(not_t); expr_free(res_t);
 
     Expr* f = expr_new_symbol("False");
@@ -373,7 +408,7 @@ void test_not_basic() {
     Expr* not_f = expr_new_function(expr_new_symbol("Not"), args_f, 1);
     Expr* res_f = evaluate(not_f);
     ASSERT(res_f->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res_f->data.symbol, "True");
+    ASSERT_STR_EQ(res_f->data.symbol.name, "True");
     expr_free(not_f); expr_free(res_f);
 }
 
@@ -381,7 +416,7 @@ void test_and_basic() {
     Expr* and_empty = expr_new_function(expr_new_symbol("And"), NULL, 0);
     Expr* res_empty = evaluate(and_empty);
     ASSERT(res_empty->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res_empty->data.symbol, "True");
+    ASSERT_STR_EQ(res_empty->data.symbol.name, "True");
     expr_free(and_empty); expr_free(res_empty);
 
     Expr* t = expr_new_symbol("True");
@@ -390,14 +425,14 @@ void test_and_basic() {
     Expr* and1 = expr_new_function(expr_new_symbol("And"), args1, 2);
     Expr* res1 = evaluate(and1);
     ASSERT(res1->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res1->data.symbol, "False");
+    ASSERT_STR_EQ(res1->data.symbol.name, "False");
     expr_free(and1); expr_free(res1);
 
     Expr* args2[] = {expr_copy(t), expr_copy(t)};
     Expr* and2 = expr_new_function(expr_new_symbol("And"), args2, 2);
     Expr* res2 = evaluate(and2);
     ASSERT(res2->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res2->data.symbol, "True");
+    ASSERT_STR_EQ(res2->data.symbol.name, "True");
     expr_free(and2); expr_free(res2);
     
     expr_free(t); expr_free(f);
@@ -407,7 +442,7 @@ void test_or_basic() {
     Expr* or_empty = expr_new_function(expr_new_symbol("Or"), NULL, 0);
     Expr* res_empty = evaluate(or_empty);
     ASSERT(res_empty->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res_empty->data.symbol, "False");
+    ASSERT_STR_EQ(res_empty->data.symbol.name, "False");
     expr_free(or_empty); expr_free(res_empty);
 
     Expr* t = expr_new_symbol("True");
@@ -416,14 +451,14 @@ void test_or_basic() {
     Expr* or1 = expr_new_function(expr_new_symbol("Or"), args1, 2);
     Expr* res1 = evaluate(or1);
     ASSERT(res1->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res1->data.symbol, "True");
+    ASSERT_STR_EQ(res1->data.symbol.name, "True");
     expr_free(or1); expr_free(res1);
 
     Expr* args2[] = {expr_copy(f), expr_copy(f)};
     Expr* or2 = expr_new_function(expr_new_symbol("Or"), args2, 2);
     Expr* res2 = evaluate(or2);
     ASSERT(res2->type == EXPR_SYMBOL);
-    ASSERT_STR_EQ(res2->data.symbol, "False");
+    ASSERT_STR_EQ(res2->data.symbol.name, "False");
     expr_free(or2); expr_free(res2);
     
     expr_free(t); expr_free(f);
@@ -460,6 +495,7 @@ int main() {
     TEST(test_less_exact_rational);
     TEST(test_lessequal_mixed);
     TEST(test_greater_unevaluated);
+    TEST(test_compare_bigint_adjacent);
     TEST(test_not_basic);
     TEST(test_and_basic);
     TEST(test_or_basic);

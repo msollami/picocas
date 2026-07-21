@@ -1,0 +1,5562 @@
+[
+  {
+    "name": "$Assumptions",
+    "category": "Simplification",
+    "slug": "simplification",
+    "status": "Stable",
+    "summary": "$Assumptions",
+    "url": "documentation/simplification/$Assumptions/"
+  },
+  {
+    "name": "$Context",
+    "category": "Scoping Constructs",
+    "slug": "scoping-constructs",
+    "status": "Stable",
+    "summary": "$Context is a string giving the current context. New symbols are created",
+    "url": "documentation/scoping-constructs/$Context/"
+  },
+  {
+    "name": "$ContextPath",
+    "category": "Scoping Constructs",
+    "slug": "scoping-constructs",
+    "status": "Stable",
+    "summary": "$ContextPath is a list of contexts used (in order) to resolve bare",
+    "url": "documentation/scoping-constructs/$ContextPath/"
+  },
+  {
+    "name": "$Epilog",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "$Epilog",
+    "url": "documentation/control-flow/$Epilog/"
+  },
+  {
+    "name": "$MachineEpsilon",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "$MachineEpsilon",
+    "url": "documentation/expression-information/$MachineEpsilon/"
+  },
+  {
+    "name": "$MachinePrecision",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "$MachinePrecision",
+    "url": "documentation/expression-information/$MachinePrecision/"
+  },
+  {
+    "name": "$MaxMachineNumber",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "$MaxMachineNumber",
+    "url": "documentation/expression-information/$MaxMachineNumber/"
+  },
+  {
+    "name": "$MaxNumber",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "$MaxNumber",
+    "url": "documentation/expression-information/$MaxNumber/"
+  },
+  {
+    "name": "$MinMachineNumber",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "$MinMachineNumber",
+    "url": "documentation/expression-information/$MinMachineNumber/"
+  },
+  {
+    "name": "$MinNumber",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "$MinNumber",
+    "url": "documentation/expression-information/$MinNumber/"
+  },
+  {
+    "name": "$PlotLegendData",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "$PlotLegendData[{color1, label1}, ...]",
+    "url": "documentation/other-advanced/$PlotLegendData/"
+  },
+  {
+    "name": "$PlotResample",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "$PlotResample[var, {f...}, {plotPoints, maxRecursion, maxPlotPoints, mesh, regionFunction, exclusions, colorFunction, colorFunctionScaling, filling, fillingStyle}]",
+    "url": "documentation/other-advanced/$PlotResample/"
+  },
+  {
+    "name": "$Post",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "$Post",
+    "url": "documentation/control-flow/$Post/"
+  },
+  {
+    "name": "$Pre",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "$Pre",
+    "url": "documentation/control-flow/$Pre/"
+  },
+  {
+    "name": "$PrePrint",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "$PrePrint",
+    "url": "documentation/control-flow/$PrePrint/"
+  },
+  {
+    "name": "$PreRead",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "$PreRead",
+    "url": "documentation/control-flow/$PreRead/"
+  },
+  {
+    "name": "$RecursionLimit",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "$RecursionLimit",
+    "url": "documentation/control-flow/$RecursionLimit/"
+  },
+  {
+    "name": "$SimplifyDebug",
+    "category": "Simplification",
+    "slug": "simplification",
+    "status": "Experimental",
+    "summary": "$SimplifyDebug",
+    "url": "documentation/simplification/$SimplifyDebug/"
+  },
+  {
+    "name": "$StreamColorBar",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "$StreamColorBar[speed_min, speed_max]",
+    "url": "documentation/other-advanced/$StreamColorBar/"
+  },
+  {
+    "name": "$Version",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "$Version",
+    "url": "documentation/expression-information/$Version/"
+  },
+  {
+    "name": "$VersionNumber",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "$VersionNumber",
+    "url": "documentation/expression-information/$VersionNumber/"
+  },
+  {
+    "name": "Abs",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Abs[z] gives the absolute value (modulus) of numeric z, Sqrt[Re[z]^2 + Im[z]^2] for complex z.",
+    "url": "documentation/arithmetic/Abs/"
+  },
+  {
+    "name": "AbsoluteTime",
+    "category": "Time and Date",
+    "slug": "time-and-date",
+    "status": "Stable",
+    "summary": "AbsoluteTime[]",
+    "url": "documentation/time-and-date/AbsoluteTime/"
+  },
+  {
+    "name": "Accumulate",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Accumulate[list]",
+    "url": "documentation/arithmetic/Accumulate/"
+  },
+  {
+    "name": "Accuracy",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Accuracy[x]",
+    "url": "documentation/arithmetic/Accuracy/"
+  },
+  {
+    "name": "AddTo",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "AddTo[x, dx] or x += dx",
+    "url": "documentation/assignment-and-rules/AddTo/"
+  },
+  {
+    "name": "AdjacencyGraph",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "AdjacencyGraph[m] builds a graph on vertices 1..n from a 0/1 adjacency matrix m (undirected if m is symmetric, else directed).",
+    "url": "documentation/other-advanced/AdjacencyGraph/"
+  },
+  {
+    "name": "AdjacencyList",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "AdjacencyList[g] gives the adjacency list of g; AdjacencyList[g,v] gives the vertices adjacent to v (successors for directed edges).",
+    "url": "documentation/other-advanced/AdjacencyList/"
+  },
+  {
+    "name": "AdjacencyMatrix",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "AdjacencyMatrix[g] gives the 0/1 adjacency matrix of g (symmetric for undirected graphs).",
+    "url": "documentation/other-advanced/AdjacencyMatrix/"
+  },
+  {
+    "name": "AiryAi",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "AiryAi[z]",
+    "url": "documentation/special-functions/AiryAi/"
+  },
+  {
+    "name": "AiryAiPrime",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "AiryAiPrime[z]",
+    "url": "documentation/other-advanced/AiryAiPrime/"
+  },
+  {
+    "name": "AiryBi",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "AiryBi[z]",
+    "url": "documentation/special-functions/AiryBi/"
+  },
+  {
+    "name": "AiryBiPrime",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "AiryBiPrime[z]",
+    "url": "documentation/other-advanced/AiryBiPrime/"
+  },
+  {
+    "name": "AllTrue",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "AllTrue[list, test]",
+    "url": "documentation/functional-programming/AllTrue/"
+  },
+  {
+    "name": "Animate",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Experimental",
+    "summary": "Animate[expr, {t, tmin, tmax}, opts...]",
+    "url": "documentation/graphics/Animate/"
+  },
+  {
+    "name": "AnyTrue",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "AnyTrue[list, test]",
+    "url": "documentation/functional-programming/AnyTrue/"
+  },
+  {
+    "name": "Apart",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Apart[expr] rewrites a rational expression as a sum of terms with minimal denominators.",
+    "url": "documentation/algebra/Apart/"
+  },
+  {
+    "name": "Append",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Append[expr, elem] adds elem to the end of expr.",
+    "url": "documentation/data-structures/Append/"
+  },
+  {
+    "name": "Apply",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "f @@ expr or Apply[f, expr]",
+    "url": "documentation/data-structures/Apply/"
+  },
+  {
+    "name": "ArcCos",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "ArcCos[z]",
+    "url": "documentation/elementary-functions/ArcCos/"
+  },
+  {
+    "name": "ArcSin",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "ArcSin[z]",
+    "url": "documentation/elementary-functions/ArcSin/"
+  },
+  {
+    "name": "ArcTan",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "ArcTan[z]",
+    "url": "documentation/elementary-functions/ArcTan/"
+  },
+  {
+    "name": "Arg",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Arg[z] gives the argument (phase angle in (-Pi, Pi]) of numeric z; 0 for nonnegative reals, Pi for negative reals.",
+    "url": "documentation/arithmetic/Arg/"
+  },
+  {
+    "name": "Array",
+    "category": "Lists and Iteration",
+    "slug": "lists-and-iteration",
+    "status": "Stable",
+    "summary": "Array[f, n]",
+    "url": "documentation/lists-and-iteration/Array/"
+  },
+  {
+    "name": "ArrayFlatten",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "ArrayFlatten[a]",
+    "url": "documentation/structural-manipulation/ArrayFlatten/"
+  },
+  {
+    "name": "AspectRatio",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "AspectRatio",
+    "url": "documentation/other-advanced/AspectRatio/"
+  },
+  {
+    "name": "AssociateTo",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "AssociateTo[s, key -> val]  |  AssociateTo[s, {rules}]",
+    "url": "documentation/data-structures/AssociateTo/"
+  },
+  {
+    "name": "Association",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Association[key1 -> val1, key2 -> val2, ...]  (also written <|...|>)",
+    "url": "documentation/data-structures/Association/"
+  },
+  {
+    "name": "AssociationMap",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "AssociationMap[f, {k1, k2, ...}]",
+    "url": "documentation/data-structures/AssociationMap/"
+  },
+  {
+    "name": "AssociationQ",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "AssociationQ[expr]",
+    "url": "documentation/data-structures/AssociationQ/"
+  },
+  {
+    "name": "AssociationThread",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "AssociationThread[{k...}, {v...}]  |  AssociationThread[keys -> values]",
+    "url": "documentation/data-structures/AssociationThread/"
+  },
+  {
+    "name": "Assuming",
+    "category": "Simplification",
+    "slug": "simplification",
+    "status": "Stable",
+    "summary": "Assuming[assum, expr]",
+    "url": "documentation/simplification/Assuming/"
+  },
+  {
+    "name": "AtomQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "AtomQ[expr]",
+    "url": "documentation/expression-information/AtomQ/"
+  },
+  {
+    "name": "Attributes",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Attributes[s] gives the list of attributes for s.",
+    "url": "documentation/expression-information/Attributes/"
+  },
+  {
+    "name": "BarChart",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Experimental",
+    "summary": "BarChart[{v1, v2, ..., vn}, opts...]",
+    "url": "documentation/graphics/BarChart/"
+  },
+  {
+    "name": "BarSpacing",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "BarSpacing",
+    "url": "documentation/other-advanced/BarSpacing/"
+  },
+  {
+    "name": "BarnesG",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "BarnesG[z]",
+    "url": "documentation/special-functions/BarnesG/"
+  },
+  {
+    "name": "Begin",
+    "category": "Scoping Constructs",
+    "slug": "scoping-constructs",
+    "status": "Stable",
+    "summary": "Begin[\"ctx`\"] sets the current context ($Context) to \"ctx`\", saving",
+    "url": "documentation/scoping-constructs/Begin/"
+  },
+  {
+    "name": "BeginPackage",
+    "category": "Scoping Constructs",
+    "slug": "scoping-constructs",
+    "status": "Stable",
+    "summary": "BeginPackage[\"ctx`\"] sets the current context to \"ctx`\" and restricts",
+    "url": "documentation/scoping-constructs/BeginPackage/"
+  },
+  {
+    "name": "BernoulliB",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "BernoulliB[n]",
+    "url": "documentation/special-functions/BernoulliB/"
+  },
+  {
+    "name": "BesselI",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "BesselI[n, z]",
+    "url": "documentation/special-functions/BesselI/"
+  },
+  {
+    "name": "BesselJ",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "BesselJ[n, z]",
+    "url": "documentation/special-functions/BesselJ/"
+  },
+  {
+    "name": "BesselJZero",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "BesselJZero[n, k] gives the k-th positive zero of BesselJ[n, x]. Stays symbolic for symbolic arguments.",
+    "url": "documentation/other-advanced/BesselJZero/"
+  },
+  {
+    "name": "BesselK",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "BesselK[n, z]",
+    "url": "documentation/special-functions/BesselK/"
+  },
+  {
+    "name": "BesselY",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "BesselY[n, z]",
+    "url": "documentation/special-functions/BesselY/"
+  },
+  {
+    "name": "Beta",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Beta[a, b]",
+    "url": "documentation/special-functions/Beta/"
+  },
+  {
+    "name": "Binomial",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Binomial[n, m]",
+    "url": "documentation/arithmetic/Binomial/"
+  },
+  {
+    "name": "Black",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Black",
+    "url": "documentation/other-advanced/Black/"
+  },
+  {
+    "name": "Blank",
+    "category": "Pattern Matching",
+    "slug": "pattern-matching",
+    "status": "Stable",
+    "summary": "_ or Blank[] represents any single expression.",
+    "url": "documentation/pattern-matching/Blank/"
+  },
+  {
+    "name": "BlankNullSequence",
+    "category": "Pattern Matching",
+    "slug": "pattern-matching",
+    "status": "Stable",
+    "summary": "___ or BlankNullSequence[] represents a sequence of zero or more expressions.",
+    "url": "documentation/pattern-matching/BlankNullSequence/"
+  },
+  {
+    "name": "BlankSequence",
+    "category": "Pattern Matching",
+    "slug": "pattern-matching",
+    "status": "Experimental",
+    "summary": "__ or BlankSequence[] represents a sequence of one or more expressions.",
+    "url": "documentation/pattern-matching/BlankSequence/"
+  },
+  {
+    "name": "Block",
+    "category": "Scoping Constructs",
+    "slug": "scoping-constructs",
+    "status": "Stable",
+    "summary": "Block[{x, y, ...}, expr] evaluates expr with local values for x, y, ....",
+    "url": "documentation/scoping-constructs/Block/"
+  },
+  {
+    "name": "Blue",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Blue",
+    "url": "documentation/other-advanced/Blue/"
+  },
+  {
+    "name": "Boole",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "Boole[expr]",
+    "url": "documentation/control-flow/Boole/"
+  },
+  {
+    "name": "Brown",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Brown",
+    "url": "documentation/other-advanced/Brown/"
+  },
+  {
+    "name": "ByteCount",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "ByteCount[expr] gives the number of bytes used internally by Mathilda to store expr.",
+    "url": "documentation/expression-information/ByteCount/"
+  },
+  {
+    "name": "CMYKColor",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Stable",
+    "summary": "CMYKColor[c, m, y, k]",
+    "url": "documentation/graphics/CMYKColor/"
+  },
+  {
+    "name": "Cancel",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Cancel[expr] cancels out common factors in the numerator and denominator of expr.",
+    "url": "documentation/algebra/Cancel/"
+  },
+  {
+    "name": "Cases",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Cases[{e1, e2, ...}, pattern] gives a list of the ei that match the pattern.",
+    "url": "documentation/data-structures/Cases/"
+  },
+  {
+    "name": "Catalan",
+    "category": "Mathematical Constants",
+    "slug": "mathematical-constants",
+    "status": "Stable",
+    "summary": "Catalan",
+    "url": "documentation/mathematical-constants/Catalan/"
+  },
+  {
+    "name": "Catch",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "Catch[expr]",
+    "url": "documentation/control-flow/Catch/"
+  },
+  {
+    "name": "Catenate",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Catenate[{e1, e2, ...}]",
+    "url": "documentation/structural-manipulation/Catenate/"
+  },
+  {
+    "name": "Ceiling",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Ceiling[x]",
+    "url": "documentation/arithmetic/Ceiling/"
+  },
+  {
+    "name": "Characters",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "Characters[\"string\"]",
+    "url": "documentation/string-operations/Characters/"
+  },
+  {
+    "name": "ChartLabels",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "ChartLabels",
+    "url": "documentation/other-advanced/ChartLabels/"
+  },
+  {
+    "name": "ChartStyle",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "ChartStyle",
+    "url": "documentation/other-advanced/ChartStyle/"
+  },
+  {
+    "name": "Chop",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Chop[expr]",
+    "url": "documentation/elementary-functions/Chop/"
+  },
+  {
+    "name": "Clear",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "Clear[s1, s2, ...]",
+    "url": "documentation/assignment-and-rules/Clear/"
+  },
+  {
+    "name": "ClearAll",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "ClearAll[s1, s2, ...]",
+    "url": "documentation/assignment-and-rules/ClearAll/"
+  },
+  {
+    "name": "ClearAttributes",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "ClearAttributes[s, attr] removes attr from the list of attributes of s.",
+    "url": "documentation/expression-information/ClearAttributes/"
+  },
+  {
+    "name": "Clip",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Clip[x]",
+    "url": "documentation/elementary-functions/Clip/"
+  },
+  {
+    "name": "Coefficient",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Coefficient[expr, form]",
+    "url": "documentation/algebra/Coefficient/"
+  },
+  {
+    "name": "CoefficientList",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "CoefficientList[poly, var] gives a list of coefficients of powers of var in poly, starting with power 0.",
+    "url": "documentation/algebra/CoefficientList/"
+  },
+  {
+    "name": "Collect",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Collect[expr, x]",
+    "url": "documentation/algebra/Collect/"
+  },
+  {
+    "name": "Commonest",
+    "category": "Statistics",
+    "slug": "statistics",
+    "status": "Stable",
+    "summary": "Commonest[list] gives a list of the elements that are the most common in list.",
+    "url": "documentation/statistics/Commonest/"
+  },
+  {
+    "name": "Complement",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Complement[eall, e1, e2, ...]",
+    "url": "documentation/structural-manipulation/Complement/"
+  },
+  {
+    "name": "CompleteGraph",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "CompleteGraph[n] gives the complete graph K_n on n vertices.",
+    "url": "documentation/other-advanced/CompleteGraph/"
+  },
+  {
+    "name": "Complex",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Complex[re, im]",
+    "url": "documentation/arithmetic/Complex/"
+  },
+  {
+    "name": "ComplexExpand",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "ComplexExpand[expr]",
+    "url": "documentation/arithmetic/ComplexExpand/"
+  },
+  {
+    "name": "ComplexPlot",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Experimental",
+    "summary": "ComplexPlot[f, {z, zmin, zmax}, opts...]",
+    "url": "documentation/graphics/ComplexPlot/"
+  },
+  {
+    "name": "ComplexPlot3D",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Experimental",
+    "summary": "ComplexPlot3D[f, {z, zmin, zmax}, opts...]",
+    "url": "documentation/graphics/ComplexPlot3D/"
+  },
+  {
+    "name": "ComposeList",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "ComposeList[{f1, f2, ...}, x]",
+    "url": "documentation/expression-information/ComposeList/"
+  },
+  {
+    "name": "Composition",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Composition[f1, f2, f3, ...]",
+    "url": "documentation/expression-information/Composition/"
+  },
+  {
+    "name": "CompoundExpression",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "expr1; expr2; ... evaluates its arguments in sequence, returning the last result.",
+    "url": "documentation/assignment-and-rules/CompoundExpression/"
+  },
+  {
+    "name": "ConditionalExpression",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "ConditionalExpression[expr, cond]",
+    "url": "documentation/control-flow/ConditionalExpression/"
+  },
+  {
+    "name": "Conjugate",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Conjugate[z] gives the complex conjugate Re[z] - I Im[z] of numeric z; real and real-valued (Re/Im/Abs/Arg) arguments are returned unchanged.",
+    "url": "documentation/arithmetic/Conjugate/"
+  },
+  {
+    "name": "ConjugateTranspose",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "ConjugateTranspose[m]",
+    "url": "documentation/linear-algebra/ConjugateTranspose/"
+  },
+  {
+    "name": "ConnectedComponents",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "ConnectedComponents[g] gives the connected components of g (weak, on the underlying undirected graph).",
+    "url": "documentation/other-advanced/ConnectedComponents/"
+  },
+  {
+    "name": "ConnectedGraphQ",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "ConnectedGraphQ[g] gives True if g is connected.",
+    "url": "documentation/other-advanced/ConnectedGraphQ/"
+  },
+  {
+    "name": "ConstantArray",
+    "category": "Lists and Iteration",
+    "slug": "lists-and-iteration",
+    "status": "Stable",
+    "summary": "ConstantArray[c, n]",
+    "url": "documentation/lists-and-iteration/ConstantArray/"
+  },
+  {
+    "name": "Context",
+    "category": "Scoping Constructs",
+    "slug": "scoping-constructs",
+    "status": "Stable",
+    "summary": "Context[] gives the current context ($Context).",
+    "url": "documentation/scoping-constructs/Context/"
+  },
+  {
+    "name": "ContinuedFraction",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "ContinuedFraction[x, n]",
+    "url": "documentation/number-theory/ContinuedFraction/"
+  },
+  {
+    "name": "ContourLabels",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "ContourLabels",
+    "url": "documentation/other-advanced/ContourLabels/"
+  },
+  {
+    "name": "ContourPlot",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Experimental",
+    "summary": "ContourPlot[f, {x, xmin, xmax}, {y, ymin, ymax}, opts...]",
+    "url": "documentation/graphics/ContourPlot/"
+  },
+  {
+    "name": "ContourShading",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "ContourShading",
+    "url": "documentation/other-advanced/ContourShading/"
+  },
+  {
+    "name": "ContourStyle",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "ContourStyle",
+    "url": "documentation/other-advanced/ContourStyle/"
+  },
+  {
+    "name": "Contours",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Contours",
+    "url": "documentation/other-advanced/Contours/"
+  },
+  {
+    "name": "CoprimeQ",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "CoprimeQ[n1, n2, ...]",
+    "url": "documentation/number-theory/CoprimeQ/"
+  },
+  {
+    "name": "Cos",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Cos[z]",
+    "url": "documentation/elementary-functions/Cos/"
+  },
+  {
+    "name": "CosIntegral",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "CosIntegral[z]",
+    "url": "documentation/special-functions/CosIntegral/"
+  },
+  {
+    "name": "Cosh",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Cosh[z]",
+    "url": "documentation/elementary-functions/Cosh/"
+  },
+  {
+    "name": "CoshIntegral",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "CoshIntegral[z]",
+    "url": "documentation/special-functions/CoshIntegral/"
+  },
+  {
+    "name": "Cot",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Cot[z]",
+    "url": "documentation/elementary-functions/Cot/"
+  },
+  {
+    "name": "Count",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Count[list, pattern] gives the number of elements in list that match pattern.",
+    "url": "documentation/data-structures/Count/"
+  },
+  {
+    "name": "Counts",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Counts[list]",
+    "url": "documentation/data-structures/Counts/"
+  },
+  {
+    "name": "CountsBy",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "CountsBy[list, f]",
+    "url": "documentation/data-structures/CountsBy/"
+  },
+  {
+    "name": "Cross",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "Cross[a, b]",
+    "url": "documentation/linear-algebra/Cross/"
+  },
+  {
+    "name": "Csc",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Csc[z]",
+    "url": "documentation/elementary-functions/Csc/"
+  },
+  {
+    "name": "Cubics",
+    "category": "Solutions of Equations",
+    "slug": "solutions-of-equations",
+    "status": "Experimental",
+    "summary": "Cubics is an option for Solve that controls whether cubic",
+    "url": "documentation/solutions-of-equations/Cubics/"
+  },
+  {
+    "name": "Cyan",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Cyan",
+    "url": "documentation/other-advanced/Cyan/"
+  },
+  {
+    "name": "CycleGraph",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "CycleGraph[n] gives the cycle graph on n vertices.",
+    "url": "documentation/other-advanced/CycleGraph/"
+  },
+  {
+    "name": "D",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "D[f, x] gives the partial derivative of f with respect to x.",
+    "url": "documentation/calculus/D/"
+  },
+  {
+    "name": "DataType",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "DataType[a]",
+    "url": "documentation/other-advanced/DataType/"
+  },
+  {
+    "name": "Decompose",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Decompose[poly, x]",
+    "url": "documentation/algebra/Decompose/"
+  },
+  {
+    "name": "Decrement",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "Decrement[x] or x--",
+    "url": "documentation/assignment-and-rules/Decrement/"
+  },
+  {
+    "name": "Default",
+    "category": "Pattern Matching",
+    "slug": "pattern-matching",
+    "status": "Experimental",
+    "summary": "Default[f]",
+    "url": "documentation/pattern-matching/Default/"
+  },
+  {
+    "name": "Degree",
+    "category": "Mathematical Constants",
+    "slug": "mathematical-constants",
+    "status": "Stable",
+    "summary": "Degree",
+    "url": "documentation/mathematical-constants/Degree/"
+  },
+  {
+    "name": "Delete",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Delete[expr, n] deletes the element at position n in expr.",
+    "url": "documentation/data-structures/Delete/"
+  },
+  {
+    "name": "DeleteCases",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "DeleteCases[expr, pattern] removes all elements of expr that match pattern.",
+    "url": "documentation/data-structures/DeleteCases/"
+  },
+  {
+    "name": "DeleteDuplicates",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "DeleteDuplicates[list]",
+    "url": "documentation/data-structures/DeleteDuplicates/"
+  },
+  {
+    "name": "DeleteDuplicatesBy",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "DeleteDuplicatesBy[expr, f]",
+    "url": "documentation/data-structures/DeleteDuplicatesBy/"
+  },
+  {
+    "name": "DeleteMissing",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "DeleteMissing[expr]",
+    "url": "documentation/data-structures/DeleteMissing/"
+  },
+  {
+    "name": "Denominator",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Denominator[expr]",
+    "url": "documentation/algebra/Denominator/"
+  },
+  {
+    "name": "DensityPlot",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Experimental",
+    "summary": "DensityPlot[f, {x, xmin, xmax}, {y, ymin, ymax}, opts...]",
+    "url": "documentation/graphics/DensityPlot/"
+  },
+  {
+    "name": "Derivative",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "f' represents the derivative of a function f of one argument.",
+    "url": "documentation/calculus/Derivative/"
+  },
+  {
+    "name": "DesignMatrix",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "DesignMatrix[data, {f1, ..., fn}, vars] gives the design matrix with entries f_i evaluated at the data coordinates.",
+    "url": "documentation/linear-algebra/DesignMatrix/"
+  },
+  {
+    "name": "Det",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "Det[m]",
+    "url": "documentation/linear-algebra/Det/"
+  },
+  {
+    "name": "DiagonalMatrix",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "DiagonalMatrix[list] gives a matrix with the elements of list on the leading diagonal, and zero elsewhere.",
+    "url": "documentation/linear-algebra/DiagonalMatrix/"
+  },
+  {
+    "name": "DiagonalMatrixQ",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "DiagonalMatrixQ[m]",
+    "url": "documentation/linear-algebra/DiagonalMatrixQ/"
+  },
+  {
+    "name": "DifferenceDelta",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "DifferenceDelta[f, i] gives the forward difference (f /. i -> i+1) - f, the discrete analogue of D. It is the left inverse of indefinite Sum.",
+    "url": "documentation/calculus/DifferenceDelta/"
+  },
+  {
+    "name": "Differences",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Differences[list]",
+    "url": "documentation/arithmetic/Differences/"
+  },
+  {
+    "name": "DigitCount",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "DigitCount[n] gives a list of the counts of digits 1, 2, ..., 9, 0 in the base-10 representation of n.",
+    "url": "documentation/arithmetic/DigitCount/"
+  },
+  {
+    "name": "DigitSum",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "DigitSum[n] gives the sum of the decimal digits of the integer n.",
+    "url": "documentation/arithmetic/DigitSum/"
+  },
+  {
+    "name": "Dimensions",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Dimensions[expr]",
+    "url": "documentation/structural-manipulation/Dimensions/"
+  },
+  {
+    "name": "DirectedGraphQ",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "DirectedGraphQ[g] gives True if all edges of g are directed.",
+    "url": "documentation/other-advanced/DirectedGraphQ/"
+  },
+  {
+    "name": "Discriminant",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Discriminant[poly, var]",
+    "url": "documentation/algebra/Discriminant/"
+  },
+  {
+    "name": "Distribute",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "Distribute[f[x1, x2, ...]]",
+    "url": "documentation/functional-programming/Distribute/"
+  },
+  {
+    "name": "Divide",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "x / y or Divide[x, y] represents x / y; rewritten by the evaluator to",
+    "url": "documentation/arithmetic/Divide/"
+  },
+  {
+    "name": "Divisible",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "Divisible[n, m]",
+    "url": "documentation/number-theory/Divisible/"
+  },
+  {
+    "name": "DivisorSigma",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "DivisorSigma[k, n] gives the divisor function sigma_k(n), the sum of the k-th powers of the divisors of n. DivisorSigma[k, n, GaussianIntegers -> True] sums over Gaussian-integer divisors.",
+    "url": "documentation/number-theory/DivisorSigma/"
+  },
+  {
+    "name": "Divisors",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "Divisors[n] gives a list of the integers that divide n. Divisors[n, GaussianIntegers -> True] includes Gaussian-integer divisors.",
+    "url": "documentation/number-theory/Divisors/"
+  },
+  {
+    "name": "Do",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "Do[expr, n] evaluates expr n times.",
+    "url": "documentation/control-flow/Do/"
+  },
+  {
+    "name": "Dot",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "a . b . c or Dot[a, b, c]",
+    "url": "documentation/linear-algebra/Dot/"
+  },
+  {
+    "name": "DownValues",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "DownValues[s] gives a list of down-value rules for s.",
+    "url": "documentation/assignment-and-rules/DownValues/"
+  },
+  {
+    "name": "Drop",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Drop[list, n]",
+    "url": "documentation/data-structures/Drop/"
+  },
+  {
+    "name": "Dt",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "Dt[f] gives the total derivative of f.",
+    "url": "documentation/calculus/Dt/"
+  },
+  {
+    "name": "E",
+    "category": "Mathematical Constants",
+    "slug": "mathematical-constants",
+    "status": "Stable",
+    "summary": "E",
+    "url": "documentation/mathematical-constants/E/"
+  },
+  {
+    "name": "EdgeCount",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "EdgeCount[g] gives the number of edges in the graph g.",
+    "url": "documentation/other-advanced/EdgeCount/"
+  },
+  {
+    "name": "EdgeList",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "EdgeList[g] gives the list of edges of the graph g.",
+    "url": "documentation/other-advanced/EdgeList/"
+  },
+  {
+    "name": "Eigenvalues",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "Eigenvalues[m]",
+    "url": "documentation/linear-algebra/Eigenvalues/"
+  },
+  {
+    "name": "Eigenvectors",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "Eigenvectors[m]",
+    "url": "documentation/linear-algebra/Eigenvectors/"
+  },
+  {
+    "name": "Element",
+    "category": "Simplification",
+    "slug": "simplification",
+    "status": "Stable",
+    "summary": "Element[x, dom]",
+    "url": "documentation/simplification/Element/"
+  },
+  {
+    "name": "Eliminate",
+    "category": "Solutions of Equations",
+    "slug": "solutions-of-equations",
+    "status": "Stable",
+    "summary": "Eliminate[eqns, vars]",
+    "url": "documentation/solutions-of-equations/Eliminate/"
+  },
+  {
+    "name": "End",
+    "category": "Scoping Constructs",
+    "slug": "scoping-constructs",
+    "status": "Stable",
+    "summary": "End[] restores the context that was active before the matching Begin[]",
+    "url": "documentation/scoping-constructs/End/"
+  },
+  {
+    "name": "EndPackage",
+    "category": "Scoping Constructs",
+    "slug": "scoping-constructs",
+    "status": "Stable",
+    "summary": "EndPackage[] restores the state saved by BeginPackage and prepends the",
+    "url": "documentation/scoping-constructs/EndPackage/"
+  },
+  {
+    "name": "Equal",
+    "category": "Comparisons",
+    "slug": "comparisons",
+    "status": "Stable",
+    "summary": "lhs == rhs or Equal[lhs, rhs]",
+    "url": "documentation/comparisons/Equal/"
+  },
+  {
+    "name": "Erf",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Erf[z]",
+    "url": "documentation/special-functions/Erf/"
+  },
+  {
+    "name": "Erfc",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Erfc[z]",
+    "url": "documentation/special-functions/Erfc/"
+  },
+  {
+    "name": "Erfi",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Erfi[z]",
+    "url": "documentation/special-functions/Erfi/"
+  },
+  {
+    "name": "EulerE",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "EulerE[n]",
+    "url": "documentation/special-functions/EulerE/"
+  },
+  {
+    "name": "EulerGamma",
+    "category": "Mathematical Constants",
+    "slug": "mathematical-constants",
+    "status": "Stable",
+    "summary": "EulerGamma",
+    "url": "documentation/mathematical-constants/EulerGamma/"
+  },
+  {
+    "name": "EulerPhi",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "EulerPhi[n] gives the Euler totient function phi(n).",
+    "url": "documentation/number-theory/EulerPhi/"
+  },
+  {
+    "name": "Evaluate",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Evaluate[expr]",
+    "url": "documentation/expression-information/Evaluate/"
+  },
+  {
+    "name": "EvenQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "EvenQ[n] gives True if n is an even integer (Integer or BigInt), False otherwise.",
+    "url": "documentation/expression-information/EvenQ/"
+  },
+  {
+    "name": "Exp",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Exp[z]",
+    "url": "documentation/elementary-functions/Exp/"
+  },
+  {
+    "name": "ExpIntegralEi",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "ExpIntegralEi[z]",
+    "url": "documentation/special-functions/ExpIntegralEi/"
+  },
+  {
+    "name": "ExpToTrig",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "ExpToTrig[expr]",
+    "url": "documentation/elementary-functions/ExpToTrig/"
+  },
+  {
+    "name": "Expand",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Expand[expr] expands out products and powers in expr.",
+    "url": "documentation/algebra/Expand/"
+  },
+  {
+    "name": "ExpandAll",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "ExpandAll[expr]",
+    "url": "documentation/structural-manipulation/ExpandAll/"
+  },
+  {
+    "name": "ExpandDenominator",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "ExpandDenominator[expr]",
+    "url": "documentation/algebra/ExpandDenominator/"
+  },
+  {
+    "name": "ExpandNumerator",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "ExpandNumerator[expr]",
+    "url": "documentation/algebra/ExpandNumerator/"
+  },
+  {
+    "name": "Exponent",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Exponent[expr, form] gives the maximum power with which form appears in the",
+    "url": "documentation/structural-manipulation/Exponent/"
+  },
+  {
+    "name": "ExponentialMovingAverage",
+    "category": "Statistics",
+    "slug": "statistics",
+    "status": "Stable",
+    "summary": "ExponentialMovingAverage[list, alpha]",
+    "url": "documentation/statistics/ExponentialMovingAverage/"
+  },
+  {
+    "name": "ExtendedGCD",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "ExtendedGCD[n1, n2, ...]",
+    "url": "documentation/number-theory/ExtendedGCD/"
+  },
+  {
+    "name": "Extract",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Extract[expr, pos]",
+    "url": "documentation/structural-manipulation/Extract/"
+  },
+  {
+    "name": "FLINT`Det",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`Det[m] gives the determinant of the square matrix m when every entry is an integer or rational, computed exactly and directly via FLINT (fmpq_mat_det). Returns unevaluated for a matrix with any non-rational entry.",
+    "url": "documentation/flint/Det/"
+  },
+  {
+    "name": "FLINT`Factor",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`Factor[p] gives the irreducible factorisation of the polynomial p over the rationals, computed directly via FLINT (fmpq_mpoly_factor), as Times[const, factor^exp, ...]. Multivariate. Returns unevaluated if p is not a polynomial over Q.",
+    "url": "documentation/flint/Factor/"
+  },
+  {
+    "name": "FLINT`FactorSquareFree",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`FactorSquareFree[p] gives the squarefree factorisation of the polynomial p over the rationals, computed directly via FLINT (fmpq_mpoly_factor_squarefree). Returns unevaluated if out of scope.",
+    "url": "documentation/flint/FactorSquareFree/"
+  },
+  {
+    "name": "FLINT`HurwitzZeta",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`HurwitzZeta[s, a] gives the numeric value of the Hurwitz zeta function via FLINT (acb_dirichlet_hurwitz), to the precision of the arguments. Unevaluated for symbolic arguments or at a pole.",
+    "url": "documentation/flint/HurwitzZeta/"
+  },
+  {
+    "name": "FLINT`Inverse",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`Inverse[m] gives the inverse of the square matrix m when every entry is an integer or rational, computed exactly via FLINT (fmpq_mat_inv). Returns unevaluated for a singular or non-rational matrix.",
+    "url": "documentation/flint/Inverse/"
+  },
+  {
+    "name": "FLINT`LinearSolve",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`LinearSolve[m, b] solves the square system m.x == b exactly via FLINT (fmpq_mat_solve) when m is a nonsingular rational matrix and b a rational vector or matrix. Returns unevaluated for a non-square, singular, or non-rational system.",
+    "url": "documentation/flint/LinearSolve/"
+  },
+  {
+    "name": "FLINT`MatrixRank",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`MatrixRank[m] gives the rank of the matrix m when every entry is an integer or rational, computed exactly via FLINT (fmpq_mat_rref). Returns unevaluated for a matrix with any non-rational entry.",
+    "url": "documentation/flint/MatrixRank/"
+  },
+  {
+    "name": "FLINT`PolyGamma",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`PolyGamma[n, z] gives the numeric value of the n-th derivative of the digamma function (n = 0 is digamma) via FLINT (acb_polygamma), to the precision of the arguments. Unevaluated for symbolic arguments or at a pole.",
+    "url": "documentation/flint/PolyGamma/"
+  },
+  {
+    "name": "FLINT`PolynomialGCD",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`PolynomialGCD[a, b] gives the monic greatest common divisor of the polynomials a and b over the rationals, computed directly via FLINT (fmpq_mpoly_gcd). Multivariate. Returns unevaluated if an argument is not a polynomial over Q.",
+    "url": "documentation/flint/PolynomialGCD/"
+  },
+  {
+    "name": "FLINT`Resultant",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`Resultant[a, b, x] gives the resultant of the polynomials a and b eliminating the variable x, over the rationals, computed directly via FLINT (fmpq_mpoly_resultant). Other variables are treated as coefficients. Returns unevaluated if out of scope.",
+    "url": "documentation/flint/Resultant/"
+  },
+  {
+    "name": "FLINT`RowReduce",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`RowReduce[m] gives the reduced row echelon form of the matrix m when every entry is an integer or rational, computed exactly via FLINT (fmpq_mat_rref). Returns unevaluated for a matrix with any non-rational entry.",
+    "url": "documentation/flint/RowReduce/"
+  },
+  {
+    "name": "FLINT`StieltjesGamma",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`StieltjesGamma[n] and FLINT`StieltjesGamma[n, a] give the numeric value of the n-th Stieltjes constant (generalized, at a) for a non-negative integer n, via FLINT (acb_dirichlet_stieltjes). Unevaluated for negative or non-integer n.",
+    "url": "documentation/flint/StieltjesGamma/"
+  },
+  {
+    "name": "FLINT`Zeta",
+    "category": "FLINT context",
+    "slug": "flint",
+    "status": "Stable",
+    "summary": "FLINT`Zeta[s] gives the numeric value of the Riemann zeta function at the numeric argument s (real or complex), computed to the precision of s (machine precision for exact s) via FLINT's rigorous acb arithmetic (acb_dirichlet_zeta). Unevaluated for symbolic s or at the pole s = 1.",
+    "url": "documentation/flint/Zeta/"
+  },
+  {
+    "name": "Factor",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Factor[poly] factors a polynomial over the integers.",
+    "url": "documentation/algebra/Factor/"
+  },
+  {
+    "name": "FactorInteger",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "FactorInteger[n] gives a list of the prime factors of the integer n, together with their exponents.",
+    "url": "documentation/number-theory/FactorInteger/"
+  },
+  {
+    "name": "FactorList",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "FactorList[poly] gives a list of the irreducible factors of poly together",
+    "url": "documentation/structural-manipulation/FactorList/"
+  },
+  {
+    "name": "FactorSquareFree",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "FactorSquareFree[poly]",
+    "url": "documentation/algebra/FactorSquareFree/"
+  },
+  {
+    "name": "FactorTerms",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "FactorTerms[poly]",
+    "url": "documentation/algebra/FactorTerms/"
+  },
+  {
+    "name": "FactorTermsList",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "FactorTermsList[poly]",
+    "url": "documentation/algebra/FactorTermsList/"
+  },
+  {
+    "name": "Factorial",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "n! or Factorial[n]",
+    "url": "documentation/arithmetic/Factorial/"
+  },
+  {
+    "name": "Factorial2",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Factorial2[n] (also typeset n!!) gives the double factorial of n.",
+    "url": "documentation/arithmetic/Factorial2/"
+  },
+  {
+    "name": "FactorialPower",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "FactorialPower[n, k]",
+    "url": "documentation/arithmetic/FactorialPower/"
+  },
+  {
+    "name": "Fibonacci",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Fibonacci[n]",
+    "url": "documentation/arithmetic/Fibonacci/"
+  },
+  {
+    "name": "FileBaseName",
+    "category": "File I/O",
+    "slug": "file-io",
+    "status": "Stable",
+    "summary": "FileBaseName[\"file\"]",
+    "url": "documentation/file-io/FileBaseName/"
+  },
+  {
+    "name": "FileExistsQ",
+    "category": "File I/O",
+    "slug": "file-io",
+    "status": "Stable",
+    "summary": "FileExistsQ[\"name\"]",
+    "url": "documentation/file-io/FileExistsQ/"
+  },
+  {
+    "name": "FileExtension",
+    "category": "File I/O",
+    "slug": "file-io",
+    "status": "Stable",
+    "summary": "FileExtension[\"file\"]",
+    "url": "documentation/file-io/FileExtension/"
+  },
+  {
+    "name": "FileNameJoin",
+    "category": "File I/O",
+    "slug": "file-io",
+    "status": "Stable",
+    "summary": "FileNameJoin[{\"name1\", \"name2\", ...}]",
+    "url": "documentation/file-io/FileNameJoin/"
+  },
+  {
+    "name": "FileNameSplit",
+    "category": "File I/O",
+    "slug": "file-io",
+    "status": "Stable",
+    "summary": "FileNameSplit[\"name\"]",
+    "url": "documentation/file-io/FileNameSplit/"
+  },
+  {
+    "name": "FilePrint",
+    "category": "File I/O",
+    "slug": "file-io",
+    "status": "Stable",
+    "summary": "FilePrint[\"file\"]",
+    "url": "documentation/file-io/FilePrint/"
+  },
+  {
+    "name": "FindIntegerNullVector",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "FindIntegerNullVector[{x1, ..., xn}]",
+    "url": "documentation/linear-algebra/FindIntegerNullVector/"
+  },
+  {
+    "name": "FindMaximum",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "FindMaximum[f, {x, x0}]",
+    "url": "documentation/calculus/FindMaximum/"
+  },
+  {
+    "name": "FindMinimum",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "FindMinimum[f, {x, x0}]",
+    "url": "documentation/calculus/FindMinimum/"
+  },
+  {
+    "name": "FindRoot",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "FindRoot[f, {x, x0}]",
+    "url": "documentation/calculus/FindRoot/"
+  },
+  {
+    "name": "FindShortestPath",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "FindShortestPath[g,s,t] gives a shortest path from s to t as a list of vertices ({} if none).",
+    "url": "documentation/other-advanced/FindShortestPath/"
+  },
+  {
+    "name": "FindSpanningTree",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "FindSpanningTree[g] gives a spanning tree (forest) of g as a graph.",
+    "url": "documentation/other-advanced/FindSpanningTree/"
+  },
+  {
+    "name": "First",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "First[expr] gives the first element of expr.",
+    "url": "documentation/data-structures/First/"
+  },
+  {
+    "name": "FirstCase",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "FirstCase[expr, patt]",
+    "url": "documentation/functional-programming/FirstCase/"
+  },
+  {
+    "name": "Fit",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "Fit[data, {f1, ..., fn}, vars] finds a least-squares fit a1 f1 + ... + an fn to data for functions of the variables vars (a symbol or list of symbols).",
+    "url": "documentation/linear-algebra/Fit/"
+  },
+  {
+    "name": "FixedPoint",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "FixedPoint[f, expr]",
+    "url": "documentation/functional-programming/FixedPoint/"
+  },
+  {
+    "name": "FixedPointList",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "FixedPointList[f, expr]",
+    "url": "documentation/functional-programming/FixedPointList/"
+  },
+  {
+    "name": "Flat",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Partial",
+    "summary": "Flat is an attribute that can be assigned to a symbol f to indicate that all expressions involving nested functions f should be flattened out. This property is accounted for in pattern matching.",
+    "url": "documentation/expression-information/Flat/"
+  },
+  {
+    "name": "Flatten",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Flatten[list]",
+    "url": "documentation/structural-manipulation/Flatten/"
+  },
+  {
+    "name": "Floor",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Floor[x]",
+    "url": "documentation/arithmetic/Floor/"
+  },
+  {
+    "name": "Fold",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "Fold[f, x, list]",
+    "url": "documentation/functional-programming/Fold/"
+  },
+  {
+    "name": "FoldList",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "FoldList[f, x, list]",
+    "url": "documentation/data-structures/FoldList/"
+  },
+  {
+    "name": "For",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "For[start, test, incr, body] executes start, then repeatedly evaluates body and incr until test fails to give True.",
+    "url": "documentation/control-flow/For/"
+  },
+  {
+    "name": "Fourier",
+    "category": "Fourier Transforms",
+    "slug": "fourier-transforms",
+    "status": "Stable",
+    "summary": "Fourier[list]",
+    "url": "documentation/fourier-transforms/Fourier/"
+  },
+  {
+    "name": "FourierDCT",
+    "category": "Fourier Transforms",
+    "slug": "fourier-transforms",
+    "status": "Stable",
+    "summary": "FourierDCT[list]",
+    "url": "documentation/fourier-transforms/FourierDCT/"
+  },
+  {
+    "name": "FourierDST",
+    "category": "Fourier Transforms",
+    "slug": "fourier-transforms",
+    "status": "Stable",
+    "summary": "FourierDST[list]",
+    "url": "documentation/fourier-transforms/FourierDST/"
+  },
+  {
+    "name": "FourierParameters",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "FourierParameters is an option for Fourier and InverseFourier that",
+    "url": "documentation/other-advanced/FourierParameters/"
+  },
+  {
+    "name": "Frame",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Frame",
+    "url": "documentation/other-advanced/Frame/"
+  },
+  {
+    "name": "FrameStyle",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "FrameStyle",
+    "url": "documentation/other-advanced/FrameStyle/"
+  },
+  {
+    "name": "FrameTicks",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "FrameTicks",
+    "url": "documentation/other-advanced/FrameTicks/"
+  },
+  {
+    "name": "FreeQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "FreeQ[expr, form]",
+    "url": "documentation/expression-information/FreeQ/"
+  },
+  {
+    "name": "FresnelC",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "FresnelC[z]",
+    "url": "documentation/other-advanced/FresnelC/"
+  },
+  {
+    "name": "FresnelS",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "FresnelS[z]",
+    "url": "documentation/other-advanced/FresnelS/"
+  },
+  {
+    "name": "FromContinuedFraction",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "FromContinuedFraction[{a1, a2, ..., an}]",
+    "url": "documentation/number-theory/FromContinuedFraction/"
+  },
+  {
+    "name": "FromDigits",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "FromDigits[list] constructs an integer from a list of decimal digits, most-significant first.",
+    "url": "documentation/arithmetic/FromDigits/"
+  },
+  {
+    "name": "FullForm",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "FullForm[expr]",
+    "url": "documentation/expression-information/FullForm/"
+  },
+  {
+    "name": "Function",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "body & or Function[body]",
+    "url": "documentation/functional-programming/Function/"
+  },
+  {
+    "name": "GCD",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "GCD[n1, n2, ...]",
+    "url": "documentation/number-theory/GCD/"
+  },
+  {
+    "name": "Gamma",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Gamma[z]",
+    "url": "documentation/special-functions/Gamma/"
+  },
+  {
+    "name": "GatherBy",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "GatherBy[list, f]",
+    "url": "documentation/data-structures/GatherBy/"
+  },
+  {
+    "name": "GeneratedParameters",
+    "category": "Solutions of Equations",
+    "slug": "solutions-of-equations",
+    "status": "Experimental",
+    "summary": "GeneratedParameters is an option for Solve specifying the",
+    "url": "documentation/solutions-of-equations/GeneratedParameters/"
+  },
+  {
+    "name": "Get",
+    "category": "File I/O",
+    "slug": "file-io",
+    "status": "Stable",
+    "summary": "Get[\"filename\"]",
+    "url": "documentation/file-io/Get/"
+  },
+  {
+    "name": "Glaisher",
+    "category": "Mathematical Constants",
+    "slug": "mathematical-constants",
+    "status": "Stable",
+    "summary": "Glaisher",
+    "url": "documentation/mathematical-constants/Glaisher/"
+  },
+  {
+    "name": "GoldenAngle",
+    "category": "Mathematical Constants",
+    "slug": "mathematical-constants",
+    "status": "Stable",
+    "summary": "GoldenAngle",
+    "url": "documentation/mathematical-constants/GoldenAngle/"
+  },
+  {
+    "name": "GoldenRatio",
+    "category": "Mathematical Constants",
+    "slug": "mathematical-constants",
+    "status": "Experimental",
+    "summary": "GoldenRatio",
+    "url": "documentation/mathematical-constants/GoldenRatio/"
+  },
+  {
+    "name": "Goto",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "Goto[tag]",
+    "url": "documentation/control-flow/Goto/"
+  },
+  {
+    "name": "Graph",
+    "category": "Graphs",
+    "slug": "graphs",
+    "status": "Stable",
+    "summary": "Graph[v, e] represents a graph with vertices v and edges e. Graph[e] derives the vertices from the edge list. Edges are DirectedEdge[u,v] or UndirectedEdge[u,v]; u->v and u<->v are accepted as shorthand. Simple graphs only: no self-loops or parallel edges.",
+    "url": "documentation/graphs/Graph/"
+  },
+  {
+    "name": "GraphDistance",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "GraphDistance[g,s,t] gives the length of a shortest path from s to t (Infinity if unreachable).",
+    "url": "documentation/other-advanced/GraphDistance/"
+  },
+  {
+    "name": "GraphPlot",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "GraphPlot[g] gives a Graphics object drawing the graph g with a circular vertex layout.",
+    "url": "documentation/other-advanced/GraphPlot/"
+  },
+  {
+    "name": "GraphQ",
+    "category": "Graphs",
+    "slug": "graphs",
+    "status": "Stable",
+    "summary": "GraphQ[g] gives True if g is a valid graph, and False otherwise.",
+    "url": "documentation/graphs/GraphQ/"
+  },
+  {
+    "name": "Gray",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Gray",
+    "url": "documentation/other-advanced/Gray/"
+  },
+  {
+    "name": "Greater",
+    "category": "Comparisons",
+    "slug": "comparisons",
+    "status": "Stable",
+    "summary": "x > y or Greater[x, y]",
+    "url": "documentation/comparisons/Greater/"
+  },
+  {
+    "name": "GreaterEqual",
+    "category": "Comparisons",
+    "slug": "comparisons",
+    "status": "Stable",
+    "summary": "x >= y or GreaterEqual[x, y]",
+    "url": "documentation/comparisons/GreaterEqual/"
+  },
+  {
+    "name": "Green",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Green",
+    "url": "documentation/other-advanced/Green/"
+  },
+  {
+    "name": "GroebnerBasis",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "GroebnerBasis[{p1, p2, ...}, {x1, x2, ...}]",
+    "url": "documentation/algebra/GroebnerBasis/"
+  },
+  {
+    "name": "GroupBy",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "GroupBy[list, f]",
+    "url": "documentation/data-structures/GroupBy/"
+  },
+  {
+    "name": "HankelMatrix",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "HankelMatrix[n] gives the n x n Hankel matrix with first row and column the integers 1..n.",
+    "url": "documentation/linear-algebra/HankelMatrix/"
+  },
+  {
+    "name": "HarmonicNumber",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "HarmonicNumber[n]",
+    "url": "documentation/special-functions/HarmonicNumber/"
+  },
+  {
+    "name": "Head",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Head[expr]",
+    "url": "documentation/structural-manipulation/Head/"
+  },
+  {
+    "name": "HermitianMatrixQ",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "HermitianMatrixQ[m]",
+    "url": "documentation/linear-algebra/HermitianMatrixQ/"
+  },
+  {
+    "name": "HilbertMatrix",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "HilbertMatrix[n] gives the n x n Hilbert matrix with entries 1/(i + j - 1).",
+    "url": "documentation/linear-algebra/HilbertMatrix/"
+  },
+  {
+    "name": "Histogram",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Stable",
+    "summary": "Histogram[data, opts...]",
+    "url": "documentation/graphics/Histogram/"
+  },
+  {
+    "name": "Hold",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Hold[expr]",
+    "url": "documentation/expression-information/Hold/"
+  },
+  {
+    "name": "HoldAll",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "HoldAll",
+    "url": "documentation/expression-information/HoldAll/"
+  },
+  {
+    "name": "HoldAllComplete",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Experimental",
+    "summary": "HoldAllComplete",
+    "url": "documentation/expression-information/HoldAllComplete/"
+  },
+  {
+    "name": "HoldComplete",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "HoldComplete[expr]",
+    "url": "documentation/expression-information/HoldComplete/"
+  },
+  {
+    "name": "HoldFirst",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "HoldFirst",
+    "url": "documentation/other-advanced/HoldFirst/"
+  },
+  {
+    "name": "HoldForm",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "HoldForm[expr] prints as the expression expr, with expr maintained in an unevaluated form.",
+    "url": "documentation/expression-information/HoldForm/"
+  },
+  {
+    "name": "HoldPattern",
+    "category": "Pattern Matching",
+    "slug": "pattern-matching",
+    "status": "Stable",
+    "summary": "HoldPattern[expr]",
+    "url": "documentation/pattern-matching/HoldPattern/"
+  },
+  {
+    "name": "HoldRest",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "HoldRest",
+    "url": "documentation/other-advanced/HoldRest/"
+  },
+  {
+    "name": "HornerForm",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "HornerForm[poly]",
+    "url": "documentation/algebra/HornerForm/"
+  },
+  {
+    "name": "HurwitzZeta",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "HurwitzZeta[s, a]",
+    "url": "documentation/special-functions/HurwitzZeta/"
+  },
+  {
+    "name": "Hyperfactorial",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Hyperfactorial[n]",
+    "url": "documentation/special-functions/Hyperfactorial/"
+  },
+  {
+    "name": "Hypergeometric0F1",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Hypergeometric0F1[b, z]",
+    "url": "documentation/special-functions/Hypergeometric0F1/"
+  },
+  {
+    "name": "Hypergeometric1F1",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Hypergeometric1F1[a, b, z]",
+    "url": "documentation/special-functions/Hypergeometric1F1/"
+  },
+  {
+    "name": "Hypergeometric2F1",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Hypergeometric2F1[a, b, c, z]",
+    "url": "documentation/special-functions/Hypergeometric2F1/"
+  },
+  {
+    "name": "HypergeometricPFQ",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "HypergeometricPFQ[{a1, ...}, {b1, ...}, z]",
+    "url": "documentation/special-functions/HypergeometricPFQ/"
+  },
+  {
+    "name": "I",
+    "category": "Mathematical Constants",
+    "slug": "mathematical-constants",
+    "status": "Stable",
+    "summary": "I",
+    "url": "documentation/mathematical-constants/I/"
+  },
+  {
+    "name": "Identity",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Identity[expr] gives expr unchanged (the identity function).",
+    "url": "documentation/expression-information/Identity/"
+  },
+  {
+    "name": "IdentityMatrix",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "IdentityMatrix[n] gives the n x n identity matrix.",
+    "url": "documentation/linear-algebra/IdentityMatrix/"
+  },
+  {
+    "name": "If",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "If[cond, t]",
+    "url": "documentation/control-flow/If/"
+  },
+  {
+    "name": "Im",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Im[z] gives the imaginary part of numeric z, and 0 for real or real-valued (Re/Im/Abs/Arg) arguments.",
+    "url": "documentation/arithmetic/Im/"
+  },
+  {
+    "name": "ImageSize",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "ImageSize",
+    "url": "documentation/other-advanced/ImageSize/"
+  },
+  {
+    "name": "IncidenceMatrix",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "IncidenceMatrix[g] gives the vertex-edge incidence matrix of g (oriented: -1 tail, +1 head for directed edges).",
+    "url": "documentation/other-advanced/IncidenceMatrix/"
+  },
+  {
+    "name": "Increment",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "Increment[x] or x++",
+    "url": "documentation/assignment-and-rules/Increment/"
+  },
+  {
+    "name": "Inequality",
+    "category": "Comparisons",
+    "slug": "comparisons",
+    "status": "Stable",
+    "summary": "Inequality[v0, op0, v1, op1, v2, ...] is the canonical form for a chained comparison such as a < b <= c. It returns True if every adjacent pair holds, False if any pair fails, and otherwise the residual chain with decidable pairs dropped.",
+    "url": "documentation/comparisons/Inequality/"
+  },
+  {
+    "name": "Information",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Information[symbol] or ?symbol returns information on symbol.",
+    "url": "documentation/expression-information/Information/"
+  },
+  {
+    "name": "Inner",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "Inner[f,list1,list2,g]",
+    "url": "documentation/linear-algebra/Inner/"
+  },
+  {
+    "name": "InputForm",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "InputForm[expr]",
+    "url": "documentation/expression-information/InputForm/"
+  },
+  {
+    "name": "Insert",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Insert[expr, elem, n] inserts elem at position n in expr.",
+    "url": "documentation/structural-manipulation/Insert/"
+  },
+  {
+    "name": "IntegerDigits",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "IntegerDigits[n] gives a list of the decimal digits in the integer n.",
+    "url": "documentation/arithmetic/IntegerDigits/"
+  },
+  {
+    "name": "IntegerExponent",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "IntegerExponent[n, b] gives the highest power of b that divides n.",
+    "url": "documentation/arithmetic/IntegerExponent/"
+  },
+  {
+    "name": "IntegerLength",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "IntegerLength[n] gives the number of decimal digits in the integer n.",
+    "url": "documentation/arithmetic/IntegerLength/"
+  },
+  {
+    "name": "IntegerPartitions",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "IntegerPartitions[n]",
+    "url": "documentation/number-theory/IntegerPartitions/"
+  },
+  {
+    "name": "IntegerQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "IntegerQ[expr]",
+    "url": "documentation/expression-information/IntegerQ/"
+  },
+  {
+    "name": "IntegerString",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "IntegerString[n] gives a string consisting of the decimal digits in the integer n.",
+    "url": "documentation/arithmetic/IntegerString/"
+  },
+  {
+    "name": "Integrate",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Partial",
+    "summary": "Integrate[f, x] gives the indefinite integral of f with respect to x.",
+    "url": "documentation/calculus/Integrate/"
+  },
+  {
+    "name": "InterpolatingFunction",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "InterpolatingFunction[domain, table]",
+    "url": "documentation/functional-programming/InterpolatingFunction/"
+  },
+  {
+    "name": "Interpolation",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "Interpolation[data]",
+    "url": "documentation/functional-programming/Interpolation/"
+  },
+  {
+    "name": "Intersection",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Intersection[list]",
+    "url": "documentation/structural-manipulation/Intersection/"
+  },
+  {
+    "name": "Inverse",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "Inverse[m]",
+    "url": "documentation/linear-algebra/Inverse/"
+  },
+  {
+    "name": "InverseErf",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "InverseErf[s]",
+    "url": "documentation/special-functions/InverseErf/"
+  },
+  {
+    "name": "InverseErfc",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "InverseErfc[s]",
+    "url": "documentation/special-functions/InverseErfc/"
+  },
+  {
+    "name": "InverseFourier",
+    "category": "Fourier Transforms",
+    "slug": "fourier-transforms",
+    "status": "Stable",
+    "summary": "InverseFourier[list]",
+    "url": "documentation/fourier-transforms/InverseFourier/"
+  },
+  {
+    "name": "InverseFunctions",
+    "category": "Solutions of Equations",
+    "slug": "solutions-of-equations",
+    "status": "Experimental",
+    "summary": "InverseFunctions is an option for Solve that enables the",
+    "url": "documentation/solutions-of-equations/InverseFunctions/"
+  },
+  {
+    "name": "IrreduciblePolynomialQ",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "IrreduciblePolynomialQ[poly]",
+    "url": "documentation/algebra/IrreduciblePolynomialQ/"
+  },
+  {
+    "name": "JacobiSymbol",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "JacobiSymbol[n, m]",
+    "url": "documentation/number-theory/JacobiSymbol/"
+  },
+  {
+    "name": "Join",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Join[list1, list2, ...]",
+    "url": "documentation/data-structures/Join/"
+  },
+  {
+    "name": "KeyDrop",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeyDrop[assoc, key]  |  KeyDrop[assoc, {k1, ...}]",
+    "url": "documentation/data-structures/KeyDrop/"
+  },
+  {
+    "name": "KeyExistsQ",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeyExistsQ[assoc, key]",
+    "url": "documentation/data-structures/KeyExistsQ/"
+  },
+  {
+    "name": "KeyFreeQ",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeyFreeQ[assoc, key]",
+    "url": "documentation/data-structures/KeyFreeQ/"
+  },
+  {
+    "name": "KeyMap",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeyMap[f, assoc]",
+    "url": "documentation/data-structures/KeyMap/"
+  },
+  {
+    "name": "KeyMemberQ",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeyMemberQ[assoc, key]",
+    "url": "documentation/data-structures/KeyMemberQ/"
+  },
+  {
+    "name": "KeySelect",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeySelect[assoc, pred]",
+    "url": "documentation/data-structures/KeySelect/"
+  },
+  {
+    "name": "KeySort",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeySort[assoc]",
+    "url": "documentation/data-structures/KeySort/"
+  },
+  {
+    "name": "KeySortBy",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeySortBy[assoc, f]",
+    "url": "documentation/data-structures/KeySortBy/"
+  },
+  {
+    "name": "KeyTake",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeyTake[assoc, {k1, ...}]",
+    "url": "documentation/data-structures/KeyTake/"
+  },
+  {
+    "name": "KeyUnion",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeyUnion[{assoc1, assoc2, ...}]",
+    "url": "documentation/data-structures/KeyUnion/"
+  },
+  {
+    "name": "KeyValueMap",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeyValueMap[f, assoc]",
+    "url": "documentation/data-structures/KeyValueMap/"
+  },
+  {
+    "name": "KeyValuePattern",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "KeyValuePattern[{k1 -> p1, ...}]",
+    "url": "documentation/data-structures/KeyValuePattern/"
+  },
+  {
+    "name": "Keys",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Keys[assoc]",
+    "url": "documentation/data-structures/Keys/"
+  },
+  {
+    "name": "Khinchin",
+    "category": "Mathematical Constants",
+    "slug": "mathematical-constants",
+    "status": "Stable",
+    "summary": "Khinchin",
+    "url": "documentation/mathematical-constants/Khinchin/"
+  },
+  {
+    "name": "LCM",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "LCM[n1, n2, ...]",
+    "url": "documentation/number-theory/LCM/"
+  },
+  {
+    "name": "LUDecomposition",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "LUDecomposition[m]",
+    "url": "documentation/linear-algebra/LUDecomposition/"
+  },
+  {
+    "name": "Label",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "Label[tag]",
+    "url": "documentation/control-flow/Label/"
+  },
+  {
+    "name": "Last",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Last[expr] gives the last element of expr.",
+    "url": "documentation/data-structures/Last/"
+  },
+  {
+    "name": "LatticeReduce",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "LatticeReduce[m]",
+    "url": "documentation/linear-algebra/LatticeReduce/"
+  },
+  {
+    "name": "LeafCount",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "LeafCount[expr] gives the total number of indivisible subexpressions in expr.",
+    "url": "documentation/expression-information/LeafCount/"
+  },
+  {
+    "name": "LeastSquares",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "LeastSquares[m, b]",
+    "url": "documentation/linear-algebra/LeastSquares/"
+  },
+  {
+    "name": "LegendreP",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "LegendreP[n, x]",
+    "url": "documentation/special-functions/LegendreP/"
+  },
+  {
+    "name": "Length",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Length[expr]",
+    "url": "documentation/structural-manipulation/Length/"
+  },
+  {
+    "name": "LengthWhile",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "LengthWhile[list, crit]",
+    "url": "documentation/data-structures/LengthWhile/"
+  },
+  {
+    "name": "LerchPhi",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "LerchPhi[z, s, a]",
+    "url": "documentation/special-functions/LerchPhi/"
+  },
+  {
+    "name": "Less",
+    "category": "Comparisons",
+    "slug": "comparisons",
+    "status": "Stable",
+    "summary": "x < y or Less[x, y]",
+    "url": "documentation/comparisons/Less/"
+  },
+  {
+    "name": "LessEqual",
+    "category": "Comparisons",
+    "slug": "comparisons",
+    "status": "Stable",
+    "summary": "x <= y or LessEqual[x, y]",
+    "url": "documentation/comparisons/LessEqual/"
+  },
+  {
+    "name": "Level",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Level[expr, levelspec]",
+    "url": "documentation/structural-manipulation/Level/"
+  },
+  {
+    "name": "LightBlue",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "LightBlue",
+    "url": "documentation/other-advanced/LightBlue/"
+  },
+  {
+    "name": "LightBrown",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "LightBrown",
+    "url": "documentation/other-advanced/LightBrown/"
+  },
+  {
+    "name": "LightCyan",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "LightCyan",
+    "url": "documentation/other-advanced/LightCyan/"
+  },
+  {
+    "name": "LightGray",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "LightGray",
+    "url": "documentation/other-advanced/LightGray/"
+  },
+  {
+    "name": "LightGreen",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "LightGreen",
+    "url": "documentation/other-advanced/LightGreen/"
+  },
+  {
+    "name": "LightMagenta",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "LightMagenta",
+    "url": "documentation/other-advanced/LightMagenta/"
+  },
+  {
+    "name": "LightOrange",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "LightOrange",
+    "url": "documentation/other-advanced/LightOrange/"
+  },
+  {
+    "name": "LightPink",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "LightPink",
+    "url": "documentation/other-advanced/LightPink/"
+  },
+  {
+    "name": "LightPurple",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "LightPurple",
+    "url": "documentation/other-advanced/LightPurple/"
+  },
+  {
+    "name": "LightRed",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "LightRed",
+    "url": "documentation/other-advanced/LightRed/"
+  },
+  {
+    "name": "LightYellow",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "LightYellow",
+    "url": "documentation/other-advanced/LightYellow/"
+  },
+  {
+    "name": "Lighting",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Lighting",
+    "url": "documentation/other-advanced/Lighting/"
+  },
+  {
+    "name": "Limit",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "Limit[f, x -> a]",
+    "url": "documentation/calculus/Limit/"
+  },
+  {
+    "name": "LinearSolve",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "LinearSolve[m, b]",
+    "url": "documentation/linear-algebra/LinearSolve/"
+  },
+  {
+    "name": "LiouvilleLambda",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "LiouvilleLambda[n] gives the Liouville function lambda(n) = (-1)^Omega(n), where Omega(n) counts the prime factors of n with multiplicity. Completely multiplicative. A non-real Gaussian-integer argument, or GaussianIntegers -> True, is handled over Z[i].",
+    "url": "documentation/number-theory/LiouvilleLambda/"
+  },
+  {
+    "name": "List",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "{e1, e2, ...} or List[e1, e2, ...]",
+    "url": "documentation/other-advanced/List/"
+  },
+  {
+    "name": "ListConvolve",
+    "category": "Fourier Transforms",
+    "slug": "fourier-transforms",
+    "status": "Stable",
+    "summary": "ListConvolve[ker, list]",
+    "url": "documentation/fourier-transforms/ListConvolve/"
+  },
+  {
+    "name": "ListCorrelate",
+    "category": "Fourier Transforms",
+    "slug": "fourier-transforms",
+    "status": "Stable",
+    "summary": "ListCorrelate[ker, list]",
+    "url": "documentation/fourier-transforms/ListCorrelate/"
+  },
+  {
+    "name": "ListPlot",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Stable",
+    "summary": "ListPlot[{y1, ..., yn}, opts...]",
+    "url": "documentation/graphics/ListPlot/"
+  },
+  {
+    "name": "ListQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "ListQ[expr] gives True if expr is a list (head List), False otherwise.",
+    "url": "documentation/expression-information/ListQ/"
+  },
+  {
+    "name": "LoadModule",
+    "category": "File I/O",
+    "slug": "file-io",
+    "status": "Experimental",
+    "summary": "LoadModule[\"relpath\"]",
+    "url": "documentation/file-io/LoadModule/"
+  },
+  {
+    "name": "Log",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Log[z]",
+    "url": "documentation/elementary-functions/Log/"
+  },
+  {
+    "name": "LogGamma",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "LogGamma[z]",
+    "url": "documentation/special-functions/LogGamma/"
+  },
+  {
+    "name": "LogIntegral",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "LogIntegral[z]",
+    "url": "documentation/special-functions/LogIntegral/"
+  },
+  {
+    "name": "Longest",
+    "category": "Pattern Matching",
+    "slug": "pattern-matching",
+    "status": "Stable",
+    "summary": "Longest[p] is a pattern object that matches the longest sequence consistent with the pattern p.",
+    "url": "documentation/pattern-matching/Longest/"
+  },
+  {
+    "name": "Lookup",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Lookup[assoc, key]",
+    "url": "documentation/data-structures/Lookup/"
+  },
+  {
+    "name": "LucasL",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "LucasL[n]",
+    "url": "documentation/arithmetic/LucasL/"
+  },
+  {
+    "name": "MachineNumberQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "MachineNumberQ[expr] gives True if expr is a machine-precision real or complex number, and False otherwise.",
+    "url": "documentation/expression-information/MachineNumberQ/"
+  },
+  {
+    "name": "Magenta",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Magenta",
+    "url": "documentation/other-advanced/Magenta/"
+  },
+  {
+    "name": "MantissaExponent",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "MantissaExponent[x] gives a list {m, e} containing the mantissa and exponent of the real number x, such that x = m * 10^e and 1/10 <= |m| < 1 (or m = 0 when x = 0).",
+    "url": "documentation/arithmetic/MantissaExponent/"
+  },
+  {
+    "name": "Map",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "f /@ expr or Map[f, expr]",
+    "url": "documentation/data-structures/Map/"
+  },
+  {
+    "name": "MapAll",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Experimental",
+    "summary": "f //@ expr or MapAll[f, expr]",
+    "url": "documentation/functional-programming/MapAll/"
+  },
+  {
+    "name": "MapAt",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "MapAt[f, expr, n]",
+    "url": "documentation/data-structures/MapAt/"
+  },
+  {
+    "name": "MapIndexed",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "MapIndexed[f, list]",
+    "url": "documentation/functional-programming/MapIndexed/"
+  },
+  {
+    "name": "MapThread",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "MapThread[f, {{a1, a2, ...}, {b1, b2, ...}, ...}]",
+    "url": "documentation/functional-programming/MapThread/"
+  },
+  {
+    "name": "MatchQ",
+    "category": "Pattern Matching",
+    "slug": "pattern-matching",
+    "status": "Stable",
+    "summary": "MatchQ[expr, form]",
+    "url": "documentation/pattern-matching/MatchQ/"
+  },
+  {
+    "name": "MatrixPower",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "MatrixPower[m, n]",
+    "url": "documentation/linear-algebra/MatrixPower/"
+  },
+  {
+    "name": "MatrixQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "MatrixQ[expr]",
+    "url": "documentation/expression-information/MatrixQ/"
+  },
+  {
+    "name": "MatrixRank",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "MatrixRank[m]",
+    "url": "documentation/linear-algebra/MatrixRank/"
+  },
+  {
+    "name": "Max",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Max[x1, x2, ...]",
+    "url": "documentation/data-structures/Max/"
+  },
+  {
+    "name": "MaximalBy",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "MaximalBy[list, f]",
+    "url": "documentation/functional-programming/MaximalBy/"
+  },
+  {
+    "name": "Mean",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Mean[data] gives the mean estimate of the elements in data.",
+    "url": "documentation/data-structures/Mean/"
+  },
+  {
+    "name": "Median",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Median[data]",
+    "url": "documentation/data-structures/Median/"
+  },
+  {
+    "name": "MemberQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "MemberQ[list, form] returns True if an element of list matches form, and False otherwise.",
+    "url": "documentation/expression-information/MemberQ/"
+  },
+  {
+    "name": "Merge",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Merge[{assoc1, assoc2, ...}, f]",
+    "url": "documentation/data-structures/Merge/"
+  },
+  {
+    "name": "Min",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Min[x1, x2, ...]",
+    "url": "documentation/data-structures/Min/"
+  },
+  {
+    "name": "MinMax",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "MinMax[list]",
+    "url": "documentation/data-structures/MinMax/"
+  },
+  {
+    "name": "MinimalBy",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "MinimalBy[list, f]",
+    "url": "documentation/functional-programming/MinimalBy/"
+  },
+  {
+    "name": "MinimalPolynomial",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "MinimalPolynomial[s, x]",
+    "url": "documentation/algebra/MinimalPolynomial/"
+  },
+  {
+    "name": "Module",
+    "category": "Scoping Constructs",
+    "slug": "scoping-constructs",
+    "status": "Stable",
+    "summary": "Module[{x, y, ...}, expr] specifies that x, y, ... are local variables.",
+    "url": "documentation/scoping-constructs/Module/"
+  },
+  {
+    "name": "MoebiusMu",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "MoebiusMu[n] gives the Moebius function mu(n): 0 if n has a squared prime factor, otherwise (-1)^k where k is the number of distinct primes. A non-real Gaussian-integer argument is handled over Z[i].",
+    "url": "documentation/number-theory/MoebiusMu/"
+  },
+  {
+    "name": "Most",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Most[expr] gives all but the last element of expr.",
+    "url": "documentation/data-structures/Most/"
+  },
+  {
+    "name": "MovingAverage",
+    "category": "Statistics",
+    "slug": "statistics",
+    "status": "Stable",
+    "summary": "MovingAverage[list, r]",
+    "url": "documentation/statistics/MovingAverage/"
+  },
+  {
+    "name": "MovingMedian",
+    "category": "Statistics",
+    "slug": "statistics",
+    "status": "Stable",
+    "summary": "MovingMedian[list, r]",
+    "url": "documentation/statistics/MovingMedian/"
+  },
+  {
+    "name": "MultiplicativeOrder",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "MultiplicativeOrder[k, n]",
+    "url": "documentation/number-theory/MultiplicativeOrder/"
+  },
+  {
+    "name": "N",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "N[expr]",
+    "url": "documentation/arithmetic/N/"
+  },
+  {
+    "name": "ND",
+    "category": "Numerical Calculus",
+    "slug": "numerical-calculus",
+    "status": "Stable",
+    "summary": "ND[expr, x, x0]",
+    "url": "documentation/numerical-calculus/ND/"
+  },
+  {
+    "name": "NDArray",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "NDArray[nested_list]",
+    "url": "documentation/linear-algebra/NDArray/"
+  },
+  {
+    "name": "NDArrayQ",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "NDArrayQ[expr]",
+    "url": "documentation/other-advanced/NDArrayQ/"
+  },
+  {
+    "name": "NIntegrate",
+    "category": "Numerical Calculus",
+    "slug": "numerical-calculus",
+    "status": "Stable",
+    "summary": "NIntegrate[f, {x, xmin, xmax}]",
+    "url": "documentation/numerical-calculus/NIntegrate/"
+  },
+  {
+    "name": "NLimit",
+    "category": "Numerical Calculus",
+    "slug": "numerical-calculus",
+    "status": "Stable",
+    "summary": "NLimit[expr, z -> z0]",
+    "url": "documentation/numerical-calculus/NLimit/"
+  },
+  {
+    "name": "NProduct",
+    "category": "Numerical Calculus",
+    "slug": "numerical-calculus",
+    "status": "Stable",
+    "summary": "NProduct[f, {i, imin, imax}]",
+    "url": "documentation/numerical-calculus/NProduct/"
+  },
+  {
+    "name": "NResidue",
+    "category": "Numerical Calculus",
+    "slug": "numerical-calculus",
+    "status": "Stable",
+    "summary": "NResidue[expr, {z, z0}]",
+    "url": "documentation/numerical-calculus/NResidue/"
+  },
+  {
+    "name": "NRoots",
+    "category": "Numerical Calculus",
+    "slug": "numerical-calculus",
+    "status": "Stable",
+    "summary": "NRoots[lhs == rhs, var]",
+    "url": "documentation/numerical-calculus/NRoots/"
+  },
+  {
+    "name": "NSeries",
+    "category": "Numerical Calculus",
+    "slug": "numerical-calculus",
+    "status": "Stable",
+    "summary": "NSeries[f, {x, x0, n}]",
+    "url": "documentation/numerical-calculus/NSeries/"
+  },
+  {
+    "name": "NSolve",
+    "category": "Numerical Calculus",
+    "slug": "numerical-calculus",
+    "status": "Stable",
+    "summary": "NSolve[expr, vars]",
+    "url": "documentation/numerical-calculus/NSolve/"
+  },
+  {
+    "name": "NSum",
+    "category": "Numerical Calculus",
+    "slug": "numerical-calculus",
+    "status": "Stable",
+    "summary": "NSum[f, {i, imin, imax}]",
+    "url": "documentation/numerical-calculus/NSum/"
+  },
+  {
+    "name": "Names",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Names[\"string\"] gives a sorted list of the names of symbols matching the string. Names[patt] matches a string pattern with metacharacters * (zero or more characters) and @ (one or more non-uppercase characters), or a RegularExpression[\"re\"]. Names[{p1, p2, ...}] matches any of the patterns. Names[] lists all symbol names.",
+    "url": "documentation/expression-information/Names/"
+  },
+  {
+    "name": "Negative",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Negative[x]",
+    "url": "documentation/expression-information/Negative/"
+  },
+  {
+    "name": "NegativeDefiniteMatrixQ",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "NegativeDefiniteMatrixQ[m]",
+    "url": "documentation/linear-algebra/NegativeDefiniteMatrixQ/"
+  },
+  {
+    "name": "Nest",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "Nest[f, expr, n]",
+    "url": "documentation/functional-programming/Nest/"
+  },
+  {
+    "name": "NestList",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "NestList[f, expr, n]",
+    "url": "documentation/functional-programming/NestList/"
+  },
+  {
+    "name": "NestWhile",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "NestWhile[f, expr, test]",
+    "url": "documentation/functional-programming/NestWhile/"
+  },
+  {
+    "name": "NestWhileList",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "NestWhileList[f, expr, test]",
+    "url": "documentation/functional-programming/NestWhileList/"
+  },
+  {
+    "name": "NextPrime",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "NextPrime[x] gives the next prime after x.",
+    "url": "documentation/number-theory/NextPrime/"
+  },
+  {
+    "name": "NonNegative",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "NonNegative[x]",
+    "url": "documentation/expression-information/NonNegative/"
+  },
+  {
+    "name": "NonPositive",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "NonPositive[x]",
+    "url": "documentation/expression-information/NonPositive/"
+  },
+  {
+    "name": "NoneTrue",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "NoneTrue[list, test]",
+    "url": "documentation/functional-programming/NoneTrue/"
+  },
+  {
+    "name": "Norm",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "Norm[expr]",
+    "url": "documentation/linear-algebra/Norm/"
+  },
+  {
+    "name": "Normal",
+    "category": "Power Series",
+    "slug": "power-series",
+    "status": "Stable",
+    "summary": "Normal[expr]",
+    "url": "documentation/power-series/Normal/"
+  },
+  {
+    "name": "Normalize",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "Normalize[v]",
+    "url": "documentation/linear-algebra/Normalize/"
+  },
+  {
+    "name": "NullSpace",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "NullSpace[m]",
+    "url": "documentation/linear-algebra/NullSpace/"
+  },
+  {
+    "name": "NumberQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "NumberQ[expr]",
+    "url": "documentation/expression-information/NumberQ/"
+  },
+  {
+    "name": "Numerator",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Numerator[expr]",
+    "url": "documentation/algebra/Numerator/"
+  },
+  {
+    "name": "NumericQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "NumericQ[expr] gives True if expr is a numeric quantity, and False otherwise.",
+    "url": "documentation/expression-information/NumericQ/"
+  },
+  {
+    "name": "OddQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "OddQ[n] gives True if n is an odd integer (Integer or BigInt), False otherwise.",
+    "url": "documentation/expression-information/OddQ/"
+  },
+  {
+    "name": "OneIdentity",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Experimental",
+    "summary": "OneIdentity is an attribute that can be assigned to a symbol f to indicate that f[x], f[f[x]], etc. are all equivalent to x for the purpose of pattern matching.",
+    "url": "documentation/expression-information/OneIdentity/"
+  },
+  {
+    "name": "OptionValue",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "OptionValue[name] gives the value of an option named name in the",
+    "url": "documentation/assignment-and-rules/OptionValue/"
+  },
+  {
+    "name": "Optional",
+    "category": "Pattern Matching",
+    "slug": "pattern-matching",
+    "status": "Stable",
+    "summary": "patt:def or Optional[patt, def]",
+    "url": "documentation/pattern-matching/Optional/"
+  },
+  {
+    "name": "Options",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "Options[f] gives the list of default option rules for the symbol f.",
+    "url": "documentation/assignment-and-rules/Options/"
+  },
+  {
+    "name": "Orange",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Orange",
+    "url": "documentation/other-advanced/Orange/"
+  },
+  {
+    "name": "OrderedQ",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "OrderedQ[h[e1, e2, ...]] gives True if the elements are in canonical order, and False otherwise.",
+    "url": "documentation/structural-manipulation/OrderedQ/"
+  },
+  {
+    "name": "Orderless",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Partial",
+    "summary": "Orderless is an attribute that can be assigned to a symbol f to indicate that the elements e_i in expressions of the form f[e_1, e_2, ...] should automatically be sorted into canonical order. This property is accounted for in pattern matching.",
+    "url": "documentation/expression-information/Orderless/"
+  },
+  {
+    "name": "Outer",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "Outer[f,list1,list2,...]",
+    "url": "documentation/linear-algebra/Outer/"
+  },
+  {
+    "name": "OwnValues",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "OwnValues[s] gives a list of own-value rules for s.",
+    "url": "documentation/assignment-and-rules/OwnValues/"
+  },
+  {
+    "name": "PadLeft",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "PadLeft[list, n]",
+    "url": "documentation/structural-manipulation/PadLeft/"
+  },
+  {
+    "name": "PadRight",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "PadRight[list, n]",
+    "url": "documentation/structural-manipulation/PadRight/"
+  },
+  {
+    "name": "ParametricPlot",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Stable",
+    "summary": "ParametricPlot[{fx, fy}, {t, tmin, tmax}, opts...]",
+    "url": "documentation/graphics/ParametricPlot/"
+  },
+  {
+    "name": "ParametricPlot3D",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Experimental",
+    "summary": "ParametricPlot3D[{fx, fy, fz}, {t, tmin, tmax}, opts...]",
+    "url": "documentation/graphics/ParametricPlot3D/"
+  },
+  {
+    "name": "Part",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "expr[[i]] or Part[expr, i]",
+    "url": "documentation/structural-manipulation/Part/"
+  },
+  {
+    "name": "Partition",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Partition[list, n]",
+    "url": "documentation/structural-manipulation/Partition/"
+  },
+  {
+    "name": "PartitionsP",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "PartitionsP[n]",
+    "url": "documentation/number-theory/PartitionsP/"
+  },
+  {
+    "name": "PartitionsQ",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "PartitionsQ[n]",
+    "url": "documentation/number-theory/PartitionsQ/"
+  },
+  {
+    "name": "PathGraph",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "PathGraph[n] gives the path on n vertices; PathGraph[{v1,...}] the path over the given vertices.",
+    "url": "documentation/other-advanced/PathGraph/"
+  },
+  {
+    "name": "Permutations",
+    "category": "Lists and Iteration",
+    "slug": "lists-and-iteration",
+    "status": "Stable",
+    "summary": "Permutations[list]",
+    "url": "documentation/lists-and-iteration/Permutations/"
+  },
+  {
+    "name": "Pi",
+    "category": "Mathematical Constants",
+    "slug": "mathematical-constants",
+    "status": "Stable",
+    "summary": "Pi",
+    "url": "documentation/mathematical-constants/Pi/"
+  },
+  {
+    "name": "Piecewise",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "Piecewise[{{val_1, cond_1}, {val_2, cond_2}, ...}]",
+    "url": "documentation/control-flow/Piecewise/"
+  },
+  {
+    "name": "Pink",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Pink",
+    "url": "documentation/other-advanced/Pink/"
+  },
+  {
+    "name": "Plot",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Stable",
+    "summary": "Plot[f, {x, xmin, xmax}, opts...]",
+    "url": "documentation/graphics/Plot/"
+  },
+  {
+    "name": "Plot3D",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Stable",
+    "summary": "Plot3D[f, {x, xmin, xmax}, {y, ymin, ymax}, opts...]",
+    "url": "documentation/graphics/Plot3D/"
+  },
+  {
+    "name": "Plus",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "x + y + ... or Plus[x, y, ...] represents a sum of terms.",
+    "url": "documentation/arithmetic/Plus/"
+  },
+  {
+    "name": "Pochhammer",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Pochhammer[a, n]",
+    "url": "documentation/special-functions/Pochhammer/"
+  },
+  {
+    "name": "PolarAxes",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Experimental",
+    "summary": "PolarAxes",
+    "url": "documentation/graphics/PolarAxes/"
+  },
+  {
+    "name": "PolarPlot",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Experimental",
+    "summary": "PolarPlot[r, {theta, tmin, tmax}, opts...]",
+    "url": "documentation/graphics/PolarPlot/"
+  },
+  {
+    "name": "PolyGamma",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "PolyGamma[z]",
+    "url": "documentation/special-functions/PolyGamma/"
+  },
+  {
+    "name": "PolyLog",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "PolyLog[n, z]",
+    "url": "documentation/special-functions/PolyLog/"
+  },
+  {
+    "name": "PolynomialExtendedGCD",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "PolynomialExtendedGCD[poly1, poly2, x] gives the extended GCD of poly1 and poly2 treated as univariate polynomials in x.",
+    "url": "documentation/algebra/PolynomialExtendedGCD/"
+  },
+  {
+    "name": "PolynomialGCD",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "PolynomialGCD[poly1, poly2, ...] gives the greatest common divisor of the polynomials.",
+    "url": "documentation/algebra/PolynomialGCD/"
+  },
+  {
+    "name": "PolynomialLCM",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "PolynomialLCM[poly1, poly2, ...] gives the least common multiple of the polynomials.",
+    "url": "documentation/algebra/PolynomialLCM/"
+  },
+  {
+    "name": "PolynomialMod",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "PolynomialMod[poly, m]",
+    "url": "documentation/algebra/PolynomialMod/"
+  },
+  {
+    "name": "PolynomialQ",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "PolynomialQ[expr, var]",
+    "url": "documentation/algebra/PolynomialQ/"
+  },
+  {
+    "name": "PolynomialQuotient",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "PolynomialQuotient[p, q, x] gives the quotient of p and q, treated as polynomials in x, with any remainder dropped.",
+    "url": "documentation/algebra/PolynomialQuotient/"
+  },
+  {
+    "name": "PolynomialQuotientRemainder",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "PolynomialQuotientRemainder[p, q, x] returns {Quotient, Remainder}",
+    "url": "documentation/calculus/PolynomialQuotientRemainder/"
+  },
+  {
+    "name": "PolynomialRemainder",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "PolynomialRemainder[p, q, x] gives the remainder from dividing p by q, treated as polynomials in x.",
+    "url": "documentation/algebra/PolynomialRemainder/"
+  },
+  {
+    "name": "PolynomialSqrt",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "PolynomialSqrt[p] gives a polynomial s with s^2 == p when p is a perfect square (every non-constant irreducible factor has even multiplicity; the numeric content is carried through Sqrt), and $Failed otherwise. PolynomialSqrt[p, x] treats p as a polynomial in x.",
+    "url": "documentation/other-advanced/PolynomialSqrt/"
+  },
+  {
+    "name": "Position",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Position[expr, pattern] gives a list of the positions at which objects matching pattern appear in expr.",
+    "url": "documentation/data-structures/Position/"
+  },
+  {
+    "name": "PositionIndex",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "PositionIndex[list]",
+    "url": "documentation/data-structures/PositionIndex/"
+  },
+  {
+    "name": "Positive",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Positive[x]",
+    "url": "documentation/expression-information/Positive/"
+  },
+  {
+    "name": "PositiveDefiniteMatrixQ",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "PositiveDefiniteMatrixQ[m]",
+    "url": "documentation/linear-algebra/PositiveDefiniteMatrixQ/"
+  },
+  {
+    "name": "PossibleZeroQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "PossibleZeroQ[expr] gives True if symbolic and numerical methods suggest that expr has value zero, and False otherwise.",
+    "url": "documentation/expression-information/PossibleZeroQ/"
+  },
+  {
+    "name": "Power",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "x ^ y or Power[x, y] represents x to the power y.",
+    "url": "documentation/arithmetic/Power/"
+  },
+  {
+    "name": "PowerExpand",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "PowerExpand[expr]",
+    "url": "documentation/algebra/PowerExpand/"
+  },
+  {
+    "name": "PowerMod",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "PowerMod[a, b, m] gives a^b mod m.",
+    "url": "documentation/number-theory/PowerMod/"
+  },
+  {
+    "name": "PreDecrement",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "PreDecrement[x] or --x",
+    "url": "documentation/assignment-and-rules/PreDecrement/"
+  },
+  {
+    "name": "PreIncrement",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "PreIncrement[x] or ++x",
+    "url": "documentation/assignment-and-rules/PreIncrement/"
+  },
+  {
+    "name": "Precision",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Precision[x]",
+    "url": "documentation/arithmetic/Precision/"
+  },
+  {
+    "name": "Prepend",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Prepend[expr, elem] adds elem to the beginning of expr.",
+    "url": "documentation/data-structures/Prepend/"
+  },
+  {
+    "name": "Prime",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "Prime[n] gives the nth prime number. Listable. Small n is read from a sieve table; large n inverts PrimePi via an asymptotic estimate refined against the exact prime counter. Defined for positive integers up to n ~ 1.4*10^12; non-positive-integer arguments give Prime::intpp.",
+    "url": "documentation/number-theory/Prime/"
+  },
+  {
+    "name": "PrimeNu",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "PrimeNu[n] gives the number of distinct prime factors of n, nu(n). PrimeNu[n, GaussianIntegers -> True] (or a non-real Gaussian-integer n) counts distinct Gaussian prime factors over Z[i]. PrimeNu[1] is 0; PrimeNu[0] is left unevaluated.",
+    "url": "documentation/number-theory/PrimeNu/"
+  },
+  {
+    "name": "PrimeOmega",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "PrimeOmega[n] gives the number of prime factors of n counted with multiplicity, Omega(n). PrimeOmega[n, GaussianIntegers -> True] (or a non-real Gaussian-integer n) counts Gaussian prime factors over Z[i]. PrimeOmega[1] is 0; PrimeOmega[0] is left unevaluated.",
+    "url": "documentation/number-theory/PrimeOmega/"
+  },
+  {
+    "name": "PrimePi",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "PrimePi[x] gives the number of primes less than or equal to x, exact for x up to 5*10^13 (larger x is left unevaluated). The option Method -> m selects the algorithm: Automatic (default), \"Sieve\", \"Legendre\", \"Meissel\", \"Lehmer\", \"LMO\" (Lagarias-Miller-Odlyzko), \"DelegliseRivat\", or \"LucyHedgehog\".",
+    "url": "documentation/number-theory/PrimePi/"
+  },
+  {
+    "name": "PrimeQ",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "PrimeQ[n]",
+    "url": "documentation/number-theory/PrimeQ/"
+  },
+  {
+    "name": "PrimitiveRoot",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "PrimitiveRoot[n]",
+    "url": "documentation/number-theory/PrimitiveRoot/"
+  },
+  {
+    "name": "PrimitiveRootList",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "PrimitiveRootList[n]",
+    "url": "documentation/number-theory/PrimitiveRootList/"
+  },
+  {
+    "name": "Print",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Print[expr1, expr2, ...]",
+    "url": "documentation/expression-information/Print/"
+  },
+  {
+    "name": "Product",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "Product[f, {i, imax}]",
+    "url": "documentation/calculus/Product/"
+  },
+  {
+    "name": "ProductLog",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "ProductLog[z]",
+    "url": "documentation/special-functions/ProductLog/"
+  },
+  {
+    "name": "Protect",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "Protect[s1, s2, ...]",
+    "url": "documentation/assignment-and-rules/Protect/"
+  },
+  {
+    "name": "PseudoInverse",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "PseudoInverse[m]",
+    "url": "documentation/linear-algebra/PseudoInverse/"
+  },
+  {
+    "name": "Purple",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Purple",
+    "url": "documentation/other-advanced/Purple/"
+  },
+  {
+    "name": "Put",
+    "category": "File I/O",
+    "slug": "file-io",
+    "status": "Stable",
+    "summary": "Put[expr, \"filename\"] or expr >> \"filename\"",
+    "url": "documentation/file-io/Put/"
+  },
+  {
+    "name": "PutAppend",
+    "category": "File I/O",
+    "slug": "file-io",
+    "status": "Stable",
+    "summary": "PutAppend[expr, \"filename\"] or expr >>> \"filename\"",
+    "url": "documentation/file-io/PutAppend/"
+  },
+  {
+    "name": "QPochhammer",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "QPochhammer[a, q, n]",
+    "url": "documentation/special-functions/QPochhammer/"
+  },
+  {
+    "name": "QRDecomposition",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "QRDecomposition[m]",
+    "url": "documentation/linear-algebra/QRDecomposition/"
+  },
+  {
+    "name": "Quartics",
+    "category": "Solutions of Equations",
+    "slug": "solutions-of-equations",
+    "status": "Experimental",
+    "summary": "Quartics is an option for Solve that controls whether quartic",
+    "url": "documentation/solutions-of-equations/Quartics/"
+  },
+  {
+    "name": "Quartiles",
+    "category": "Statistics",
+    "slug": "statistics",
+    "status": "Stable",
+    "summary": "Quartiles[data]",
+    "url": "documentation/statistics/Quartiles/"
+  },
+  {
+    "name": "RandomChoice",
+    "category": "Random Number Generation",
+    "slug": "random-number-generation",
+    "status": "Stable",
+    "summary": "RandomChoice[{e1, e2, ...}]",
+    "url": "documentation/random-number-generation/RandomChoice/"
+  },
+  {
+    "name": "RandomComplex",
+    "category": "Random Number Generation",
+    "slug": "random-number-generation",
+    "status": "Stable",
+    "summary": "RandomComplex[]",
+    "url": "documentation/random-number-generation/RandomComplex/"
+  },
+  {
+    "name": "RandomGraph",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "RandomGraph[{n, m}] gives a random undirected graph with n vertices and m edges.",
+    "url": "documentation/other-advanced/RandomGraph/"
+  },
+  {
+    "name": "RandomInteger",
+    "category": "Random Number Generation",
+    "slug": "random-number-generation",
+    "status": "Stable",
+    "summary": "RandomInteger[{imin, imax}]",
+    "url": "documentation/random-number-generation/RandomInteger/"
+  },
+  {
+    "name": "RandomReal",
+    "category": "Random Number Generation",
+    "slug": "random-number-generation",
+    "status": "Stable",
+    "summary": "RandomReal[]",
+    "url": "documentation/random-number-generation/RandomReal/"
+  },
+  {
+    "name": "RandomSample",
+    "category": "Random Number Generation",
+    "slug": "random-number-generation",
+    "status": "Stable",
+    "summary": "RandomSample[{e1, e2, ...}, n]",
+    "url": "documentation/random-number-generation/RandomSample/"
+  },
+  {
+    "name": "Range",
+    "category": "Lists and Iteration",
+    "slug": "lists-and-iteration",
+    "status": "Stable",
+    "summary": "Range[n]",
+    "url": "documentation/lists-and-iteration/Range/"
+  },
+  {
+    "name": "Rational",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Rational[n, d]",
+    "url": "documentation/arithmetic/Rational/"
+  },
+  {
+    "name": "Rationalize",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Rationalize[x]",
+    "url": "documentation/arithmetic/Rationalize/"
+  },
+  {
+    "name": "Ratios",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Ratios[list]",
+    "url": "documentation/arithmetic/Ratios/"
+  },
+  {
+    "name": "Re",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Re[z] gives the real part of numeric z; Re[Re[z]], Re[Im[z]], Re[Abs[z]], Re[Arg[z]] fold since those heads are real-valued.",
+    "url": "documentation/arithmetic/Re/"
+  },
+  {
+    "name": "ReIm",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "ReIm[z] gives {Re[z], Im[z]}, the real and imaginary parts of numeric z as a list; real-valued arguments give {z, 0}.",
+    "url": "documentation/arithmetic/ReIm/"
+  },
+  {
+    "name": "RealDigits",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "RealDigits[x] gives a list {digits, exp} of the digits in the approximate real number x together with the exponent such that the first digit is the coefficient of 10^(exp - 1).",
+    "url": "documentation/arithmetic/RealDigits/"
+  },
+  {
+    "name": "RealExponent",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "RealExponent[x] gives Log[10, |x|] -- the base-10 real exponent of x.",
+    "url": "documentation/arithmetic/RealExponent/"
+  },
+  {
+    "name": "Red",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Red",
+    "url": "documentation/other-advanced/Red/"
+  },
+  {
+    "name": "RegularExpression",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "RegularExpression[\"regex\"]",
+    "url": "documentation/string-operations/RegularExpression/"
+  },
+  {
+    "name": "ReleaseHold",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "ReleaseHold[expr]",
+    "url": "documentation/expression-information/ReleaseHold/"
+  },
+  {
+    "name": "Remove",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "Remove[s1, s2, ...]",
+    "url": "documentation/assignment-and-rules/Remove/"
+  },
+  {
+    "name": "Repeated",
+    "category": "Pattern Matching",
+    "slug": "pattern-matching",
+    "status": "Stable",
+    "summary": "p.. or Repeated[p] is a pattern object that represents a sequence of one or more expressions, each matching p.",
+    "url": "documentation/pattern-matching/Repeated/"
+  },
+  {
+    "name": "RepeatedNull",
+    "category": "Pattern Matching",
+    "slug": "pattern-matching",
+    "status": "Stable",
+    "summary": "p... or RepeatedNull[p] is a pattern object that represents a sequence of zero or more expressions, each matching p.",
+    "url": "documentation/pattern-matching/RepeatedNull/"
+  },
+  {
+    "name": "RepeatedTiming",
+    "category": "Time and Date",
+    "slug": "time-and-date",
+    "status": "Stable",
+    "summary": "RepeatedTiming[expr] evaluates expr repeatedly and returns a list of the average time in seconds used, together with the result obtained.",
+    "url": "documentation/time-and-date/RepeatedTiming/"
+  },
+  {
+    "name": "Replace",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "Replace[expr, rules]",
+    "url": "documentation/assignment-and-rules/Replace/"
+  },
+  {
+    "name": "ReplaceAll",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "expr /. rules or ReplaceAll[expr, rules]",
+    "url": "documentation/assignment-and-rules/ReplaceAll/"
+  },
+  {
+    "name": "ReplaceAt",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "ReplaceAt[expr, rules, n]",
+    "url": "documentation/assignment-and-rules/ReplaceAt/"
+  },
+  {
+    "name": "ReplaceList",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "ReplaceList[expr, rules] attempts to transform the entire expression expr by applying a rule or list of rules in all possible ways, and returns a list of the results obtained.",
+    "url": "documentation/assignment-and-rules/ReplaceList/"
+  },
+  {
+    "name": "ReplaceRepeated",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Experimental",
+    "summary": "expr //. rules or ReplaceRepeated[expr, rules]",
+    "url": "documentation/assignment-and-rules/ReplaceRepeated/"
+  },
+  {
+    "name": "Rescale",
+    "category": "Lists and Iteration",
+    "slug": "lists-and-iteration",
+    "status": "Stable",
+    "summary": "Rescale[x, {min, max}]",
+    "url": "documentation/lists-and-iteration/Rescale/"
+  },
+  {
+    "name": "Residue",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "Residue[f, {z, z0}]",
+    "url": "documentation/calculus/Residue/"
+  },
+  {
+    "name": "Rest",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Rest[expr] gives all but the first element of expr.",
+    "url": "documentation/data-structures/Rest/"
+  },
+  {
+    "name": "Resultant",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Resultant[p, q, var]",
+    "url": "documentation/algebra/Resultant/"
+  },
+  {
+    "name": "Return",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "Return[expr]",
+    "url": "documentation/control-flow/Return/"
+  },
+  {
+    "name": "Reverse",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Reverse[expr] reverses the order of elements in expr.",
+    "url": "documentation/structural-manipulation/Reverse/"
+  },
+  {
+    "name": "ReverseSort",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "ReverseSort[list]",
+    "url": "documentation/functional-programming/ReverseSort/"
+  },
+  {
+    "name": "ReverseSortBy",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "ReverseSortBy[list, f]",
+    "url": "documentation/functional-programming/ReverseSortBy/"
+  },
+  {
+    "name": "Root",
+    "category": "Solutions of Equations",
+    "slug": "solutions-of-equations",
+    "status": "Stable",
+    "summary": "Root[Function[t, p[t]], k]",
+    "url": "documentation/solutions-of-equations/Root/"
+  },
+  {
+    "name": "RootMeanSquare",
+    "category": "Statistics",
+    "slug": "statistics",
+    "status": "Stable",
+    "summary": "RootMeanSquare[list] gives the root mean square of values in list.",
+    "url": "documentation/statistics/RootMeanSquare/"
+  },
+  {
+    "name": "RootReduce",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "RootReduce[expr] canonicalises an algebraic expression: a constant algebraic number becomes a rational, a quadratic radical, or a Root object; a rational function over a radical tower has its denominator rationalised; a polynomial/rational function in a free variable has its constant-algebraic coefficients canonicalised. Threads over lists, equations, inequalities and logic. Option: Method -> \"Automatic\" | \"Recursive\" | \"NumberField\".",
+    "url": "documentation/algebra/RootReduce/"
+  },
+  {
+    "name": "RootSum",
+    "category": "Solutions of Equations",
+    "slug": "solutions-of-equations",
+    "status": "Stable",
+    "summary": "RootSum[Function[t, p[t]], Function[t, body[t]]]",
+    "url": "documentation/solutions-of-equations/RootSum/"
+  },
+  {
+    "name": "RotateLeft",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "RotateLeft[expr, n] rotates the elements of expr n positions to the left.",
+    "url": "documentation/structural-manipulation/RotateLeft/"
+  },
+  {
+    "name": "RotateRight",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "RotateRight[expr, n] rotates the elements of expr n positions to the right.",
+    "url": "documentation/structural-manipulation/RotateRight/"
+  },
+  {
+    "name": "Round",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Round[x]",
+    "url": "documentation/arithmetic/Round/"
+  },
+  {
+    "name": "RowReduce",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "RowReduce[m]",
+    "url": "documentation/linear-algebra/RowReduce/"
+  },
+  {
+    "name": "Rule",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "lhs -> rhs or Rule[lhs, rhs]",
+    "url": "documentation/assignment-and-rules/Rule/"
+  },
+  {
+    "name": "RuleDelayed",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Experimental",
+    "summary": "lhs :> rhs or RuleDelayed[lhs, rhs]",
+    "url": "documentation/assignment-and-rules/RuleDelayed/"
+  },
+  {
+    "name": "SameQ",
+    "category": "Comparisons",
+    "slug": "comparisons",
+    "status": "Stable",
+    "summary": "lhs === rhs or SameQ[lhs, rhs]",
+    "url": "documentation/comparisons/SameQ/"
+  },
+  {
+    "name": "ScalingFunctions",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "ScalingFunctions",
+    "url": "documentation/other-advanced/ScalingFunctions/"
+  },
+  {
+    "name": "Scan",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "Scan[f, expr]",
+    "url": "documentation/functional-programming/Scan/"
+  },
+  {
+    "name": "Sec",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Sec[z]",
+    "url": "documentation/elementary-functions/Sec/"
+  },
+  {
+    "name": "SeedRandom",
+    "category": "Random Number Generation",
+    "slug": "random-number-generation",
+    "status": "Stable",
+    "summary": "SeedRandom[n]",
+    "url": "documentation/random-number-generation/SeedRandom/"
+  },
+  {
+    "name": "Select",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Select[list, crit]",
+    "url": "documentation/data-structures/Select/"
+  },
+  {
+    "name": "SelectFirst",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "SelectFirst[list, pred]",
+    "url": "documentation/functional-programming/SelectFirst/"
+  },
+  {
+    "name": "Sequence",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Sequence[e1, e2, ...]",
+    "url": "documentation/expression-information/Sequence/"
+  },
+  {
+    "name": "SequenceHold",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Experimental",
+    "summary": "SequenceHold",
+    "url": "documentation/expression-information/SequenceHold/"
+  },
+  {
+    "name": "Series",
+    "category": "Power Series",
+    "slug": "power-series",
+    "status": "Stable",
+    "summary": "Series[f, {x, x0, n}]",
+    "url": "documentation/power-series/Series/"
+  },
+  {
+    "name": "SeriesCoefficient",
+    "category": "Power Series",
+    "slug": "power-series",
+    "status": "Stable",
+    "summary": "SeriesCoefficient[f, {x, x0, k}]",
+    "url": "documentation/power-series/SeriesCoefficient/"
+  },
+  {
+    "name": "SeriesData",
+    "category": "Power Series",
+    "slug": "power-series",
+    "status": "Stable",
+    "summary": "SeriesData[x, x0, {a0, a1, ...}, nmin, nmax, den]",
+    "url": "documentation/power-series/SeriesData/"
+  },
+  {
+    "name": "Set",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "lhs = rhs or Set[lhs, rhs]",
+    "url": "documentation/assignment-and-rules/Set/"
+  },
+  {
+    "name": "SetAccuracy",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "SetAccuracy[x, n]",
+    "url": "documentation/arithmetic/SetAccuracy/"
+  },
+  {
+    "name": "SetAttributes",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "SetAttributes[s, attr] sets the attributes for s.",
+    "url": "documentation/expression-information/SetAttributes/"
+  },
+  {
+    "name": "SetDelayed",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "lhs := rhs or SetDelayed[lhs, rhs]",
+    "url": "documentation/assignment-and-rules/SetDelayed/"
+  },
+  {
+    "name": "SetOptions",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "SetOptions[s, name -> value, ...] sets default options for the symbol",
+    "url": "documentation/assignment-and-rules/SetOptions/"
+  },
+  {
+    "name": "SetPrecision",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "SetPrecision[x, n]",
+    "url": "documentation/arithmetic/SetPrecision/"
+  },
+  {
+    "name": "Shortest",
+    "category": "Pattern Matching",
+    "slug": "pattern-matching",
+    "status": "Stable",
+    "summary": "Shortest[p] is a pattern object that matches the shortest sequence consistent with the pattern p.",
+    "url": "documentation/pattern-matching/Shortest/"
+  },
+  {
+    "name": "Show",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Stable",
+    "summary": "Show[graphics, opts...]",
+    "url": "documentation/graphics/Show/"
+  },
+  {
+    "name": "Sign",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Sign[x] gives -1, 0, or 1 for real numeric x according to its sign, and z/Abs[z] for a nonzero numeric complex z.",
+    "url": "documentation/arithmetic/Sign/"
+  },
+  {
+    "name": "Simplify",
+    "category": "Simplification",
+    "slug": "simplification",
+    "status": "Stable",
+    "summary": "Simplify[expr]",
+    "url": "documentation/simplification/Simplify/"
+  },
+  {
+    "name": "SimplifyCount",
+    "category": "Simplification",
+    "slug": "simplification",
+    "status": "Stable",
+    "summary": "SimplifyCount[expr]",
+    "url": "documentation/simplification/SimplifyCount/"
+  },
+  {
+    "name": "Sin",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Sin[z]",
+    "url": "documentation/elementary-functions/Sin/"
+  },
+  {
+    "name": "SinIntegral",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "SinIntegral[z]",
+    "url": "documentation/special-functions/SinIntegral/"
+  },
+  {
+    "name": "Sinc",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Sinc[z]",
+    "url": "documentation/special-functions/Sinc/"
+  },
+  {
+    "name": "SingularValueDecomposition",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "SingularValueDecomposition[m]",
+    "url": "documentation/linear-algebra/SingularValueDecomposition/"
+  },
+  {
+    "name": "Sinh",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Sinh[z]",
+    "url": "documentation/elementary-functions/Sinh/"
+  },
+  {
+    "name": "SinhIntegral",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "SinhIntegral[z]",
+    "url": "documentation/special-functions/SinhIntegral/"
+  },
+  {
+    "name": "Slot",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "# or Slot[n] represents the n-th argument of a pure function.",
+    "url": "documentation/functional-programming/Slot/"
+  },
+  {
+    "name": "SlotSequence",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "## or SlotSequence[n] represents arguments from the n-th onward.",
+    "url": "documentation/functional-programming/SlotSequence/"
+  },
+  {
+    "name": "Solve",
+    "category": "Solutions of Equations",
+    "slug": "solutions-of-equations",
+    "status": "Stable",
+    "summary": "Solve[expr, vars]",
+    "url": "documentation/solutions-of-equations/Solve/"
+  },
+  {
+    "name": "SolveAlways",
+    "category": "Solutions of Equations",
+    "slug": "solutions-of-equations",
+    "status": "Stable",
+    "summary": "SolveAlways[eqns, vars]",
+    "url": "documentation/solutions-of-equations/SolveAlways/"
+  },
+  {
+    "name": "Sort",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Sort[list] sorts the elements of list into canonical order.",
+    "url": "documentation/data-structures/Sort/"
+  },
+  {
+    "name": "SortBy",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "SortBy[list, f]",
+    "url": "documentation/data-structures/SortBy/"
+  },
+  {
+    "name": "Span",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "i;;j represents a span of elements i through j. i;;j;;k represents a span in steps of k.",
+    "url": "documentation/structural-manipulation/Span/"
+  },
+  {
+    "name": "Split",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Split[list]",
+    "url": "documentation/structural-manipulation/Split/"
+  },
+  {
+    "name": "Sqrt",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Sqrt[z]",
+    "url": "documentation/arithmetic/Sqrt/"
+  },
+  {
+    "name": "SquareFreeQ",
+    "category": "Number Theory",
+    "slug": "number-theory",
+    "status": "Stable",
+    "summary": "SquareFreeQ[expr]",
+    "url": "documentation/number-theory/SquareFreeQ/"
+  },
+  {
+    "name": "SquareMatrixQ",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "SquareMatrixQ[m]",
+    "url": "documentation/linear-algebra/SquareMatrixQ/"
+  },
+  {
+    "name": "StandardDeviation",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "StandardDeviation[data] gives the standard deviation estimate of the elements in data.",
+    "url": "documentation/data-structures/StandardDeviation/"
+  },
+  {
+    "name": "StieltjesGamma",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "StieltjesGamma[n]",
+    "url": "documentation/special-functions/StieltjesGamma/"
+  },
+  {
+    "name": "StreamPlot",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Experimental",
+    "summary": "StreamPlot[{vx, vy}, {x, xmin, xmax}, {y, ymin, ymax}, opts...]",
+    "url": "documentation/graphics/StreamPlot/"
+  },
+  {
+    "name": "StringCases",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringCases[\"string\", patt]",
+    "url": "documentation/string-operations/StringCases/"
+  },
+  {
+    "name": "StringDrop",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringDrop[\"string\", n]",
+    "url": "documentation/string-operations/StringDrop/"
+  },
+  {
+    "name": "StringExpression",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "StringExpression[p1, p2, ...] or p1 ~~ p2 ~~ ...",
+    "url": "documentation/other-advanced/StringExpression/"
+  },
+  {
+    "name": "StringExtract",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringExtract[\"string\", n]",
+    "url": "documentation/string-operations/StringExtract/"
+  },
+  {
+    "name": "StringInsert",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringInsert[\"string\", \"snew\", n]",
+    "url": "documentation/string-operations/StringInsert/"
+  },
+  {
+    "name": "StringJoin",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringJoin[\"s1\", \"s2\", ...]",
+    "url": "documentation/string-operations/StringJoin/"
+  },
+  {
+    "name": "StringLength",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringLength[\"string\"]",
+    "url": "documentation/string-operations/StringLength/"
+  },
+  {
+    "name": "StringMatchQ",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringMatchQ[\"string\", patt]",
+    "url": "documentation/string-operations/StringMatchQ/"
+  },
+  {
+    "name": "StringPadLeft",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringPadLeft[\"string\", n]",
+    "url": "documentation/string-operations/StringPadLeft/"
+  },
+  {
+    "name": "StringPadRight",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringPadRight[\"string\", n]",
+    "url": "documentation/string-operations/StringPadRight/"
+  },
+  {
+    "name": "StringPart",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringPart[\"string\", n]",
+    "url": "documentation/string-operations/StringPart/"
+  },
+  {
+    "name": "StringPartition",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringPartition[\"string\", n]",
+    "url": "documentation/string-operations/StringPartition/"
+  },
+  {
+    "name": "StringPosition",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringPosition[\"string\", patt]",
+    "url": "documentation/string-operations/StringPosition/"
+  },
+  {
+    "name": "StringRepeat",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringRepeat[\"string\", n]",
+    "url": "documentation/string-operations/StringRepeat/"
+  },
+  {
+    "name": "StringReplace",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringReplace[\"string\", patt -> rep]",
+    "url": "documentation/string-operations/StringReplace/"
+  },
+  {
+    "name": "StringReplacePart",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringReplacePart[\"string\", \"snew\", {m, n}]",
+    "url": "documentation/string-operations/StringReplacePart/"
+  },
+  {
+    "name": "StringReverse",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringReverse[\"string\"]",
+    "url": "documentation/string-operations/StringReverse/"
+  },
+  {
+    "name": "StringRiffle",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringRiffle[{s1, s2, ...}]",
+    "url": "documentation/string-operations/StringRiffle/"
+  },
+  {
+    "name": "StringSplit",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringSplit[\"string\"]",
+    "url": "documentation/string-operations/StringSplit/"
+  },
+  {
+    "name": "StringTake",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringTake[\"string\", n]",
+    "url": "documentation/string-operations/StringTake/"
+  },
+  {
+    "name": "StringTrim",
+    "category": "String Operations",
+    "slug": "string-operations",
+    "status": "Stable",
+    "summary": "StringTrim[\"string\"]",
+    "url": "documentation/string-operations/StringTrim/"
+  },
+  {
+    "name": "StronglyConnectedComponents",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "StronglyConnectedComponents[g] gives the strongly connected components of g (following edge directions).",
+    "url": "documentation/other-advanced/StronglyConnectedComponents/"
+  },
+  {
+    "name": "SubresultantPolynomialRemainders",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Stable",
+    "summary": "SubresultantPolynomialRemainders[a, b, x] gives the polynomial-remainder",
+    "url": "documentation/calculus/SubresultantPolynomialRemainders/"
+  },
+  {
+    "name": "SubresultantPolynomials",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "SubresultantPolynomials[poly1, poly2, var]",
+    "url": "documentation/algebra/SubresultantPolynomials/"
+  },
+  {
+    "name": "Subresultants",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Subresultants[poly1, poly2, var]",
+    "url": "documentation/algebra/Subresultants/"
+  },
+  {
+    "name": "Subtract",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "x - y or Subtract[x, y] represents x - y; rewritten by the evaluator",
+    "url": "documentation/arithmetic/Subtract/"
+  },
+  {
+    "name": "SubtractFrom",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "SubtractFrom[x, dx] or x -= dx",
+    "url": "documentation/assignment-and-rules/SubtractFrom/"
+  },
+  {
+    "name": "Sum",
+    "category": "Calculus",
+    "slug": "calculus",
+    "status": "Partial",
+    "summary": "Sum[f, {i, imax}] gives the sum of f for i from 1 to imax. Sum[f, {i, imin, imax}], Sum[f, {i, imin, imax, di}] and Sum[f, {i, {i1, i2, ...}}] use the standard iterator forms; multiple iterators give nested sums. Sum[f, i] gives the indefinite sum (antidifference). Symbolic and infinite sums are evaluated in closed form via Method -> \"Polynomial\" | \"Geometric\" | \"Gosper\".",
+    "url": "documentation/calculus/Sum/"
+  },
+  {
+    "name": "Switch",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "Switch[expr, form_1, value_1, form_2, value_2, ...]",
+    "url": "documentation/control-flow/Switch/"
+  },
+  {
+    "name": "Symbol",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Symbol[\"name\"]",
+    "url": "documentation/expression-information/Symbol/"
+  },
+  {
+    "name": "SymmetricMatrixQ",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "SymmetricMatrixQ[m]",
+    "url": "documentation/linear-algebra/SymmetricMatrixQ/"
+  },
+  {
+    "name": "Table",
+    "category": "Lists and Iteration",
+    "slug": "lists-and-iteration",
+    "status": "Stable",
+    "summary": "Table[expr, n]",
+    "url": "documentation/lists-and-iteration/Table/"
+  },
+  {
+    "name": "Take",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Take[list, n]",
+    "url": "documentation/data-structures/Take/"
+  },
+  {
+    "name": "TakeLargest",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "TakeLargest[list, n]",
+    "url": "documentation/functional-programming/TakeLargest/"
+  },
+  {
+    "name": "TakeLargestBy",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "TakeLargestBy[list, f, n]",
+    "url": "documentation/functional-programming/TakeLargestBy/"
+  },
+  {
+    "name": "TakeSmallest",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "TakeSmallest[list, n]",
+    "url": "documentation/functional-programming/TakeSmallest/"
+  },
+  {
+    "name": "TakeSmallestBy",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "TakeSmallestBy[list, f, n]",
+    "url": "documentation/functional-programming/TakeSmallestBy/"
+  },
+  {
+    "name": "TakeWhile",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "TakeWhile[list, crit]",
+    "url": "documentation/data-structures/TakeWhile/"
+  },
+  {
+    "name": "Tally",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Tally[list] counts the number of occurrences of each distinct element in list.",
+    "url": "documentation/data-structures/Tally/"
+  },
+  {
+    "name": "Tan",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Tan[z]",
+    "url": "documentation/elementary-functions/Tan/"
+  },
+  {
+    "name": "Tanh",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "Tanh[z]",
+    "url": "documentation/elementary-functions/Tanh/"
+  },
+  {
+    "name": "TeXForm",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Experimental",
+    "summary": "TeXForm[expr]",
+    "url": "documentation/expression-information/TeXForm/"
+  },
+  {
+    "name": "Thread",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "Thread[f[args]]",
+    "url": "documentation/functional-programming/Thread/"
+  },
+  {
+    "name": "Through",
+    "category": "Functional Programming",
+    "slug": "functional-programming",
+    "status": "Stable",
+    "summary": "Through[p[f1, f2, ...][x1, x2, ...]]",
+    "url": "documentation/functional-programming/Through/"
+  },
+  {
+    "name": "Throw",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "Throw[value]",
+    "url": "documentation/control-flow/Throw/"
+  },
+  {
+    "name": "TimeConstrained",
+    "category": "Time and Date",
+    "slug": "time-and-date",
+    "status": "Stable",
+    "summary": "TimeConstrained[expr, t]",
+    "url": "documentation/time-and-date/TimeConstrained/"
+  },
+  {
+    "name": "Times",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "x * y * ... or Times[x, y, ...] represents a product of terms.",
+    "url": "documentation/arithmetic/Times/"
+  },
+  {
+    "name": "Timing",
+    "category": "Time and Date",
+    "slug": "time-and-date",
+    "status": "Stable",
+    "summary": "Timing[expr] evaluates expr, and returns a list of the time in seconds used, together with the result obtained.",
+    "url": "documentation/time-and-date/Timing/"
+  },
+  {
+    "name": "ToExpression",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "ToExpression[input]",
+    "url": "documentation/expression-information/ToExpression/"
+  },
+  {
+    "name": "ToRadicals",
+    "category": "Solutions of Equations",
+    "slug": "solutions-of-equations",
+    "status": "Stable",
+    "summary": "ToRadicals[expr]",
+    "url": "documentation/solutions-of-equations/ToRadicals/"
+  },
+  {
+    "name": "ToString",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "ToString[expr]",
+    "url": "documentation/expression-information/ToString/"
+  },
+  {
+    "name": "ToeplitzMatrix",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "ToeplitzMatrix[n] gives the n x n Toeplitz matrix with first row and column the integers 1..n.",
+    "url": "documentation/linear-algebra/ToeplitzMatrix/"
+  },
+  {
+    "name": "Together",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Together[expr] combines fractions over a common denominator, then cancels.",
+    "url": "documentation/algebra/Together/"
+  },
+  {
+    "name": "Total",
+    "category": "Arithmetic",
+    "slug": "arithmetic",
+    "status": "Stable",
+    "summary": "Total[list]",
+    "url": "documentation/arithmetic/Total/"
+  },
+  {
+    "name": "Tr",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "Tr[m]",
+    "url": "documentation/linear-algebra/Tr/"
+  },
+  {
+    "name": "Trace",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Trace[expr]",
+    "url": "documentation/expression-information/Trace/"
+  },
+  {
+    "name": "TransformationFunctions",
+    "category": "Simplification",
+    "slug": "simplification",
+    "status": "Stable",
+    "summary": "TransformationFunctions",
+    "url": "documentation/simplification/TransformationFunctions/"
+  },
+  {
+    "name": "Transpose",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Transpose[list]",
+    "url": "documentation/structural-manipulation/Transpose/"
+  },
+  {
+    "name": "TrigExpand",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "TrigExpand[expr]",
+    "url": "documentation/elementary-functions/TrigExpand/"
+  },
+  {
+    "name": "TrigFactor",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "TrigFactor[expr]",
+    "url": "documentation/elementary-functions/TrigFactor/"
+  },
+  {
+    "name": "TrigReduce",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "TrigReduce[expr]",
+    "url": "documentation/elementary-functions/TrigReduce/"
+  },
+  {
+    "name": "TrigToExp",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "TrigToExp[expr]",
+    "url": "documentation/elementary-functions/TrigToExp/"
+  },
+  {
+    "name": "TrueQ",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "TrueQ[expr] yields True if expr is True, and False otherwise.",
+    "url": "documentation/control-flow/TrueQ/"
+  },
+  {
+    "name": "Tuples",
+    "category": "Lists and Iteration",
+    "slug": "lists-and-iteration",
+    "status": "Stable",
+    "summary": "Tuples[list,n]",
+    "url": "documentation/lists-and-iteration/Tuples/"
+  },
+  {
+    "name": "Unequal",
+    "category": "Comparisons",
+    "slug": "comparisons",
+    "status": "Stable",
+    "summary": "lhs != rhs or Unequal[lhs, rhs]",
+    "url": "documentation/comparisons/Unequal/"
+  },
+  {
+    "name": "Unevaluated",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "Unevaluated[expr]",
+    "url": "documentation/expression-information/Unevaluated/"
+  },
+  {
+    "name": "Union",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "Union[list]",
+    "url": "documentation/structural-manipulation/Union/"
+  },
+  {
+    "name": "UnitStep",
+    "category": "Elementary Functions",
+    "slug": "elementary-functions",
+    "status": "Stable",
+    "summary": "UnitStep[x]",
+    "url": "documentation/elementary-functions/UnitStep/"
+  },
+  {
+    "name": "UnitVector",
+    "category": "Lists and Iteration",
+    "slug": "lists-and-iteration",
+    "status": "Stable",
+    "summary": "UnitVector[k]",
+    "url": "documentation/lists-and-iteration/UnitVector/"
+  },
+  {
+    "name": "Unprotect",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "Unprotect[s1, s2, ...]",
+    "url": "documentation/assignment-and-rules/Unprotect/"
+  },
+  {
+    "name": "UnsameQ",
+    "category": "Comparisons",
+    "slug": "comparisons",
+    "status": "Stable",
+    "summary": "lhs =!= rhs or UnsameQ[lhs, rhs]",
+    "url": "documentation/comparisons/UnsameQ/"
+  },
+  {
+    "name": "Unset",
+    "category": "Assignment and Rules",
+    "slug": "assignment-and-rules",
+    "status": "Stable",
+    "summary": "Unset[lhs] or lhs =.",
+    "url": "documentation/assignment-and-rules/Unset/"
+  },
+  {
+    "name": "UpTo",
+    "category": "Structural Manipulation",
+    "slug": "structural-manipulation",
+    "status": "Stable",
+    "summary": "UpTo[n]",
+    "url": "documentation/structural-manipulation/UpTo/"
+  },
+  {
+    "name": "UpperTriangularMatrixQ",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "UpperTriangularMatrixQ[m]",
+    "url": "documentation/linear-algebra/UpperTriangularMatrixQ/"
+  },
+  {
+    "name": "ValueQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "ValueQ[expr]",
+    "url": "documentation/expression-information/ValueQ/"
+  },
+  {
+    "name": "Values",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Values[assoc]",
+    "url": "documentation/data-structures/Values/"
+  },
+  {
+    "name": "VandermondeMatrix",
+    "category": "Linear Algebra",
+    "slug": "linear-algebra",
+    "status": "Stable",
+    "summary": "VandermondeMatrix[{x1, ..., xn}] gives the n x n Vandermonde matrix with entry (i, j) equal to xi^(j-1).",
+    "url": "documentation/linear-algebra/VandermondeMatrix/"
+  },
+  {
+    "name": "Variables",
+    "category": "Algebra",
+    "slug": "algebra",
+    "status": "Stable",
+    "summary": "Variables[poly]",
+    "url": "documentation/algebra/Variables/"
+  },
+  {
+    "name": "Variance",
+    "category": "Data Structures",
+    "slug": "data-structures",
+    "status": "Stable",
+    "summary": "Variance[data] gives the unbiased variance estimate of the elements in data.",
+    "url": "documentation/data-structures/Variance/"
+  },
+  {
+    "name": "VectorPlot",
+    "category": "Graphics",
+    "slug": "graphics",
+    "status": "Experimental",
+    "summary": "VectorPlot[{vx, vy}, {x, xmin, xmax}, {y, ymin, ymax}, opts...]",
+    "url": "documentation/graphics/VectorPlot/"
+  },
+  {
+    "name": "VectorPoints",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "VectorPoints",
+    "url": "documentation/other-advanced/VectorPoints/"
+  },
+  {
+    "name": "VectorQ",
+    "category": "Expression Information",
+    "slug": "expression-information",
+    "status": "Stable",
+    "summary": "VectorQ[expr]",
+    "url": "documentation/expression-information/VectorQ/"
+  },
+  {
+    "name": "VectorScale",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "VectorScale",
+    "url": "documentation/other-advanced/VectorScale/"
+  },
+  {
+    "name": "VectorStyle",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "VectorStyle",
+    "url": "documentation/other-advanced/VectorStyle/"
+  },
+  {
+    "name": "VerifySolutions",
+    "category": "Solutions of Equations",
+    "slug": "solutions-of-equations",
+    "status": "Experimental",
+    "summary": "VerifySolutions is an option for Solve that decides whether to",
+    "url": "documentation/solutions-of-equations/VerifySolutions/"
+  },
+  {
+    "name": "VertexConnectivity",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "VertexConnectivity[g] gives the minimum number of vertices whose removal disconnects g.",
+    "url": "documentation/other-advanced/VertexConnectivity/"
+  },
+  {
+    "name": "VertexCount",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "VertexCount[g] gives the number of vertices in the graph g.",
+    "url": "documentation/other-advanced/VertexCount/"
+  },
+  {
+    "name": "VertexDegree",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "VertexDegree[g] gives the list of vertex degrees; VertexDegree[g,v] gives the degree of vertex v.",
+    "url": "documentation/other-advanced/VertexDegree/"
+  },
+  {
+    "name": "VertexInDegree",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "VertexInDegree[g] / VertexInDegree[g,v] gives in-degrees (incoming directed edges; undirected edges count for both).",
+    "url": "documentation/other-advanced/VertexInDegree/"
+  },
+  {
+    "name": "VertexList",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "VertexList[g] gives the list of vertices of the graph g.",
+    "url": "documentation/other-advanced/VertexList/"
+  },
+  {
+    "name": "VertexOutDegree",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "VertexOutDegree[g] / VertexOutDegree[g,v] gives out-degrees (outgoing directed edges; undirected edges count for both).",
+    "url": "documentation/other-advanced/VertexOutDegree/"
+  },
+  {
+    "name": "WeaklyConnectedComponents",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Stable",
+    "summary": "WeaklyConnectedComponents[g] gives the weakly connected components of g.",
+    "url": "documentation/other-advanced/WeaklyConnectedComponents/"
+  },
+  {
+    "name": "Which",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "Which[test1, value1, test2, value2, ...]",
+    "url": "documentation/control-flow/Which/"
+  },
+  {
+    "name": "While",
+    "category": "Control Flow",
+    "slug": "control-flow",
+    "status": "Stable",
+    "summary": "While[test, body] evaluates test, then body, repeatedly, until test first fails to give True.",
+    "url": "documentation/control-flow/While/"
+  },
+  {
+    "name": "White",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "White",
+    "url": "documentation/other-advanced/White/"
+  },
+  {
+    "name": "With",
+    "category": "Scoping Constructs",
+    "slug": "scoping-constructs",
+    "status": "Stable",
+    "summary": "With[{x = x0, ...}, expr] specifies that x should be replaced by x0 throughout expr.",
+    "url": "documentation/scoping-constructs/With/"
+  },
+  {
+    "name": "Yellow",
+    "category": "Other & Advanced",
+    "slug": "other-advanced",
+    "status": "Experimental",
+    "summary": "Yellow",
+    "url": "documentation/other-advanced/Yellow/"
+  },
+  {
+    "name": "Zeta",
+    "category": "Special Functions",
+    "slug": "special-functions",
+    "status": "Stable",
+    "summary": "Zeta[s]",
+    "url": "documentation/special-functions/Zeta/"
+  }
+]

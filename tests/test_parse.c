@@ -3,6 +3,9 @@
 #include "print.h"
 #include "test_utils.h"
 #include <stdio.h>
+#include "symtab.h"
+#include "core.h"
+#include "eval.h"
 
 
 void test_parse_atomics() {
@@ -64,7 +67,7 @@ void test_parse_lists() {
         Expr* e = parse_expression(tests[i]);
         ASSERT(e != NULL);
         ASSERT(e->type == EXPR_FUNCTION);
-        ASSERT(strcmp(e->data.function.head->data.symbol, "List") == 0);
+        ASSERT(strcmp(e->data.function.head->data.symbol.name, "List") == 0);
         printf("PASS: %-15s → ", tests[i]);
         expr_print(e);
         printf("\n");
@@ -313,7 +316,181 @@ void test_parse_comments() {
     }
 }
 
+
+
+static void assert_parse_eq(const char* input, const char* expected) {
+    Expr* p = parse_expression(input);
+    if (!p) {
+        printf("FAIL: parsed %s as NULL\n", input);
+        return;
+    }
+    char* s = expr_to_string_fullform(p);
+    if (strcmp(s, expected) != 0) {
+        printf("FAIL: parsed %s\nExpected: %s\nActual:   %s\n", input, expected, s);
+        assert(strcmp(s, expected) == 0);
+    }
+    free(s);
+    expr_free(p);
+}
+
+/* Reported by Nasser, May 2026: `Timing[LUDecomposition[mat];]` printed a
+ * spurious "Unexpected character: ']'" on stderr.  The parser already
+ * substituted Null for the missing RHS of `;` (so the tree was correct),
+ * but parse_primary was being invoked on the trailing delimiter first
+ * and printing an error before unwinding.  These tests assert (a) the
+ * parse tree shape and (b) that stderr stays silent. */
+static void assert_parse_silent(const char* input, const char* expected) {
+    fflush(stderr);
+    int saved = dup(fileno(stderr));
+    FILE* tmp = tmpfile();
+    ASSERT(saved >= 0 && tmp != NULL);
+    dup2(fileno(tmp), fileno(stderr));
+
+    Expr* p = parse_expression(input);
+
+    fflush(stderr);
+    dup2(saved, fileno(stderr));
+    close(saved);
+
+    fseek(tmp, 0, SEEK_END);
+    long sz = ftell(tmp);
+    char buf[256] = {0};
+    if (sz > 0) {
+        fseek(tmp, 0, SEEK_SET);
+        size_t r = fread(buf, 1, sizeof(buf) - 1, tmp);
+        (void)r;
+    }
+    fclose(tmp);
+
+    if (sz > 0) {
+        fprintf(stderr, "FAIL: parse(%s) wrote to stderr: %s\n", input, buf);
+        ASSERT(sz == 0);
+    }
+    ASSERT(p != NULL);
+    char* s = expr_to_string_fullform(p);
+    if (strcmp(s, expected) != 0) {
+        fprintf(stderr, "FAIL: parse(%s)\n  Expected: %s\n  Actual:   %s\n",
+                input, expected, s);
+        ASSERT(strcmp(s, expected) == 0);
+    }
+    free(s);
+    expr_free(p);
+}
+
+void test_parse_trailing_semicolon() {
+    /* `expr;` followed immediately by a closing delimiter should produce
+     * CompoundExpression[expr, Null] without writing to stderr.  Each
+     * closer (`)`, `]`, `}`) goes through a different call site of
+     * parse_expression_prec, so we cover all three. */
+    assert_parse_silent("(1+1;)",        "CompoundExpression[Plus[1, 1], Null]");
+    assert_parse_silent("f[x;]",         "f[CompoundExpression[x, Null]]");
+    assert_parse_silent("{1+1;}",        "List[CompoundExpression[Plus[1, 1], Null]]");
+    assert_parse_silent("g[x, y;]",      "g[x, CompoundExpression[y, Null]]");
+    assert_parse_silent("{a, b;}",       "List[a, CompoundExpression[b, Null]]");
+    /* Original repro from the bug report: AbsoluteTiming isn't a builtin
+     * here so it stays symbolic, but the parse must still succeed
+     * silently. */
+    assert_parse_silent("Timing[LUDecomposition[mat];]",
+        "Timing[CompoundExpression[LUDecomposition[mat], Null]]");
+}
+
+void test_parse_scaled_scientific() {
+    /* Mathematica's `*^` scaled-scientific-notation suffix on a number
+     * literal: mantissa *^ signed-integer-exponent. */
+    assert_parse_eq("1.23*^4", "12300.0");
+    assert_parse_eq("1.23E4", "12300.0");
+    assert_parse_eq("1.23e4", "12300.0");
+    assert_parse_eq("1.23*^-4", "0.000123");
+    assert_parse_eq("123*^4", "1230000");
+    assert_parse_eq("123*^-4", "Rational[123, 10000]");
+    assert_parse_eq("100*^-2", "1");           /* reduces to integer */
+    assert_parse_eq("5*^0", "5");              /* zero exponent */
+    assert_parse_eq("2*^3", "2000");           /* simple integer scale */
+    assert_parse_eq("-1.5*^2", "-150.0");      /* signed mantissa */
+}
+
+void test_parse_dots() {
+    assert_parse_eq(".1", "0.1");
+    assert_parse_eq("-.1", "-0.1");
+    assert_parse_eq("+.1", "0.1");
+    assert_parse_eq("x /. .1 -> 2", "ReplaceAll[x, Rule[0.1, 2]]");
+    assert_parse_eq("x /. 1", "ReplaceAll[x, 1]");
+    assert_parse_eq("x /.1", "Times[x, Power[0.1, -1]]");
+    assert_parse_eq("1/.1", "Power[0.1, -1]");
+    assert_parse_eq(".1 ..", "Repeated[0.1]");
+    assert_parse_eq(".1 ...", "RepeatedNull[0.1]");
+    assert_parse_eq("x / .1", "Times[x, Power[0.1, -1]]");
+    assert_parse_eq("x * .1", "Times[x, 0.1]");
+    assert_parse_eq("x + .1", "Plus[x, 0.1]");
+    assert_parse_eq("x - .1", "Plus[x, Times[-1, 0.1]]");
+    assert_parse_eq("x ^ .1", "Power[x, 0.1]");
+    assert_parse_eq("x .1", "Times[x, 0.1]");
+    // Let me check what `x .1` parses as in my code!
+}
+
+/* Helper: assert that parse_next_expression yields exactly `expected_count`
+ * statements from `buffer`, and that the last one's FullForm is `last`.
+ * Mirrors how mathilda_run_file (Get) iterates a multi-statement file. */
+static void assert_statements(const char* buffer, int expected_count,
+                              const char* last) {
+    const char* ptr = buffer;
+    int count = 0;
+    char* last_form = NULL;
+    for (;;) {
+        Expr* e = parse_next_expression(&ptr);
+        if (!e) break;
+        count++;
+        free(last_form);
+        last_form = expr_to_string_fullform(e);
+        expr_free(e);
+    }
+    if (count != expected_count) {
+        printf("FAIL: %s -> %d statements (expected %d)\n",
+               buffer, count, expected_count);
+        assert(count == expected_count);
+    }
+    if (last && (!last_form || strcmp(last_form, last) != 0)) {
+        printf("FAIL: %s -> last %s (expected %s)\n",
+               buffer, last_form ? last_form : "(none)", last);
+        assert(last_form && strcmp(last_form, last) == 0);
+    }
+    free(last_form);
+}
+
+/* GitHub issue #20: two top-level expressions on separate lines with no
+ * trailing `;` were merged into one via implicit multiplication, so
+ * Get["file.m"] returned the wrong value. A bracket-depth-0 line break must
+ * terminate the statement (Mathematica semantics), while line breaks inside
+ * brackets stay insignificant. */
+void test_parse_newline_separator() {
+    /* Bare juxtaposition across a newline: two statements, not a product. */
+    assert_statements("a\nb\n", 2, "b");
+    /* Each statement is itself an implicit product on one line. */
+    assert_statements("a b\nc d\n", 2, "Times[c, d]");
+    /* Real repro: Series then Integrate — must stay two statements. */
+    assert_statements("Series[Sin[x],{x,0,5}]\nIntegrate[Sin[x],x]\n", 2,
+                      "Integrate[Sin[x], x]");
+    /* Explicit `;` and bare newlines mix freely. */
+    assert_statements("x = 3;\nx^2\n", 2, "Power[x, 2]");
+
+    /* Line breaks inside brackets do NOT separate: one statement each. */
+    assert_statements("f[a,\n b,\n c]\n", 1, "f[a, b, c]");
+    assert_statements("{1,\n 2,\n 3}\n", 1, "List[1, 2, 3]");
+    assert_statements("(a\n b)\n", 1, "Times[a, b]");
+    /* Juxtaposition inside braces across a newline stays implicit Times. */
+    assert_statements("{a\n b}\n", 1, "List[Times[a, b]]");
+
+    /* A line ending in an operator continues onto the next line. */
+    assert_statements("1 +\n2\n", 1, "Plus[1, 2]");
+    assert_statements("x =\n 5\n", 1, "Set[x, 5]");
+}
+
 int main() {
+    /* The parser builds expressions with the cached SYM_* symbol pointers
+     * (e.g. expr_new_symbol(SYM_List)), which are only populated by
+     * sym_names_init() — invoked from core_init(). Initialise the symbol
+     * system before exercising the parser. */
+    symtab_init(); core_init();
     TEST(test_parse_atomics);
     TEST(test_negative_numbers);
     TEST(test_implicit_multiplication);
@@ -328,6 +505,10 @@ int main() {
     TEST(test_parse_part);
     TEST(test_parse_precedence);
     TEST(test_parse_comments);
+    TEST(test_parse_trailing_semicolon);
+    TEST(test_parse_newline_separator);
+    TEST(test_parse_dots);
+    TEST(test_parse_scaled_scientific);
 
     printf("\nAll parser tests passed!\n");
     return 0;
